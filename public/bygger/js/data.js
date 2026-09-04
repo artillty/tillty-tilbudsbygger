@@ -96,12 +96,12 @@ const PRODUKTFOTO = {
   termstat:'termstat', termmobil:'termmobil',
   lan:'printer', wifi:'printer',
 };
-/* Pengeskuffe mangler stadig et foto — den får en pladsholder, som ikke
-   kommer med i PDF'en. */
+/* Alt tilbehør har nu et foto. Mangler et nyt tilbehør sit billede, viser
+   byggeren en grå pladsholder, som aldrig kommer med i kundens PDF. */
 const TILBEHOERFOTO = {
   floor:'floor', term_holder:'term_holder', mount:'mount', desktop:'desktop',
   multi:'multi', vesa:'vesa', tsfixed:'tsfixed', tsstand:'tsstand',
-  hand:'hand', cradle:'cradle',
+  hand:'hand', drawer:'drawer', cradle:'cradle',
 };
 
 /* Slå fotos op på hele varenøglen, så resten af koden slipper for at parse

@@ -99,8 +99,9 @@ pladsholdere **og kommer med i kundens PDF**. Sælgeren kan stadig uploade sit
 eget billede oveni; en upload vinder altid.
 
 Flere produkter deler samme foto med vilje — de tre tabletstørrelser ligner
-hinanden, og det gør de to KDS-størrelser også. **Vesa Arm og Pengeskuffe
-mangler et foto** og viser en pladsholder, som aldrig kommer med i PDF'en.
+hinanden, og det gør de to KDS-størrelser også. Alt i kataloget har et foto;
+et nyt produkt uden billede viser en grå pladsholder, som aldrig kommer med
+i PDF'en.
 
 Nyt foto: læg en PNG i mappen, maks. 600 px på den lange led, og peg på den
 fra `PRODUKTFOTO` eller `TILBEHOERFOTO`.
