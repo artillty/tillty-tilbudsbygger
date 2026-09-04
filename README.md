@@ -106,6 +106,17 @@ i PDF'en.
 Nyt foto: læg en PNG i mappen, maks. 600 px på den lange led, og peg på den
 fra `PRODUKTFOTO` eller `TILBEHOERFOTO`.
 
+## Indløsning
+
+Feltet **Indløsning** er valgfrit. Udfyldes det, står satsen i tilbuddet:
+*"Indløsning er aftalt til 0,45 % + 0,15 kr. pr. transaktion."* Står det tomt,
+skriver tilbuddet i stedet forbeholdet: *"Indløsning aftales særskilt og
+beregnes efter IC++."*
+
+Linjen står **altid** i tilbuddet, lige under prisoverblikket sammen med de
+øvrige prisforbehold. Et tilbud må ikke være tavst om, hvad korttransaktionerne
+koster, bare fordi sælgeren ikke nåede at udfylde feltet.
+
 ## Postnumre
 
 `js/postnumre.js` er en lokal tabel over alle danske postnumre. Skriver

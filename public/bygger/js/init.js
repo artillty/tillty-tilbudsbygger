@@ -6,7 +6,7 @@
    med resten, så næste kunde ikke arver den forriges navn og tilbudsnummer. */
 const QUOTE_FIELDS = ['c_company','c_cvr','c_contact','c_email','c_phone',
                       'c_addr','c_zip','c_city','c_number','c_date','c_valid',
-                      'c_seller','c_intro','c_note'];
+                      'c_seller','c_indloesning','c_intro','c_note'];
 
 /* Tomt udgangspunkt: dagens dato og 30 dages gyldighed er defaults, ikke data. */
 function applyDefaults(){

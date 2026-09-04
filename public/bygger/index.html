@@ -52,6 +52,10 @@
           <label>Dato sendt<input id="c_date" type="date" oninput="updateSoon()"></label>
           <label>Gælder (dage fra sendt)<input id="c_valid" type="number" min="1" value="30" oninput="updateSoon()"></label>
           <label>Sælger<input id="c_seller" placeholder="Dit navn" oninput="updateSoon()"></label>
+          <label>Indløsning<input id="c_indloesning"
+                 placeholder="Fx 0,45 % + 0,15 kr. — lad stå tom for IC++"
+                 title="Står feltet tomt, skriver tilbuddet at indløsning aftales særskilt og beregnes efter IC++"
+                 oninput="updateSoon()"></label>
           <textarea id="c_intro" placeholder="Beskrivelse – vises øverst i tilbuddet (valgfri)" oninput="updateSoon()"></textarea>
           <textarea id="c_note" placeholder="Uddybende beskrivelse – vises efter specifikationen, lige inden hilsen (valgfri)" oninput="updateSoon()"></textarea>
         </div>

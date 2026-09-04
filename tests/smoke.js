@@ -132,6 +132,11 @@ const kr = s => parseFloat(String(s).replace(/\./g, '').replace(/,-$/, '').repla
 
     check('tilbudsnr. kan ikke tastes i', await p.getAttribute('#c_number', 'readonly') !== null);
 
+    // Indløsning står altid i tilbuddet. Uden aftalt sats skal forbeholdet stå der.
+    check('tomt indløsningsfelt giver IC++-forbeholdet',
+      await p.$eval('#quote-doc', e => /Indløsning aftales særskilt og beregnes efter IC\+\+/.test(
+        e.textContent.replace(/\s+/g, ' '))));
+
     check('QR låst når Takeaway er valgt',
       await p.isDisabled('[data-qwrap="s_qr"] button:last-child'));
     // Feltet skal låses sammen med knapperne — ellers kan der tastes et antal
@@ -237,8 +242,14 @@ const kr = s => parseFloat(String(s).replace(/\./g, '').replace(/,-$/, '').repla
     await p.fill('#c_company', 'Bageriet Bro ApS');
     await p.fill('#c_seller', 'Rask');
     await p.fill('#c_note', 'Installation og oplæring er inkluderet i prisen.');
+    await p.fill('#c_indloesning', '0,45 % + 0,15 kr. pr. transaktion');
     await plus(p, 'm_sot', 1);
     await p.waitForTimeout(300);
+
+    const doktekst = await p.$eval('#quote-doc', e => e.textContent.replace(/\s+/g, ' '));
+    check('aftalt indløsning står i tilbuddet',
+      /Indløsning er aftalt til 0,45 % \+ 0,15 kr\. pr\. transaktion\./.test(doktekst));
+    check('forbeholdet er væk når satsen er aftalt', !/IC\+\+/.test(doktekst));
 
     const order = await p.$$eval('#quote-doc .qp-content > *',
       els => els.map(e => e.className.split(' ')[0] || e.tagName.toLowerCase()));
