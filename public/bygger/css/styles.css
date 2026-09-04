@@ -70,6 +70,23 @@
   .gem-status.fejl{color:#ffb4b4}
   .layout{display:grid;grid-template-columns:1.35fr 1fr;gap:20px;padding:20px;max-width:1500px;margin:0 auto}
   @media(max-width:1000px){.layout{grid-template-columns:1fr}}
+
+  /* ---- to spalter, to rullelister ----
+     Byggeren og tilbudspreviewet scroller hver for sig. Ellers flytter et kig
+     ned i tilbuddet også katalogets lange liste, og sælgeren mister sin plads.
+     Højden regnes af flexboksen i stedet for at hårdkode sidehovedets højde,
+     som ændrer sig når knapperne brydes om på en smal skærm.
+     Kun på brede skærme — under 1000px står spalterne under hinanden, og dér
+     er én almindelig siderulning det rigtige. */
+  @media(min-width:1001px){
+    html{height:100%}
+    body{height:100%;display:flex;flex-direction:column;overflow:hidden}
+    header{flex:none}
+    .layout{flex:1;min-height:0;padding-bottom:0}
+    .layout>div{overflow-y:auto;min-height:0;padding-bottom:20px}
+    /* luft mellem indholdet og spaltens egen rullebjælke */
+    .layout>div:first-child{padding-right:8px}
+  }
   .panel{background:#fff;border:1px solid var(--line);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);margin-bottom:20px}
   .panel h2{margin:0;padding:14px 18px;background:var(--navy);color:#fff;font-size:15px;letter-spacing:.3px;font-family:var(--font-heading);font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:10px}
   .panel .body{padding:16px 18px}
@@ -102,6 +119,10 @@
   .cust-grid label{display:flex;flex-direction:column;font-size:12px;font-weight:700;color:var(--muted);gap:4px;font-family:var(--font-heading)}
   .cust-grid input,.cust-grid textarea{border:1px solid var(--line);border-radius:7px;padding:8px 10px;font-size:14px;font-family:inherit}
   .cust-grid textarea{grid-column:1/-1;resize:vertical;min-height:44px}
+  /* Den uddybende beskrivelse er forudfyldt med en standardtekst — feltet skal
+     være højt nok til at man kan læse og rette den uden at rulle i en tekstboks
+     inde i en rullende spalte. */
+  #c_note{min-height:170px;line-height:1.5}
   /* postnr. og by deler én celle, så rækken flugter med de øvrige felter */
   .felt-par{display:grid;grid-template-columns:5.5em 1fr;gap:8px}
   /* Skrivebeskyttede felter skal ikke ligne noget, man kan taste i. */
@@ -253,6 +274,10 @@
     /* Dokumentet er allerede delt op i færdige A4-sider af buildPrintPages(),
        så papiret skal ikke have margener — hver .pg ER en side. */
     @page{ size:A4; margin:0; }
+    /* Rul spalterne tilbage til almindeligt flow: på papir findes der ingen
+       viewporthøjde at scrolle indenfor, og en flexboks med skjult overflow
+       ville klippe alt efter første side væk. */
+    html,body{ height:auto !important; overflow:visible !important; display:block !important; }
     html,body{ background:#fff !important; }
     body>*:not(#print-root){ display:none !important; }
     #print-root{ display:block !important; }

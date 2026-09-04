@@ -67,8 +67,17 @@ async function paginate(p) {
 
 const kr = s => parseFloat(String(s).replace(/\./g, '').replace(/,-$/, '').replace(',', '.'));
 
+/* Standardteksten hentes fra appen selv, så testen ikke skal holdes i sync
+   med ordlyden i hånden — kun med at den ER der. */
+let STANDARD_START = null;
+
 (async () => {
   const browser = await chromium.launch();
+  {
+    const p = await newPage(browser);
+    STANDARD_START = await p.evaluate(() => STANDARD_NOTE);
+    await p.close();
+  }
 
   /* ---------- 1: én lokation ---------- */
   console.log('\n# Én lokation');
@@ -132,6 +141,14 @@ const kr = s => parseFloat(String(s).replace(/\./g, '').replace(/,-$/, '').repla
 
     check('tilbudsnr. kan ikke tastes i', await p.getAttribute('#c_number', 'readonly') !== null);
 
+    // Standardteksten står i feltet fra start og går med i tilbuddet.
+    check('standardteksten er forudfyldt', (await p.inputValue('#c_note')) === STANDARD_START);
+    check('standardteksten står i tilbuddet',
+      await p.$eval('#quote-doc', e => /altid åbne for at genbruge det udstyr/.test(e.textContent)
+        && /Opsamling/.test(e.textContent)));
+    check('linjeskift bevares i tilbuddet',
+      await p.$eval('#quote-doc .qp-note', e => getComputedStyle(e).whiteSpace === 'pre-wrap'));
+
     // Ordlyden om licenser er salgsargumentet og skal stå ordret.
     check('licensforbeholdet taler om dage terminalen er slået til',
       await p.$eval('#quote-doc', e => /I betaler kun for de dage, terminalen er slået til\./.test(
@@ -167,6 +184,38 @@ const kr = s => parseFloat(String(s).replace(/\./g, '').replace(/,-$/, '').repla
       els.map(e => e.textContent.trim()).filter(t => /\d/.test(t) && !/^\d+$/.test(t)));
     check('alle beløb har ",-"', nums.every(t => /,-$/.test(t) || t === 'Inkl.'),
       nums.filter(t => !/,-$/.test(t) && t !== 'Inkl.').join(', ') || 'ingen afvigelser');
+
+    // De to spalter skal rulle hver for sig. Ellers flytter et kig ned i
+    // tilbuddet også katalogets liste, og sælgeren mister sin plads.
+    const rul = await p.evaluate(async () => {
+      const [venstre, hoejre] = document.querySelectorAll('.layout > div');
+      const kanRulle = (e) => e.scrollHeight - e.clientHeight > 40;
+      if (!kanRulle(venstre) || !kanRulle(hoejre)) return { nok: false };
+      const vent = () => new Promise((r) => setTimeout(r, 120));
+
+      // Udgangspunktet er ikke nødvendigvis 0 — klikkene ovenfor har allerede
+      // rullet venstre spalte for at få knapperne i syne.
+      const start = { v: venstre.scrollTop, h: hoejre.scrollTop };
+
+      hoejre.scrollTop = start.h + 300; await vent();
+      const efterHoejre = { v: venstre.scrollTop, h: hoejre.scrollTop };
+      venstre.scrollTop = start.v + 400; await vent();
+      const efterVenstre = { v: venstre.scrollTop, h: hoejre.scrollTop };
+      return {
+        nok: true,
+        hoejreRullede: efterHoejre.h > start.h + 250,
+        venstreStodStille: efterHoejre.v === start.v,
+        venstreRullede: efterVenstre.v > start.v + 350,
+        hoejreStodStille: efterVenstre.h === efterHoejre.h,
+        sidenSelvStodStille: (document.scrollingElement || document.documentElement).scrollTop === 0,
+      };
+    });
+    check('begge spalter er høje nok til at teste rulning', rul.nok);
+    check('højre spalte ruller uden at flytte venstre',
+      rul.hoejreRullede && rul.venstreStodStille, JSON.stringify(rul));
+    check('venstre spalte ruller uden at flytte højre',
+      rul.venstreRullede && rul.hoejreStodStille, JSON.stringify(rul));
+    check('siden selv ruller ikke', rul.sidenSelvStodStille);
 
     const pg = await paginate(p);
     check('sidetal på alle sider', pg.feet.every((f, i) => f === `Side ${i + 1} af ${pg.n}`), pg.feet.join(' / '));
@@ -261,6 +310,9 @@ const kr = s => parseFloat(String(s).replace(/\./g, '').replace(/,-$/, '').repla
     const note = order.indexOf('qp-note');
     check('beskrivelse efter specifikationen', note > order.lastIndexOf('loc-block'), order.join(' → '));
     check('beskrivelse inden hilsen', note < order.indexOf('qp-greet'));
+    check('standardteksten kan redigeres væk',
+      await p.$eval('#quote-doc', e => !/altid åbne for at genbruge/.test(e.textContent)
+        && /Installation og oplæring/.test(e.textContent)));
 
     const pg = await paginate(p);
     check('intet indhold i sidefoden', pg.bad.length === 0, pg.bad.join('; '));
@@ -282,7 +334,10 @@ const kr = s => parseFloat(String(s).replace(/\./g, '').replace(/,-$/, '').repla
 
     check('kundeoplysninger ryddet',
       (await p.inputValue('#c_company')) === '' && (await p.inputValue('#c_number')) === '');
-    check('beskrivelse ryddet', (await p.inputValue('#c_note')) === '');
+    // Standardteksten er en default, ikke kundedata — den skal komme igen.
+    check('standardteksten er tilbage i beskrivelsen',
+      (await p.inputValue('#c_note')) === STANDARD_START,
+      (await p.inputValue('#c_note')).slice(0, 40) + '…');
     check('produktvalg ryddet', (await p.inputValue('#qty_m_sot')) === '0');
     check('lokationen er tilbage til én tom', (await p.$$('.loctab')).length === 2); // 1 lokation + "+ Lokation"
     // Dato og gyldighed er defaults, ikke kundedata — de skal stå igen bagefter.

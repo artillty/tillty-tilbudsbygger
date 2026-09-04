@@ -72,8 +72,15 @@ udledes af koden — og de fejl der allerede er begået én gang.
   **Tekstfelterne kalder `updateSoon()`**, som venter 90 ms. `update()` bygger
   hele preview'et forfra inkl. billedernes data-URL'er, og ét kald pr. anslag
   bliver tungt, så snart der er produktfotos i tilbuddet.
-- `resetAll()` rydder **alt** — også kundeoplysningerne. Dato og gyldighed
-  sættes tilbage til deres defaults, for de er ikke kundedata.
+- `resetAll()` rydder **alt** — også kundeoplysningerne. Dato, gyldighed og
+  standardteksten sættes tilbage til deres defaults, for de er ikke kundedata.
+- **Standardteksten (`STANDARD_NOTE` i `js/init.js`) står i feltet**, ikke som
+  en fallback i dokumentet. Sælgeren skal kunne rette i den og slette den helt;
+  en usynlig fallback ville komme snigende tilbage.
+- **Spalterne ruller hver for sig** på skærme over 1000 px. Højden regnes af en
+  flexboks på `body`; hårdkod ikke sidehovedets højde, den ændrer sig når
+  knapperne brydes om. `@media print` sætter det hele tilbage til normalt flow,
+  ellers klippes alt efter første side væk.
 
 ## Tilbudsdokumentet
 

@@ -108,6 +108,15 @@ i PDF'en.
 Nyt foto: læg en PNG i mappen, maks. 600 px på den lange led, og peg på den
 fra `PRODUKTFOTO` eller `TILBEHOERFOTO`.
 
+## Standardtekst i beskrivelsen
+
+Den uddybende beskrivelse er forudfyldt med tilltys standardtekst om genbrug af
+udstyr og afsnittet "Opsamling". Teksten står i **feltet**, ikke som en skjult
+fallback i dokumentet — sælgeren kan rette i den, skrive den om eller slette
+den helt. `Nulstil` sætter den tilbage.
+
+Ordlyden ligger i `STANDARD_NOTE` i `js/init.js`.
+
 ## Indløsning
 
 Feltet **Indløsning** er valgfrit, og tillty arbejder kun med procentsatser.
