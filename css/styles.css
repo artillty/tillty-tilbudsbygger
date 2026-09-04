@@ -1,0 +1,245 @@
+/* tillty Tilbudsbygger — stilark
+   Tokens følger design system v1.0: https://web.tillty.com/styleguide/ */
+
+  :root{
+    /* ==== tillty design system v1.0 — kanoniske tokennavne ====
+       Kilde: https://web.tillty.com/styleguide/
+       Brug ALTID --color-* / --bg-* / --radius-* nedenfor.
+       De korte aliaser (--navy, --accent …) findes kun for bagudkompatibilitet. */
+    --color-primary:#142251;
+    --color-primary-light:#2e3d73;
+    --color-accent:#198aff;
+    --color-accent-hover:#0070e0;
+    --color-secondary:#ffffff;
+    --color-success:#10b981;
+    --color-warning:#f59e0b;
+    --color-error:#ef4444;
+    --bg-body:#ffffff;
+    --bg-elevated:#f4f7fc;
+    --bg-sunken:#eef2f9;
+    --surface-card:#ffffff;
+    --border-subtle:#dbe3f0;
+    --text-secondary:#5b6785;
+
+    --font-display:'Fugaz One',cursive;
+    --font-heading:'Nunito',sans-serif;
+    --font-body:'Open Sans',sans-serif;
+    --font-mono:'JetBrains Mono',monospace;
+
+    --radius-sm:4px;
+    --radius-md:8px;
+    --radius-lg:12px;
+    --radius-xl:16px;
+    --radius-full:9999px;
+
+    --space-1:4px;  --space-2:8px;  --space-3:12px; --space-4:16px;
+    --space-6:24px; --space-8:32px;
+
+    --shadow-sm:0 1px 3px rgba(20,34,81,.06);
+    --shadow-md:0 4px 12px rgba(20,34,81,.10);
+
+    --duration-fast:150ms;
+
+    /* aliaser (deprecated) */
+    --navy:var(--color-primary);
+    --navy-light:var(--color-primary-light);
+    --accent:var(--color-accent);
+    --accent-hover:var(--color-accent-hover);
+    --bg:var(--bg-sunken);
+    --line:var(--border-subtle);
+    --muted:var(--text-secondary);
+    --ok:var(--color-success);
+  }
+  :focus-visible{outline:2px solid var(--color-accent);outline-offset:2px;border-radius:var(--radius-sm)}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--font-body);background:var(--bg);color:#142251}
+  header{background:var(--navy);color:#fff;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+  .brand{font-family:var(--font-display);font-size:28px;letter-spacing:.5px;text-transform:lowercase}
+  header .sub{font-size:13px;opacity:.85;font-family:var(--font-heading)}
+  .actions button{border:none;border-radius:var(--radius-md);padding:10px 18px;font-size:14px;font-weight:700;font-family:var(--font-heading);cursor:pointer;transition:all var(--duration-fast) ease-out}
+  .btn-pdf{background:var(--accent);color:#fff}
+  .btn-pdf:hover{background:var(--accent-hover);transform:translateY(-1px)}
+  .btn-ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4)!important}
+  .layout{display:grid;grid-template-columns:1.35fr 1fr;gap:20px;padding:20px;max-width:1500px;margin:0 auto}
+  @media(max-width:1000px){.layout{grid-template-columns:1fr}}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);margin-bottom:20px}
+  .panel h2{margin:0;padding:14px 18px;background:var(--navy);color:#fff;font-size:15px;letter-spacing:.3px;font-family:var(--font-heading);font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .panel .body{padding:16px 18px}
+  .panel h2 .h2-sub{font-weight:600;font-size:12px;opacity:.75;margin-left:auto;padding-right:10px}
+
+  /* ---- foldbare paneler ---- */
+  .panel.fold>h2{cursor:pointer;user-select:none}
+  .panel.fold>h2::after{content:'⌄';font-size:18px;line-height:1;transition:transform var(--duration-fast) ease-out;flex-shrink:0}
+  .panel.fold.closed>h2::after{transform:rotate(-90deg)}
+  .panel.fold.closed>.body{display:none}
+
+  /* ---- lokations-faner ---- */
+  .loctabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+  .loctab{display:inline-flex;align-items:center;gap:7px;border:1.5px solid var(--line);background:var(--bg-elevated);color:var(--navy);
+          border-radius:var(--radius-full);padding:7px 14px;font-size:13px;font-weight:700;font-family:var(--font-heading);cursor:pointer;
+          transition:all var(--duration-fast) ease-out}
+  .loctab:hover{border-color:var(--accent)}
+  .loctab.active{background:var(--navy);border-color:var(--navy);color:#fff}
+  .loctab .cnt{font-size:11px;font-family:var(--font-mono);opacity:.7}
+  .loctab-add{border-style:dashed;color:var(--accent);font-weight:800}
+  .locbar{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+  .locbar label{display:flex;flex-direction:column;font-size:12px;font-weight:700;color:var(--muted);gap:4px;font-family:var(--font-heading);flex:1;min-width:180px}
+  .locbar input{border:1px solid var(--line);border-radius:7px;padding:8px 10px;font-size:14px;font-family:inherit}
+  .minibtn{border:1px solid var(--line);background:#fff;color:var(--navy);border-radius:var(--radius-md);padding:8px 12px;
+           font-size:12.5px;font-weight:700;font-family:var(--font-heading);cursor:pointer;transition:all var(--duration-fast) ease-out;white-space:nowrap}
+  .minibtn:hover{border-color:var(--accent);color:var(--accent)}
+  .minibtn.danger:hover{border-color:var(--color-error);color:var(--color-error)}
+
+  .cust-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .cust-grid label{display:flex;flex-direction:column;font-size:12px;font-weight:700;color:var(--muted);gap:4px;font-family:var(--font-heading)}
+  .cust-grid input,.cust-grid textarea{border:1px solid var(--line);border-radius:7px;padding:8px 10px;font-size:14px;font-family:inherit}
+  .cust-grid textarea{grid-column:1/-1;resize:vertical;min-height:44px}
+
+  /* ---- produktrækker ---- */
+  .group{border:1px solid var(--line);border-radius:10px;margin-bottom:14px;overflow:hidden;transition:border-color var(--duration-fast) ease-out}
+  .group.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+  .group>.main{display:flex;gap:12px;padding:12px;align-items:flex-start;background:#fbfcfe}
+  .group.on>.main{background:#f2f8ff}
+  .thumb{width:64px;height:64px;border-radius:8px;object-fit:cover;border:1px solid var(--line);background:#eef2f7;flex-shrink:0;cursor:pointer}
+  .thumb-wrap{position:relative}
+  .thumb-wrap .cam{position:absolute;right:-6px;bottom:-6px;background:var(--navy);color:#fff;border-radius:50%;width:22px;height:22px;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid #fff}
+  .prod-info{flex:1;min-width:0}
+  .prod-name{font-weight:700;font-size:15px;font-family:var(--font-heading)}
+  .prod-desc{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .price{font-weight:700;white-space:nowrap;font-family:var(--font-mono);font-size:13.5px}
+  .prod-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0}
+  .ctrl-row{display:flex;align-items:center;gap:8px}
+  .acc-hint{font-size:11.5px;color:var(--muted);margin-top:5px;font-weight:600}
+  .incl-hint{color:var(--color-success)}
+  .dup-hint{color:var(--color-warning);margin-top:4px}
+
+  /* ---- stepper: antal 0 = ikke valgt ---- */
+  .qty{display:inline-flex;align-items:center;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+  .qty.on{border-color:var(--accent)}
+  .qbtn{width:32px;height:34px;border:none;background:var(--bg-elevated);color:var(--navy);font-size:19px;font-weight:800;line-height:1;cursor:pointer;font-family:var(--font-heading);display:flex;align-items:center;justify-content:center;transition:all .12s ease-out}
+  .qbtn:hover:not(:disabled){background:var(--accent);color:#fff}
+  .qbtn:active:not(:disabled){background:var(--accent-hover);color:#fff}
+  .qbtn:disabled{opacity:.3;cursor:default}
+  .qty input{width:44px;height:34px;border:none;border-left:1.5px solid var(--line);border-right:1.5px solid var(--line);text-align:center;font-size:15px;font-weight:700;font-family:var(--font-mono);color:var(--navy);-moz-appearance:textfield}
+  .qty:not(.on) input{color:#b3bccd}
+  .qty input::-webkit-outer-spin-button,.qty input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .matchbtn{border:1px dashed var(--accent);background:transparent;color:var(--accent);border-radius:var(--radius-sm);
+            font-size:11px;font-weight:700;font-family:var(--font-heading);padding:3px 7px;cursor:pointer;white-space:nowrap}
+  .matchbtn:hover{background:var(--accent);color:#fff}
+
+  .acc-list{padding:4px 12px 10px 88px;display:none}
+  .acc-list.show{display:block}
+  .acc-item{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-top:1px dashed var(--line)}
+  .acc-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+  .acc-item .thumb{width:40px;height:40px}
+  .acc-info{flex:1;min-width:0}
+  .acc-name{font-size:13px;font-weight:700;font-family:var(--font-heading)}
+  .acc-desc{font-size:11.5px;color:var(--muted)}
+  .acc-badge{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--accent);font-weight:700;margin-bottom:2px;font-family:var(--font-heading)}
+  .sect-title{font-weight:700;color:var(--navy);margin:16px 0 2px;font-size:13px;font-family:var(--font-heading)}
+
+  /* ---- tilbudsdokument ---- */
+  #preview{font-size:13px}
+  table.pv td .pv-d{display:block;font-size:10.5px;color:var(--muted);margin-top:1px;font-weight:400}
+  /* Tabellerne står nu uden overskrift over sig, så luften mellem dem er
+     det eneste der adskiller Hardware fra Licens fra Modul. */
+  table.pv{width:100%;border-collapse:collapse;margin-top:16px}
+  table.pv th{background:var(--navy);color:#fff;font-size:11px;text-align:left;padding:7px 8px;font-family:var(--font-heading)}
+  table.pv th.num,table.pv td.num{text-align:right}
+  table.pv td.num{font-family:var(--font-mono);font-size:12px}
+  table.pv td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.pv tr.acc td:first-child{padding-left:22px;color:var(--muted)}
+  table.pv tr.acc td{font-size:12px}
+  table.pv tfoot td{font-weight:800;border-top:2px solid var(--navy);border-bottom:none;font-family:var(--font-heading)}
+  table.pv tfoot td.num{font-family:var(--font-mono)}
+  .pv-img{width:34px;height:34px;object-fit:cover;border-radius:5px;border:1px solid var(--line);vertical-align:middle;margin-right:8px}
+  /* ---- nummer-chip: binder oversigtstabellen sammen med blokkene bagi ---- */
+  .lo-n{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:var(--radius-full);
+        background:var(--accent);color:#fff;font-family:var(--font-mono);font-weight:700;font-size:10px;
+        margin-right:7px;vertical-align:1px}
+
+  .qp-assump{font-size:11px;color:var(--text-secondary);margin-top:6px;line-height:1.5}
+  /* Totalrækken i prisoverblikket er dokumentets opsummering — den skal kunne ses. */
+  table.loc-overview tfoot td{font-size:13.5px;padding-top:9px;padding-bottom:9px}
+  .qp-missing{color:var(--color-error);font-style:italic}
+  .empty{color:var(--muted);font-style:italic;padding:20px 0;text-align:center}
+
+  .quote-page{background:#fff;color:#142251;width:100%;border:1px solid var(--line);border-radius:10px;overflow:hidden;font-family:var(--font-body)}
+  .qp-band{background:var(--navy);color:#fff;display:flex;justify-content:space-between;align-items:flex-start;padding:18px 22px}
+  .qp-logo{font-family:var(--font-display);font-size:30px;line-height:1;text-transform:lowercase}
+  .qp-meta{text-align:right;font-size:11px;line-height:1.55;font-family:var(--font-heading)}
+  .qp-meta .qp-tt{font-family:var(--font-heading);font-size:13px;font-weight:800;letter-spacing:.5px;margin-bottom:3px}
+  .qp-content{padding:18px 22px 6px}
+  .qp-parties{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px}
+  .qp-col{font-size:11.5px;color:#33405c;line-height:1.55;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--bg-elevated)}
+  .qp-col .qp-lbl{font-family:var(--font-heading);font-weight:800;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;font-size:10.5px;margin-bottom:3px}
+  .qp-hej{font-family:var(--font-heading);font-weight:800;color:var(--navy);font-size:15px;margin:4px 0 8px}
+  .qp-intro{font-size:12.5px;line-height:1.6;margin:6px 0 12px;white-space:pre-wrap;color:#2d3750}
+  /* Beskrivelse efter specifikationen — brødtekst, ikke en lille fodnote,
+     for den læses som en del af tilbuddet lige inden underskriften. */
+  .qp-note{font-size:12.5px;line-height:1.6;color:#2d3750;margin:20px 0 0;white-space:pre-wrap}
+  .qp-greet{margin:22px 0 8px;font-size:12.5px;color:#2d3750}
+  /* Sidefod — gentages på hver side i PDF'en */
+  .qp-foot{border-top:1px solid var(--line);margin:12px 22px 0;padding:8px 0 14px;font-size:9.5px;color:#9aa6bb;
+           display:flex;justify-content:space-between;align-items:flex-end;gap:14px;line-height:1.5}
+  .qp-foot .qf-page{white-space:nowrap;font-family:var(--font-mono);font-weight:700;color:var(--text-secondary)}
+  /* Slankt sidehoved på side 2 og frem */
+  .qp-band.slim{padding:11px 22px}
+  .qp-band.slim .qp-logo{font-size:22px}
+  .qp-band.slim .qp-meta .qp-tt{display:inline;margin-right:6px}
+
+  /* ---- pagineringens A4-sider (bruges kun i print + måling) ---- */
+  .pg{width:210mm;height:297mm;position:relative;overflow:hidden;background:#fff;color:#142251;font-family:var(--font-body)}
+  .pg .qp-band{padding:13mm 14mm 9mm}
+  .pg .qp-band.slim{padding:8mm 14mm 7mm}
+  .pg-body{padding:5mm 14mm 0}
+  .pg .qp-foot{position:absolute;left:14mm;right:14mm;bottom:8mm;margin:0;padding-top:5px}
+  .pg-measure{position:absolute;left:-30000px;top:0;visibility:hidden}
+  .lh-cont{font-family:var(--font-heading);font-size:11px;font-weight:700;opacity:.8;margin-left:6px}
+
+  /* ---- tætheden på tryk ----
+     Disse regler MÅ gælde både i målebeholderen og på den færdige side.
+     Ligger de kun i @media print, måler vi på skærmens mål og printer med
+     andre — og så flyder indholdet ud over sidefoden. */
+  .pg-measure table.pv th, .pg-measure table.pv td,
+  .pg table.pv th, .pg table.pv td{ padding:5px 8px }
+  .pg-measure table.pv, .pg table.pv{ margin-top:12px }
+  .pg-measure .qp-parties, .pg .qp-parties{ margin-bottom:10px }
+  .pg-measure .qp-intro, .pg .qp-intro{ margin:4px 0 9px }
+  .pg-measure .qp-greet, .pg .qp-greet{ margin:14px 0 8px }
+  .pg-measure .loc-head, .pg .loc-head{ margin:0 }
+  .pg-measure .loc-block, .pg .loc-block{ margin-top:18px;border-radius:0;overflow:visible }
+  .pg-measure .qp-missing, .pg .qp-missing{ display:none }
+  /* ---- lokationsblok: hver lokation er sin egen indrammede sektion, så
+         oversigten og de enkelte lokationer ikke flyder sammen ---- */
+  .loc-block{border:1px solid var(--line);border-radius:var(--radius-md);overflow:hidden;margin-top:24px;background:#fff}
+  .loc-body{padding:0 13px 13px}
+  /* Accentfarvet bjælke — kan ikke forveksles med tabellernes navy-headere. */
+  .loc-head{display:flex;align-items:center;gap:9px;padding:9px 13px;background:var(--accent);color:#fff}
+  .loc-head .lh-n{background:#fff;color:var(--accent);font-family:var(--font-mono);font-weight:700;font-size:11px;
+                  width:21px;height:21px;border-radius:var(--radius-full);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .loc-head .lh-name{font-family:var(--font-heading);font-size:14px;font-weight:800;overflow-wrap:anywhere}
+  /* Delpriserne lukker blokken som en fodbjælke. */
+  .loc-sub{background:var(--bg-sunken);border-top:1px solid var(--line);margin:13px -13px -13px;padding:9px 13px;font-size:12px}
+  .loc-sub div{display:flex;justify-content:space-between;padding:2px 0;color:var(--navy-light);font-weight:700;max-width:62%;margin-left:auto}
+  .loc-sub div span:last-child{font-family:var(--font-mono)}
+  .loc-sub .ls-strong{border-top:1px solid var(--line);margin-top:4px;padding-top:5px;color:var(--navy);font-size:13px}
+  table.loc-overview tbody td:first-child{font-family:var(--font-heading);font-weight:700}
+  .hint{font-size:11.5px;color:var(--muted);margin:0 0 12px}
+  input[type=file]{display:none}
+
+  /* ===== Print / Gem som PDF ===== */
+  #print-root{display:none}
+  @media print{
+    /* Dokumentet er allerede delt op i færdige A4-sider af buildPrintPages(),
+       så papiret skal ikke have margener — hver .pg ER en side. */
+    @page{ size:A4; margin:0; }
+    html,body{ background:#fff !important; }
+    body>*:not(#print-root){ display:none !important; }
+    #print-root{ display:block !important; }
+    #print-root, #print-root *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+    #print-root .pg{ page-break-after:always; break-after:page; }
+    #print-root .pg:last-child{ page-break-after:auto; break-after:auto; }
+    /* Intet må brydes inde i en side — pagineringen har allerede placeret alt. */
+    #print-root .pg *{ page-break-inside:avoid; }
+  }

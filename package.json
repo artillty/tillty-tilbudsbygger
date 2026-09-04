@@ -1,0 +1,13 @@
+{
+  "name": "tillty-tilbudsbygger",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Internt salgsværktøj: sammensæt et tilbud og eksportér det som PDF",
+  "scripts": {
+    "start": "npx serve .",
+    "test": "node tests/smoke.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.47.0"
+  }
+}

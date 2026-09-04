@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>tillty – Tilbudsbygger</title>
+<!-- brandfonte hentes fra Google Fonts til både skærm og PDF -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fugaz+One&family=Nunito:wght@400;500;600;700;800&family=Open+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<header>
+  <div>
+    <div class="brand">tillty</div>
+    <div class="sub">Tilbudsbygger · sammensæt og eksportér tilbud</div>
+  </div>
+  <div class="actions">
+    <button class="btn-ghost" onclick="resetAll()">Nulstil</button>
+    <button class="btn-pdf" onclick="exportPDF()">⬇ Eksportér PDF</button>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- LEFT: builder -->
+  <div>
+    <div class="panel">
+      <h2>Kunde &amp; tilbud</h2>
+      <div class="body">
+        <div class="cust-grid">
+          <label>Firma / kunde<input id="c_company" placeholder="Kundens firmanavn" oninput="update()"></label>
+          <label>CVR<input id="c_cvr" placeholder="12345678" oninput="update()"></label>
+          <label>Kontaktperson<input id="c_contact" placeholder="Navn" oninput="update()"></label>
+          <label>E-mail<input id="c_email" placeholder="mail@kunde.dk" oninput="update()"></label>
+          <label>Telefon<input id="c_phone" placeholder="+45 ..." oninput="update()"></label>
+          <label>Adresse<input id="c_addr" placeholder="Kundens adresse" oninput="update()"></label>
+          <label>Tilbudsnr.<input id="c_number" placeholder="2026-001" oninput="update()"></label>
+          <label>Dato sendt<input id="c_date" type="date" oninput="update()"></label>
+          <label>Gælder (dage fra sendt)<input id="c_valid" type="number" min="1" value="30" oninput="update()"></label>
+          <label>Sælger<input id="c_seller" placeholder="Dit navn" oninput="update()"></label>
+          <textarea id="c_intro" placeholder="Beskrivelse – vises øverst i tilbuddet (valgfri)" oninput="update()"></textarea>
+          <textarea id="c_note" placeholder="Uddybende beskrivelse – vises efter specifikationen, lige inden hilsen (valgfri)" oninput="update()"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Lokationer</h2>
+      <div class="body">
+        <p class="hint">Har kunden flere forretninger, kan hver lokation få sit eget setup. Vælg en fane for at redigere den lokation — tilbuddet samler dem til sidst med både delpriser og en samlet total.</p>
+        <div class="loctabs" id="loctabs"></div>
+        <div class="locbar">
+          <label>Navn på den valgte lokation<input id="l_name" placeholder="fx Aarhus C" oninput="renameLoc(this.value)"></label>
+          <button class="minibtn" onclick="dupLoc()" title="Opret en ny lokation med præcis samme setup">⧉ Kopiér lokation</button>
+          <button class="minibtn danger" onclick="delLoc()" title="Slet den valgte lokation">✕ Slet</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel fold">
+      <h2>Hardware<span class="h2-sub" id="hw_sub"></span></h2>
+      <div class="body">
+        <p class="hint">Sæt antal med − og + — antal 0 betyder “ikke med i tilbuddet”. Tilbehør folder sig ud, så snart et produkt har antal 1 eller mere. Klik på et billede for at uploade dit eget.</p>
+        <div id="catalog"></div>
+      </div>
+    </div>
+
+    <div class="panel fold closed">
+      <h2>Tilkøb af løst tilbehør<span class="h2-sub" id="ex_sub"></span></h2>
+      <div class="body">
+        <p class="hint">Til kunder der <b>allerede har udstyret</b> og bare mangler lidt ekstra. Her vælges tilbehør frit, uden at der skal købes hardware til. Skal tilbehøret følge med et <i>nyt</i> produkt, sættes antallet under produktet ovenfor i stedet.</p>
+        <div id="extras"></div>
+      </div>
+    </div>
+
+    <div class="panel fold">
+      <h2>Licenser &amp; software<span class="h2-sub" id="sw_sub"></span></h2>
+      <div class="body">
+        <p class="hint">Licenser beregnes <b>automatisk</b> ud fra de terminaler du har valgt for lokationen og vises som en samlet pris <b>pr. dag</b>. Modulerne nedenfor sættes manuelt og afregnes <b>pr. måned</b>.</p>
+        <div id="software"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: preview -->
+  <div>
+    <div class="panel" style="position:sticky;top:20px">
+      <h2>Tilbudspreview</h2>
+      <div class="body" id="preview"></div>
+    </div>
+  </div>
+</div>
+
+<div id="print-root"></div>
+
+<!-- Rækkefølgen betyder noget: data først, derefter state/UI, dokument, print, opstart. -->
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/quote.js"></script>
+<script src="js/print.js"></script>
+<script src="js/init.js"></script>
+</body>
+</html>
