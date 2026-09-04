@@ -1,0 +1,86 @@
+/* Kartotekets stilark. Tokens er de samme som byggerens (css/styles.css) —
+   kilde: https://web.tillty.com/styleguide/. Fontene hentes fra byggerens
+   eget fonts.css, så der kun er ét sted de er defineret. */
+:root{
+  --color-primary:#142251;
+  --color-primary-light:#2e3d73;
+  --color-accent:#198aff;
+  --color-accent-hover:#0070e0;
+  --color-success:#10b981;
+  --color-error:#ef4444;
+  --bg-elevated:#f4f7fc;
+  --bg-sunken:#eef2f9;
+  --border-subtle:#dbe3f0;
+  --text-secondary:#5b6785;
+
+  --font-display:'Fugaz One','Nunito','Helvetica Neue',Arial,sans-serif;
+  --font-heading:'Nunito','Helvetica Neue',Arial,sans-serif;
+  --font-body:'Open Sans','Helvetica Neue',Arial,sans-serif;
+  --font-mono:'JetBrains Mono','SF Mono',Menlo,Consolas,monospace;
+
+  --radius-md:8px; --radius-lg:12px; --radius-full:9999px;
+  --shadow-sm:0 1px 3px rgba(20,34,81,.06);
+  --duration-fast:150ms;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--font-body);background:var(--bg-sunken);color:var(--color-primary)}
+:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px;border-radius:4px}
+
+header.top{background:var(--color-primary);color:#fff;padding:16px 24px;display:flex;
+  align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.brand{font-family:var(--font-display);font-size:28px;letter-spacing:.5px;text-transform:lowercase}
+.top .sub{font-size:13px;opacity:.85;font-family:var(--font-heading)}
+.btn{border:none;border-radius:var(--radius-md);padding:10px 18px;font-size:14px;font-weight:700;
+  font-family:var(--font-heading);cursor:pointer;transition:all var(--duration-fast) ease-out;
+  background:var(--color-accent);color:#fff;text-decoration:none;display:inline-block}
+.btn:hover{background:var(--color-accent-hover);transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4)}
+.btn-ghost:hover{background:rgba(255,255,255,.1);transform:none}
+
+.wrap{max-width:1200px;margin:0 auto;padding:20px}
+.panel{background:#fff;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);
+  overflow:hidden;box-shadow:var(--shadow-sm)}
+.panel h2{margin:0;padding:14px 18px;background:var(--color-primary);color:#fff;font-size:15px;
+  font-family:var(--font-heading);font-weight:700;display:flex;align-items:center;
+  justify-content:space-between;gap:10px}
+.panel h2 .cnt{font-weight:600;font-size:12px;opacity:.75;font-family:var(--font-mono)}
+
+.soeg{width:100%;border:1px solid var(--border-subtle);border-radius:7px;padding:10px 12px;
+  font-size:14px;font-family:inherit;margin:16px 18px;width:calc(100% - 36px)}
+
+table.kart{width:100%;border-collapse:collapse;font-size:13px}
+table.kart th{background:var(--bg-elevated);color:var(--text-secondary);font-size:11px;
+  text-align:left;padding:8px 12px;font-family:var(--font-heading);text-transform:uppercase;
+  letter-spacing:.5px;border-bottom:1px solid var(--border-subtle)}
+table.kart td{padding:10px 12px;border-bottom:1px solid var(--border-subtle);vertical-align:middle}
+table.kart tr:hover td{background:var(--bg-elevated)}
+table.kart th.num,table.kart td.num{text-align:right}
+table.kart td.num{font-family:var(--font-mono);font-size:12px}
+.nr{font-family:var(--font-mono);font-weight:700;color:var(--color-accent)}
+.firma{font-family:var(--font-heading);font-weight:700}
+.svag{color:var(--text-secondary);font-size:11.5px}
+.status{display:inline-block;border-radius:var(--radius-full);padding:2px 9px;font-size:10.5px;
+  font-weight:700;font-family:var(--font-heading);text-transform:uppercase;letter-spacing:.4px}
+.status.kladde{background:var(--bg-sunken);color:var(--text-secondary)}
+.status.sendt{background:#d9f5e9;color:#0a7a53}
+.rowbtn{border:1px solid var(--border-subtle);background:#fff;color:var(--color-primary);
+  border-radius:6px;padding:5px 10px;font-size:12px;font-weight:700;font-family:var(--font-heading);
+  cursor:pointer;text-decoration:none;display:inline-block}
+.rowbtn:hover{border-color:var(--color-accent);color:var(--color-accent)}
+.rowbtn.fare:hover{border-color:var(--color-error);color:var(--color-error)}
+.tom{padding:40px 20px;text-align:center;color:var(--text-secondary);font-style:italic}
+
+/* ---- login ---- */
+.gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
+  background:var(--color-primary)}
+.gate-in{background:#fff;border-radius:var(--radius-lg);padding:28px;width:100%;max-width:360px;
+  display:flex;flex-direction:column;gap:6px}
+.gate-in h1{font-family:var(--font-display);font-size:32px;margin:0;text-transform:lowercase;
+  color:var(--color-primary)}
+.gate-in p.und{margin:0 0 14px;font-size:13px;color:var(--text-secondary);font-family:var(--font-heading)}
+.gate-in label{font-size:12px;font-weight:700;color:var(--text-secondary);font-family:var(--font-heading)}
+.gate-in input{border:1px solid var(--border-subtle);border-radius:7px;padding:10px 12px;
+  font-size:15px;font-family:inherit}
+.gate-err{color:var(--color-error);font-size:12.5px;margin:4px 0 0}
+.gate-in .btn{margin-top:12px;width:100%}
+.gate-in .btn:disabled{opacity:.5;cursor:default;transform:none}

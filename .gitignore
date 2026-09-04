@@ -1,6 +1,11 @@
 node_modules/
+.next
 .DS_Store
 *.log
+*.tsbuildinfo
+next-env.d.ts
+.vercel
+.env*
 
 # lokale eksporter og skrammel
 *.pdf

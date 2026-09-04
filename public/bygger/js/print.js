@@ -181,17 +181,27 @@ function buildPrintPages(){
 }
 
 /* ---------- PDF-eksport: browserens print-til-PDF (ægte vektor-HTML→PDF) ---------- */
-function exportPDF(){
+async function exportPDF(){
   const node=document.getElementById('quote-doc');
   if(!node){ alert('Sæt antal på mindst ét produkt før du eksporterer.'); return; }
 
-  // Simpel validering — et tilbud uden kunde eller nummer skal ikke ud af huset.
+  // Simpel validering — et tilbud uden kunde skal ikke ud af huset.
+  // Tilbudsnr. kræves kun uden server; med kartotek bag tildeles det nedenfor.
   const missing=[];
   if(!v('c_company') && !v('c_contact')) missing.push('kunde/kontaktperson');
-  if(!v('c_number')) missing.push('tilbudsnr.');
+  if(!v('c_number') && !window.HAR_API) missing.push('tilbudsnr.');
   if(!v('c_date'))   missing.push('dato');
   if(!v('c_seller')) missing.push('sælger');
   if(missing.length && !confirm('Følgende mangler: '+missing.join(', ')+'\n\nEksportér alligevel?')) return;
+
+  // Gem FØR print. Et tilbud må aldrig forlade huset uden at stå i kartoteket,
+  // og det er her nummeret tildeles, hvis sælgeren ikke har gemt undervejs.
+  if(window.HAR_API && typeof gemTilbud==='function'){
+    try{ await gemTilbud('sendt'); }
+    catch(e){
+      if(!confirm('Tilbuddet kunne ikke gemmes i kartoteket.\n\nEksportér alligevel?')) return;
+    }
+  }
 
   const root=document.getElementById('print-root');
   root.innerHTML='';

@@ -4,10 +4,22 @@
   "private": true,
   "description": "Internt salgsværktøj: sammensæt et tilbud og eksportér det som PDF",
   "scripts": {
-    "start": "npx serve .",
-    "test": "node tests/smoke.js"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "node tests/smoke.js",
+    "test:api": "node tests/api.js"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.0",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest"
   },
   "devDependencies": {
-    "playwright": "^1.47.0"
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "playwright": "^1.47.0",
+    "typescript": "^5"
   }
 }

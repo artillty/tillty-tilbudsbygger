@@ -1,5 +1,23 @@
 # Projektkonventioner
 
+## Arkitektur — læs først
+
+To verdener i ét repo, og grænsen mellem dem er vigtig:
+
+- **`public/bygger/`** er den oprindelige app: vanilla JS, ingen build, virker
+  fra `file://`. **Skriv den ikke om til React.** `js/print.js` er 222 linjer
+  DOM-måling og print-CSS med fælder, der allerede har kostet tid (se nedenfor).
+- **`app/`, `lib/`, `proxy.ts`** er Next.js-skallen: login, kartotek, API.
+  Alt nyt, der ikke handler om selve tilbudsdokumentet, hører til her.
+
+Byggeren skal blive ved med at virke uden server. `js/store.js` slår sig selv
+fra på `file://`, og det er dét, der holder `npm test` kørende uden database.
+
+**Byggeren linkes som `/bygger/index.html`, ikke `/bygger`.** Dens stier er
+relative, og fra `/bygger` opløses `js/app.js` til `/js/app.js` — hele appens
+JavaScript 404'er, og siden står tom. Et redirect til `/bygger/` duer ikke:
+Next normaliserer skråstregen væk igen, og de to løber i ring.
+
 Læs denne fil før du ændrer noget. Den samler de beslutninger der ikke kan
 udledes af koden — og de fejl der allerede er begået én gang.
 
@@ -97,7 +115,26 @@ Højder som blokkens margen og `.loc-body`'s bundpadding måles med
 `getComputedStyle` på originalen — de må ikke hårdkodes som tal i JS, for så
 skal de holdes i sync med stilarket i hånden.
 
+## Tilbudsnumre
+
+- Nummeret tildeles **af serveren** ved første gem — også når eksporten gemmer
+  automatisk først. Feltet er skrivebeskyttet, når der er en server bag.
+- Tildelingen er én atomar `insert … on conflict … returning` (`lib/nummer.ts`).
+  Neons HTTP-driver har ikke rigtige transaktioner, så det skal afgøres i
+  databasen. Lav den ikke om til læs-så-skriv.
+- **Numre genbruges aldrig.** Tælleren rulles ikke tilbage, når et tilbud
+  slettes — det kan allerede være sendt til en kunde.
+
 ## Test
+
+`npm test` kører fire scenarier i headless Chromium mod `file://`, uden server
+eller database. `npm run test:api` kræver en **separat** database og nægter at
+køre mod `DATABASE_URL` — den tømmer tabellerne og ville ellers brænde rigtige
+tilbudsnumre.
+
+Testen fanger også tavse 404'er på lokale filer. Det er ikke teoretisk: en
+forkert relativ sti i `css/fonts.css` gjorde, at alle fontene 404'ede, og
+appen kørte i systemfonte uden at nogen opdagede det.
 
 `npm test` kører fire scenarier i headless Chromium. Kontroltallene i testen er
 **håndregnede** — ændrer du priser i `js/data.js`, skal de rettes med, ellers
@@ -105,3 +142,13 @@ er testen værdiløs.
 
 Overflow-testen tvinger `#print-root` synlig først. Måler man på et
 `display:none`-element, er alle rects 0 og testen melder grønt uanset hvad.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

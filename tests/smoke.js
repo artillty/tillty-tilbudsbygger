@@ -7,7 +7,7 @@
 const path = require('path');
 const { chromium } = require('playwright');
 
-const URL = 'file://' + path.resolve(__dirname, '..', 'index.html');
+const URL = 'file://' + path.resolve(__dirname, '..', 'public', 'bygger', 'index.html');
 const fails = [];
 const ok = [];
 
@@ -23,6 +23,11 @@ async function newPage(browser) {
   // Værktøjet skal virke uden net. Alt hvad der ikke er en lokal fil, er en fejl.
   p.external = [];
   p.on('request', r => { if (!/^(file:|data:|blob:)/.test(r.url())) p.external.push(r.url()); });
+  // ... og alt lokalt skal rent faktisk kunne findes. En forkert relativ sti i
+  // et stilark giver en tavs 404, og så printer vi i systemfonte uden at opdage det.
+  p.mangler = [];
+  p.on('requestfailed', r => p.mangler.push(r.url().split('/').pop()));
+  p.on('response', r => { if (r.status() >= 400) p.mangler.push(r.url().split('/').pop()); });
   await p.goto(URL);
   await p.waitForTimeout(400);
   return p;
@@ -134,6 +139,11 @@ const kr = s => parseFloat(String(s).replace(/\./g, '').replace(/,-$/, '').repla
     check('kontakt i sidefod på alle sider', pg.contact);
     check('intet indhold i sidefoden', pg.bad.length === 0, pg.bad.join('; '));
     check('ingen eksterne requests', p.external.length === 0, p.external.join(', ') || 'kun lokale filer');
+    check('ingen filer mangler', p.mangler.length === 0, p.mangler.join(', ') || 'alt fundet');
+    // Fontene skal være indlæst, ikke bare refereret.
+    const fonte = await p.evaluate(() => ['Nunito', 'Open Sans', 'JetBrains Mono', 'Fugaz One']
+      .filter(f => !document.fonts.check(`12px "${f}"`)));
+    check('brandfontene er indlæst', fonte.length === 0, fonte.join(', ') || 'alle fire');
     await p.close();
   }
 
@@ -224,7 +234,7 @@ const kr = s => parseFloat(String(s).replace(/\./g, '').replace(/,-$/, '').repla
     await plus(p, 'm_sot', 2);
     await p.waitForTimeout(200);
 
-    await p.click('.btn-ghost');            // Nulstil (confirm accepteres i newPage)
+    await p.click('button[onclick="resetAll()"]');   // confirm accepteres i newPage
     await p.waitForTimeout(300);
 
     check('kundeoplysninger ryddet',

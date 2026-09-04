@@ -4,22 +4,27 @@ Internt salgsværktøj. Sammensæt et tilbud på hardware, tilbehør, licenser o
 moduler — for én forretning eller for en kæde med flere lokationer — og
 eksportér det som en færdig PDF til kunden.
 
-Ingen build, ingen afhængigheder i drift — heller ikke over nettet. Ren HTML,
-CSS og JavaScript, og brandfontene ligger lokalt i `fonts/`, så et tilbud kan
-bygges og printes hos kunden uden internet.
+Hvert tilbud får automatisk et nummer (`2026-001`) og lander i et kartotek, så
+det kan findes frem igen.
+
+Selve byggeren er stadig ren HTML, CSS og JavaScript uden build — den kan åbnes
+direkte fra disken og virker uden net. Udenom ligger en Next.js-skal, der
+håndterer login, kartotek og API.
 
 ---
 
 ## Kom i gang
 
-Åbn `index.html` i en browser. Det er det.
-
-Til udvikling er en lille server rarere (så browseren ikke behandler filerne
-som `file://`):
-
 ```bash
-npx serve .
+npm install
+cp .env.example .env.local     # udfyld APP_PASSWORD og DATABASE_URL
+npm run dev                    # http://localhost:3000
 ```
+
+Skal du kun rette i selve byggeren — priser, layout, paginering — kan du nøjes
+med at åbne `public/bygger/index.html` direkte i en browser. Uden en server bag
+slås kartoteket fra, og resten opfører sig præcis som før. Det er også sådan
+`npm test` kører.
 
 ## Sådan retter du priser
 
@@ -41,27 +46,60 @@ kontrolregning stadig passer (de er håndregnet og skal rettes med).
 ## Filerne
 
 ```
-index.html        markup — formular, paneler, preview
-css/styles.css    alt design, tokens fra styleguiden
-css/fonts.css     @font-face for de selvhostede brandfonte
-fonts/            selve fontfilerne (woff2, latin + latin-ext)
-js/data.js        priser og katalog  ← den fil forretningen retter i
-js/app.js         state (lokationer, antal) og byggerens venstre side
-js/quote.js       selve tilbudsdokumentet
-js/print.js       paginering og PDF-eksport
-js/init.js        nulstil og opstart
-tests/smoke.js    regressionstest i headless Chromium
+app/                      Next.js-skallen — alt det nye
+  page.tsx, kartotek.tsx  kartoteket
+  login/page.tsx          kodeordslås
+  api/tilbud/…            gem, hent, slet · her tildeles nummeret
+  api/billeder/…          delt katalog over produktfotos
+lib/db.ts                 Neon-klient og tabeller
+lib/nummer.ts             nummertildelingen
+proxy.ts                  alt bag login
+
+public/bygger/            byggeren — uændret vanilla, ingen build
+  index.html              markup — formular, paneler, preview
+  css/styles.css          alt design, tokens fra styleguiden
+  css/fonts.css           @font-face for de selvhostede brandfonte
+  fonts/                  selve fontfilerne (woff2, latin + latin-ext)
+  js/data.js              priser og katalog  ← den fil forretningen retter i
+  js/app.js               state (lokationer, antal) og byggerens venstre side
+  js/quote.js             selve tilbudsdokumentet
+  js/print.js             paginering og PDF-eksport
+  js/init.js              nulstil og opstart
+  js/store.js             gem/hent mod kartoteket — slår fra uden server
+
+tests/smoke.js            byggeren, mod file:// — ingen server nødvendig
+tests/api.js              kartotek og nummerering, mod en rigtig database
 ```
 
 Scriptrækkefølgen i `index.html` betyder noget: `data` → `app` → `quote` →
 `print` → `init`.
 
+## Tilbudsnumre
+
+Nummeret tildeles af serveren, første gang et tilbud gemmes — enten fordi
+sælgeren trykker Gem, eller fordi eksporten gemmer automatisk først. Et tilbud
+kan altså ikke forlade huset uden at stå i kartoteket.
+
+Formatet er `2026-001`, løbenummer pr. år. Nummeret tildeles med én atomar
+sætning i databasen (`lib/nummer.ts`), så to sælgere der gemmer samtidig ikke
+kan få samme nummer. **Numre genbruges aldrig** — heller ikke når et tilbud
+slettes, for det kan allerede være sendt til en kunde.
+
+Feltet er skrivebeskyttet i browseren. Åbnes byggeren som løs fil, uden server,
+kan man taste et nummer selv — der er jo ingen til at tildele et.
+
 ## Test
 
 ```bash
-npm install     # henter playwright (kun til test)
-npm test
+npm install
+npm test          # byggeren: 38 checks, ingen server eller database nødvendig
+
+TEST_DATABASE_URL="postgres://…" npm run test:api    # kartoteket: 25 checks
 ```
+
+`test:api` starter selv en dev-server og kræver en **separat** database — den
+tømmer tabellerne og ville ellers brænde rigtige tilbudsnumre. Den nægter at
+køre mod `DATABASE_URL`.
 
 Testen kører fire scenarier igennem i en rigtig browser — én lokation, tre
 lokationer, et tilbud med beskrivelse, og en nulstilling — og tjekker blandt
@@ -90,9 +128,10 @@ give os kontrol over filnavnet uden at gå gennem `document.title`.
 
 ## Kendte begrænsninger
 
-- **Ingen persistens.** Et tilbud lever kun i browserfanen. Lukker sælgeren
-  fanen, er alt væk. Det er det næste der bør laves — se nedenfor.
-  Bemærk at **Nulstil** rydder alt: kunde, lokationer og valg.
+- **Nulstil rydder alt** — kunde, lokationer og valg. Er tilbuddet gemt, ligger
+  det stadig i kartoteket; er det ikke, er det væk.
+- Der er ingen automatisk gem undervejs. Lukker sælgeren fanen uden at trykke
+  Gem, er det ugemte væk.
 - Uploadede produktbilleder komprimeres ikke, så mange store fotos giver en
   tung PDF.
 - Uploadede billeder deles på tværs af lokationer (med vilje — det er de samme
@@ -100,9 +139,7 @@ give os kontrol over filnavnet uden at gå gennem `document.title`.
 
 ## Næste skridt
 
-1. **Gem og hent tilbud** — localStorage til at starte med, så et uheldigt
-   F5 ikke koster en halv times arbejde. Derefter eventuelt eksport/import
-   som `.json`, så tilbud kan sendes mellem sælgere.
-2. **Deploy** på `web.tillty.com/tilbud` bag login, så alle sælgere altid
-   arbejder med nyeste priser.
-3. **Server-side PDF** hvis printdialogen bliver et problem i praksis.
+1. **Rigtigt domæne** på `web.tillty.com/tilbud` i stedet for `.vercel.app`.
+2. **Automatisk gem** undervejs, så et uheldigt luk ikke koster arbejde.
+3. **Kopiér et tilbud** som udgangspunkt for et nyt — kæder køber ens setup.
+4. **Server-side PDF** hvis printdialogen bliver et problem i praksis.
