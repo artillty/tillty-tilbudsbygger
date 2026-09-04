@@ -18,9 +18,9 @@ const CATALOG = [
   {id:'tab14', name:'14" POS Tablet', desc:'Både stationær og mobil skærm til kassesystemet.', price:4495,
    acc:['tsfixed','tsstand','desktop','multi','mount','hand']},
   {id:'kds185', name:'18.5" KDS – Køkkenskærm', desc:'Digital skærm til ordrevisning i køkkenet.', price:5995,
-   acc:['vesa','mount']},
+   acc:['vesa']},
   {id:'kds22', name:'22" KDS – Køkkenskærm', desc:'Digital skærm til ordrevisning i køkkenet.', price:6995,
-   acc:['vesa','mount']},
+   acc:['vesa']},
   {id:'termstat', name:'Stationær Betalingsterminal', desc:'Fast betalingsterminal – anbefales på SOT og kasse.', price:1995,
    acc:['term_holder']},
   {id:'termmobil', name:'Mobil Betalingsterminal', desc:'Håndholdt betalingsterminal for mobilbetaling.', price:2495,
@@ -96,11 +96,12 @@ const PRODUKTFOTO = {
   termstat:'termstat', termmobil:'termmobil',
   lan:'printer', wifi:'printer',
 };
-/* Vesa Arm og Pengeskuffe mangler stadig et foto — de får en pladsholder,
-   som ikke kommer med i PDF'en. */
+/* Pengeskuffe mangler stadig et foto — den får en pladsholder, som ikke
+   kommer med i PDF'en. */
 const TILBEHOERFOTO = {
   floor:'floor', term_holder:'term_holder', mount:'mount', desktop:'desktop',
-  multi:'multi', tsfixed:'tsfixed', tsstand:'tsstand', hand:'hand', cradle:'cradle',
+  multi:'multi', vesa:'vesa', tsfixed:'tsfixed', tsstand:'tsstand',
+  hand:'hand', cradle:'cradle',
 };
 
 /* Slå fotos op på hele varenøglen, så resten af koden slipper for at parse

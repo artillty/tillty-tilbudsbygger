@@ -117,8 +117,8 @@ function renderCatalog(){
     g.innerHTML=`
       <div class="main">
         <div class="thumb-wrap">
-          <img class="thumb" id="img_${mk}" src="${getImg(mk,p.name)}" onclick="pick('${mk}')">
-          <div class="cam" onclick="pick('${mk}')">✎</div>
+          <img class="thumb" id="img_${mk}" src="${getImg(mk,p.name)}" onclick="pick('${mk}')"
+               title="Klik for at uploade dit eget billede">
         </div>
         <div class="prod-info">
           <div class="prod-name">${esc(p.name)}</div>
@@ -166,8 +166,8 @@ function renderExtras(){
     const g=document.createElement('div'); g.className='group'; g.dataset.rowkey=xk;
     g.innerHTML=`<div class="main">
       <div class="thumb-wrap">
-        <img class="thumb" id="img_${xk}" src="${getImg(xk,a.name)}" onclick="pick('${xk}')">
-        <div class="cam" onclick="pick('${xk}')">✎</div>
+        <img class="thumb" id="img_${xk}" src="${getImg(xk,a.name)}" onclick="pick('${xk}')"
+             title="Klik for at uploade dit eget billede">
       </div>
       <div class="prod-info">
         <div class="prod-name">${esc(a.name)}</div>

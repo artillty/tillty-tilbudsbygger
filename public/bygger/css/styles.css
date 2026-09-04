@@ -118,7 +118,10 @@
      produktet midt over. Hellere lidt luft i siderne end et halvt produkt. */
   .thumb{width:64px;height:64px;border-radius:8px;object-fit:contain;border:1px solid var(--line);background:#fff;flex-shrink:0;cursor:pointer}
   .thumb-wrap{position:relative}
-  .thumb-wrap .cam{position:absolute;right:-6px;bottom:-6px;background:var(--navy);color:#fff;border-radius:50%;width:22px;height:22px;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid #fff}
+  /* Ingen blyant på billederne — produkterne har officielle fotos, og et ikon
+     oveni så ud som om der manglede noget. Upload sker stadig ved klik; at
+     markøren skifter er antydning nok. */
+  .thumb-wrap .thumb:hover{border-color:var(--accent)}
   .prod-info{flex:1;min-width:0}
   .prod-name{font-weight:700;font-size:15px;font-family:var(--font-heading)}
   .prod-desc{font-size:12.5px;color:var(--muted);margin-top:2px}
