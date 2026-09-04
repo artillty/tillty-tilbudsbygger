@@ -21,10 +21,12 @@
     --border-subtle:#dbe3f0;
     --text-secondary:#5b6785;
 
-    --font-display:'Fugaz One',cursive;
-    --font-heading:'Nunito',sans-serif;
-    --font-body:'Open Sans',sans-serif;
-    --font-mono:'JetBrains Mono',monospace;
+    /* Fontene er selvhostet i fonts/ — se css/fonts.css. Fallbacks er sans,
+       ikke cursive: mangler Fugaz One, skal logoet ikke ende i kalligrafi. */
+    --font-display:'Fugaz One','Nunito','Helvetica Neue',Arial,sans-serif;
+    --font-heading:'Nunito','Helvetica Neue',Arial,sans-serif;
+    --font-body:'Open Sans','Helvetica Neue',Arial,sans-serif;
+    --font-mono:'JetBrains Mono','SF Mono',Menlo,Consolas,monospace;
 
     --radius-sm:4px;
     --radius-md:8px;

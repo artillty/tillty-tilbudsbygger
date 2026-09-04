@@ -62,30 +62,45 @@ function buildPrintPages(){
     return c;
   }
 
-  /* Del en tabel række for række; thead gentages på hver del.
-     Tabellen åbnes først når en række rent faktisk kan være der — ellers
-     ender vi med en tom overskriftsrække nederst på en side. */
-  function placeTable(t){
+  /* Del en tabel over sider, række for række. thead gentages på hver del, og
+     tabellen åbnes først når der er plads til både overskriftsrække og mindst
+     én datarække — ellers efterlader vi et tomt tabelhoved nederst på en side.
+
+     De to kaldere adskiller sig kun på to punkter, som derfor er callbacks:
+       attach(del)  lægger en ny tabeldel dér hvor den hører til — direkte på
+                    siden, eller inde i en lokationsbloks .loc-body.
+       onBreak()    kaldes efter hvert sideskift, så en delt lokationsblok kan
+                    åbne sin bjælke igen øverst på den nye side.
+
+     Alle mål tages fra originalen i målebeholderen; kloner uden for DOM'en
+     rapporterer højden 0. */
+  function splitTable(t,attach,onBreak){
     const thead=t.querySelector('thead');
     const baseH=(thead?thead.getBoundingClientRect().height:0)
                +parseFloat(getComputedStyle(t).marginTop||0);
-    const rows=[...t.querySelectorAll('tbody > tr')];
-    const foot=t.querySelector('tfoot');
     let shell=null;
-    const openTable=()=>{ shell=tableShell(t); cur.push(shell); used+=baseH; };
-    rows.forEach(r=>{
+    const openTable=()=>{ shell=tableShell(t); attach(shell); used+=baseH; };
+    /* Skaf plads til det næste element af højden h — og åbn tabellen, hvis den
+       ikke er åben endnu. Efter kaldet er `shell` altid klar til at tage imod. */
+    const fit=h=>{
+      if(!shell){ if(baseH+h>room()){ newPage(); onBreak(); } openTable(); }
+      else if(h>room()){ newPage(); onBreak(); openTable(); }
+    };
+    [...t.querySelectorAll('tbody > tr')].forEach(r=>{
       const rh=r.getBoundingClientRect().height;
-      if(!shell){ if(baseH+rh>room()) newPage(); openTable(); }
-      else if(rh>room()){ newPage(); openTable(); }
+      fit(rh);
       shell.querySelector('tbody').appendChild(r.cloneNode(true)); used+=rh;
     });
+    const foot=t.querySelector('tfoot');
     if(foot){
       const fh=foot.getBoundingClientRect().height;
-      if(!shell){ if(baseH+fh>room()) newPage(); openTable(); }
-      else if(fh>room()){ newPage(); openTable(); }
+      fit(fh);
       shell.appendChild(foot.cloneNode(true)); used+=fh;
     }
   }
+
+  /* Tabel der ligger direkte på siden — der er ingen blok at genåbne. */
+  function placeTable(t){ splitTable(t, sh=>cur.push(sh), ()=>{}); }
 
   /* En specifikationsblok: prøv hel, ellers del den og gentag bjælken. */
   function placeBlock(blk){
@@ -102,6 +117,10 @@ function buildPrintPages(){
       // VIGTIGT: mål altid på originalen i host — kloner er løsrevet fra DOM'en
       // og rapporterer højden 0, hvilket får indholdet til at løbe ud over sidefoden.
       const headH=head.getBoundingClientRect().height;
+      // Blokkens egen topmargen og .loc-body's bundpadding måles også på
+      // originalen, så de ikke skal holdes i sync med CSS'en i hånden.
+      const blkTopH=parseFloat(getComputedStyle(blk).marginTop||0);
+      const bodyBotH=parseFloat(getComputedStyle(blk.querySelector('.loc-body')).paddingBottom||0);
       const openShell=(cont)=>{
         shell=document.createElement('div');
         shell.className=blk.className+' split';
@@ -110,7 +129,7 @@ function buildPrintPages(){
         const bd=document.createElement('div'); bd.className='loc-body';
         shell.appendChild(hd); shell.appendChild(bd);
         cur.push(shell);
-        used += 18 + headH + 13;   // blokkens margin-top + bjælke + .loc-body bundpadding
+        used += blkTopH + headH + bodyBotH;   // margen + bjælke + bundpadding
       };
       if(head.getBoundingClientRect().height+60 > room()) newPage();
       openShell(false);
@@ -118,29 +137,11 @@ function buildPrintPages(){
         const kh=outerH(k);
         if(kh<=room()){ shell.querySelector('.loc-body').appendChild(k.cloneNode(true)); used+=kh; return; }
         if(k.tagName==='TABLE'){
-          // Tabellen deles over sider inde i blokken. Højden på thead og på
-          // tabellens topmargen tages fra originalen, ikke fra klonen.
-          const thead=k.querySelector('thead');
-          const baseH=(thead?thead.getBoundingClientRect().height:0)
-                     +parseFloat(getComputedStyle(k).marginTop||0);
-          const target=()=>shell.querySelector('.loc-body');
-          const rows=[...k.querySelectorAll('tbody > tr')];
-          let t=null;
-          // Åbn først tabellen når der er plads til både overskrift og en række.
-          const openTable=()=>{ t=tableShell(k); target().appendChild(t); used+=baseH; };
-          rows.forEach(r=>{
-            const rh=r.getBoundingClientRect().height;
-            if(!t){ if(baseH+rh>room()){ newPage(); openShell(true); } openTable(); }
-            else if(rh>room()){ newPage(); openShell(true); openTable(); }
-            t.querySelector('tbody').appendChild(r.cloneNode(true)); used+=rh;
-          });
-          const tf=k.querySelector('tfoot');
-          if(tf){
-            const fh=tf.getBoundingClientRect().height;
-            if(!t){ if(baseH+fh>room()){ newPage(); openShell(true); } openTable(); }
-            else if(fh>room()){ newPage(); openShell(true); openTable(); }
-            t.appendChild(tf.cloneNode(true)); used+=fh;
-          }
+          // Tabellen deles inde i blokken; ved sideskift genåbnes blokkens
+          // bjælke med "(fortsat)" øverst på den nye side. `shell` slås op ved
+          // kaldet, fordi openShell() udskifter den undervejs.
+          splitTable(k, sh=>shell.querySelector('.loc-body').appendChild(sh),
+                        ()=>openShell(true));
         } else {
           newPage(); openShell(true);
           shell.querySelector('.loc-body').appendChild(k.cloneNode(true)); used+=kh;

@@ -4,7 +4,9 @@ Internt salgsværktøj. Sammensæt et tilbud på hardware, tilbehør, licenser o
 moduler — for én forretning eller for en kæde med flere lokationer — og
 eksportér det som en færdig PDF til kunden.
 
-Ingen build, ingen afhængigheder i drift. Ren HTML, CSS og JavaScript.
+Ingen build, ingen afhængigheder i drift — heller ikke over nettet. Ren HTML,
+CSS og JavaScript, og brandfontene ligger lokalt i `fonts/`, så et tilbud kan
+bygges og printes hos kunden uden internet.
 
 ---
 
@@ -41,6 +43,8 @@ kontrolregning stadig passer (de er håndregnet og skal rettes med).
 ```
 index.html        markup — formular, paneler, preview
 css/styles.css    alt design, tokens fra styleguiden
+css/fonts.css     @font-face for de selvhostede brandfonte
+fonts/            selve fontfilerne (woff2, latin + latin-ext)
 js/data.js        priser og katalog  ← den fil forretningen retter i
 js/app.js         state (lokationer, antal) og byggerens venstre side
 js/quote.js       selve tilbudsdokumentet
@@ -59,14 +63,17 @@ npm install     # henter playwright (kun til test)
 npm test
 ```
 
-Testen kører tre scenarier igennem i en rigtig browser — én lokation, tre
-lokationer, og et tilbud med beskrivelse — og tjekker blandt andet at:
+Testen kører fire scenarier igennem i en rigtig browser — én lokation, tre
+lokationer, et tilbud med beskrivelse, og en nulstilling — og tjekker blandt
+andet at:
 
 - totalerne stemmer med håndregnede kontroltal
-- QR ikke kan faktureres oveni Takeaway
+- QR hverken kan faktureres eller indtastes oveni Takeaway
 - alle beløb er formateret med `,-`
 - intet indhold løber ud over sidefoden på nogen side
 - sidetal og gentaget sidehoved er på plads
+- siden ikke laver en eneste ekstern request
+- Nulstil rydder både kunde, lokationer og valg
 
 ## Eksport til PDF
 
@@ -85,6 +92,7 @@ give os kontrol over filnavnet uden at gå gennem `document.title`.
 
 - **Ingen persistens.** Et tilbud lever kun i browserfanen. Lukker sælgeren
   fanen, er alt væk. Det er det næste der bør laves — se nedenfor.
+  Bemærk at **Nulstil** rydder alt: kunde, lokationer og valg.
 - Uploadede produktbilleder komprimeres ikke, så mange store fotos giver en
   tung PDF.
 - Uploadede billeder deles på tværs af lokationer (med vilje — det er de samme

@@ -11,7 +11,7 @@ function ph(label){
   x.fillStyle='#eef2f7'; x.fillRect(0,0,S,S);
   x.strokeStyle='#c7d0dc'; x.lineWidth=3; x.strokeRect(1.5,1.5,S-3,S-3);
   x.fillStyle='#198aff'; x.globalAlpha=.15; x.fillRect(S/2-34,S/2-40,68,52); x.globalAlpha=1;
-  x.fillStyle='#198aff'; x.beginPath(); x.arc(S/2+14,S/2-26,7,0,7); x.fill();
+  x.fillStyle='#198aff'; x.beginPath(); x.arc(S/2+14,S/2-26,7,0,Math.PI*2); x.fill();
   x.fillStyle='#142251'; x.font='600 13px Arial'; x.textAlign='center';
   const words=(label||'').split(' '); let line='',lines=[];
   words.forEach(w=>{ if((line+w).length>16){lines.push(line.trim());line=w+' ';} else line+=w+' '; });
@@ -51,9 +51,10 @@ function locItemCount(Q){ return Object.keys(Q).reduce((s,k)=>s+(Q[k]||0),0); }
 function getImg(key,label){ return images[key] || ph(label); }
 
 /* ---------- beløb ----------
-   Hele kroner skrives "1.234,-" (dansk konvention, hvor ",-" står i stedet for
-   ørerne). Beløb med ører skrives "97,50" — "97,5,-" er hverken korrekt eller
-   pænt i et kundetilbud. */
+   ALLE beløb ender på ",-" — også dem med ører, altså "1.234,-" og "97,50,-".
+   Det følger tilltys egen prisliste og er husets stil. Typografisk er det
+   diskutabelt (",-" står normalt i stedet for ørerne), men lav det ikke om
+   uden at spørge: testen håndhæver det, og kunden genkender formatet. */
 const fmt = n => (Number.isInteger(n)
   ? n.toLocaleString('da-DK')
   : n.toLocaleString('da-DK',{minimumFractionDigits:2,maximumFractionDigits:2})) + ',-';
@@ -101,7 +102,7 @@ function delLoc(){
   if(activeIdx>=LOCATIONS.length) activeIdx=LOCATIONS.length-1;
   renderAll();
 }
-function renameLoc(val){ L().name=val; renderLocTabs(); update(); }
+function renameLoc(val){ L().name=val; renderLocTabs(); updateSoon(); }
 
 /* ---------- byg katalog-UI ---------- */
 function renderCatalog(){
@@ -215,7 +216,11 @@ function renderSoftware(){
 }
 
 /* Et modul der er inkluderet i et andet (fx QR i Takeaway) må ikke kunne
-   tilvælges separat — ellers dobbeltfakturerer vi kunden. */
+   tilvælges separat — ellers dobbeltfakturerer vi kunden.
+
+   Kaldes FØRST i syncUI(), fordi funktionen retter i state (tvinger antallet
+   til 0). Kørte den til sidst, ville steppernes felter allerede være tegnet ud
+   fra det gamle antal, og feltet ville vise fx 5 mens tilbuddet regnede med 0. */
 function syncIncludedModules(){
   MODULES.forEach(s=>{
     const parentId=INCLUDED_BY[s.id]; if(!parentId) return;
@@ -226,7 +231,13 @@ function syncIncludedModules(){
     const hint=document.getElementById('inc_'+k);
     const wrapEl=document.querySelector('[data-qwrap="'+k+'"]');
     if(grp) grp.style.opacity=parentOn?'.6':'1';
-    if(wrapEl) wrapEl.querySelectorAll('button').forEach(b=>{ b.disabled = parentOn || (b.textContent==='−' && q(k)===0); });
+    if(wrapEl){
+      // Feltet låses sammen med knapperne — ellers kan der tastes et antal ind,
+      // som state straks nulstiller igen.
+      const inp=wrapEl.querySelector('input');
+      if(inp) inp.disabled=parentOn;
+      wrapEl.querySelectorAll('button').forEach(b=>{ b.disabled = parentOn || (b.textContent==='−' && q(k)===0); });
+    }
     if(hint){
       const parent=MODULES.find(m=>m.id===parentId);
       hint.style.display=parentOn?'block':'none';
@@ -242,6 +253,8 @@ function accAlsoUnderProduct(aid){
 
 /* ---------- tegn DOM ud fra state ---------- */
 function syncUI(){
+  // Ryd op i state før noget tegnes — se kommentaren over syncIncludedModules().
+  syncIncludedModules();
   // steppere
   document.querySelectorAll('[data-qwrap]').forEach(w=>{
     const key=w.dataset.qwrap, n=q(key);
@@ -277,7 +290,6 @@ function syncUI(){
     hint.style.display=dup?'block':'none';
     hint.textContent=dup?'⚠ Også lagt på et nyt produkt ovenfor — tjek at antallet er rigtigt.':'';
   });
-  syncIncludedModules();
   renderLocTabs();
   refreshPanelSubs();
   update();
@@ -389,6 +401,16 @@ function refreshLicensePanel(data){
 }
 
 /* ---------- hjælpere ---------- */
+/* update() bygger hele preview'et forfra, inkl. de uploadede billeders
+   data-URL'er. Ved klik (steppere, faner) er det fint — der sker ét kald.
+   Ved tastning i tekstfelterne er det ét kald pr. anslag, og med en håndfuld
+   produktfotos i tilbuddet bliver det tungt. Tekstfelterne kalder derfor
+   updateSoon(); alt andet kalder update() direkte og er stadig synkront. */
+let _updateTimer=null;
+function updateSoon(){
+  clearTimeout(_updateTimer);
+  _updateTimer=setTimeout(()=>{ _updateTimer=null; update(); },90);
+}
 function v(id){const e=document.getElementById(id);return e?e.value.trim():'';}
 function esc(s){return String(s==null?'':s)
   .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
@@ -396,13 +418,19 @@ function esc(s){return String(s==null?'':s)
 /* Licenser regnes altid om til månedspris med en fast måned på 30 dage. */
 const LICENSE_DAYS = 30;
 function licenseDays(){ return LICENSE_DAYS; }
+/* new Date("2026-09-04") tolkes som UTC-midnat og kan derfor vise dagen før,
+   når browseren står vest for UTC. Vi bygger datoen af komponenterne i stedet. */
+function parseISODate(iso){
+  const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(iso||''); if(!m) return null;
+  return new Date(+m[1], +m[2]-1, +m[3]);
+}
 function validUntil(){
-  const d=v('c_date'); const days=parseInt(v('c_valid'))||30;
-  if(!d) return '';
-  const dt=new Date(d); dt.setDate(dt.getDate()+days);
+  const dt=parseISODate(v('c_date')); if(!dt) return '';
+  const days=parseInt(v('c_valid'))||30;
+  dt.setDate(dt.getDate()+days);
   return dt.toLocaleDateString('da-DK');
 }
-function daDate(iso){ return iso? new Date(iso).toLocaleDateString('da-DK') : ''; }
+function daDate(iso){ const dt=parseISODate(iso); return dt?dt.toLocaleDateString('da-DK'):''; }
 function quoteFilename(){
   const nr=v('c_number')||new Date().toISOString().slice(0,10);
   const who=(v('c_company')||v('c_contact')||'kunde')

@@ -11,6 +11,10 @@ udledes af koden — og de fejl der allerede er begået én gang.
 - Tone of voice: du/I-form, fagnært ordvalg, verbum-forrest.
 - Selvbetjeningsenheden hedder en **selvbetjeningsterminal**. Aldrig "kiosk",
   "stander" eller "selvbetjeningsskærm".
+- **Brandfontene er selvhostet i `fonts/`** (se `css/fonts.css`). Hent dem
+  aldrig fra Google Fonts igen: sælgere sidder hos kunder uden net, og
+  PDF'en faldt tilbage på systemfonte uden at nogen opdagede det. Testen
+  fejler, hvis siden laver en eneste ekstern request.
 - Designtokens følger <https://web.tillty.com/styleguide/>. Brug de kanoniske
   navne (`--color-primary`, `--bg-sunken`, `--radius-md`, `--space-4`).
   De korte aliaser (`--navy`, `--accent`, `--line`) findes kun af historiske
@@ -37,6 +41,18 @@ udledes af koden — og de fejl der allerede er begået én gang.
   men det er husets stil — lav det ikke om uden at spørge.
 - Priser står **kun** i `js/data.js`.
 
+## Preview og state
+
+- `syncUI()` kalder **`syncIncludedModules()` først**. Den funktion retter i
+  state (tvinger fx QR til 0, når Takeaway er valgt), så den skal køre før
+  DOM'en tegnes — ellers viser antalsfeltet et tal, tilbuddet ikke regner med.
+- Klik (steppere, faner, knapper) kalder `update()` direkte og er synkrone.
+  **Tekstfelterne kalder `updateSoon()`**, som venter 90 ms. `update()` bygger
+  hele preview'et forfra inkl. billedernes data-URL'er, og ét kald pr. anslag
+  bliver tungt, så snart der er produktfotos i tilbuddet.
+- `resetAll()` rydder **alt** — også kundeoplysningerne. Dato og gyldighed
+  sættes tilbage til deres defaults, for de er ikke kundedata.
+
 ## Tilbudsdokumentet
 
 Samme opbygning uanset antal lokationer:
@@ -61,7 +77,7 @@ Chrome kan ikke sætte sidetal via CSS (`@page`-margenbokse understøttes ikke),
 og et `position:fixed` sidehoved lægger sig oven på indholdet. Derfor deler vi
 selv dokumentet op i A4-sider.
 
-To fælder der allerede har kostet tid:
+Tre fælder der allerede har kostet tid:
 
 1. **Mål aldrig på løsrevne kloner.** `cloneNode()`-elementer der ikke er i
    DOM'en rapporterer højden 0. Alle mål skal tages fra originalen i
@@ -69,13 +85,21 @@ To fælder der allerede har kostet tid:
 2. **Tætheds-CSS skal gælde i både målebeholder og færdig side.** Ligger den
    kun i `@media print`, måler vi med skærmens mål og printer med andre.
    Reglerne er derfor scopet til `.pg-measure, .pg` — ikke til `@media print`.
+3. **Der er kun én tabeldeler.** `splitTable(t, attach, onBreak)` bruges både
+   til tabeller direkte på siden og til tabeller inde i en lokationsblok —
+   forskellen er alene de to callbacks. Logikken lå før duplikeret to steder,
+   hvor kun den ene blev rettet. Læg ikke en tredje kopi ind.
 
 En tabel åbnes først når der er plads til både overskriftsrække og mindst én
 datarække, så vi aldrig efterlader et tomt tabelhoved nederst på en side.
 
+Højder som blokkens margen og `.loc-body`'s bundpadding måles med
+`getComputedStyle` på originalen — de må ikke hårdkodes som tal i JS, for så
+skal de holdes i sync med stilarket i hånden.
+
 ## Test
 
-`npm test` kører tre scenarier i headless Chromium. Kontroltallene i testen er
+`npm test` kører fire scenarier i headless Chromium. Kontroltallene i testen er
 **håndregnede** — ændrer du priser i `js/data.js`, skal de rettes med, ellers
 er testen værdiløs.
 

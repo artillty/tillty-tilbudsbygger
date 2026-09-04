@@ -20,6 +20,9 @@ async function newPage(browser) {
   const p = await browser.newPage({ viewport: { width: 1500, height: 1300 } });
   p.on('pageerror', e => check('ingen JS-fejl', false, e.message));
   p.on('dialog', d => d.accept());
+  // Værktøjet skal virke uden net. Alt hvad der ikke er en lokal fil, er en fejl.
+  p.external = [];
+  p.on('request', r => { if (!/^(file:|data:|blob:)/.test(r.url())) p.external.push(r.url()); });
   await p.goto(URL);
   await p.waitForTimeout(400);
   return p;
@@ -100,12 +103,20 @@ const kr = s => parseFloat(String(s).replace(/\./g, '').replace(/,-$/, '').repla
     check('moduler/md stemmer', kr(row[3]) === MOD, `${row[3]} vs ${MOD}`);
     check('løbende/md stemmer', kr(row[4]) === REC, `${row[4]} vs ${REC}`);
 
-    check('stationær terminal giver ingen licens',
-      !(await p.$eval('#quote-doc', e => /Stationær Betalingsterminal[\s\S]*?licens/i.test(e.textContent) &&
-        e.textContent.match(/POS & SOT licens[\s\S]{0,40}?(\d+)/)[1] === '7')));
+    // 6 = 2 SOT + 4 tablets. Den stationære terminal tæller bevidst ikke med.
+    const posQty = await p.$$eval('#quote-doc table.pv tbody tr', rows => {
+      const r = rows.find(x => /POS & SOT licens/.test(x.cells[0].textContent));
+      return r ? r.cells[1].textContent.trim() : null;
+    });
+    check('stationær terminal udløser ingen licens', posQty === '6',
+      `POS-licenser: ${posQty === null ? 'ingen licensrække fundet' : posQty} (forventet 6)`);
 
     check('QR låst når Takeaway er valgt',
       await p.isDisabled('[data-qwrap="s_qr"] button:last-child'));
+    // Feltet skal låses sammen med knapperne — ellers kan der tastes et antal
+    // ind, som state nulstiller igen, uden at skærmen følger med.
+    check('QR-antalsfeltet er også låst', await p.isDisabled('#qty_s_qr'));
+    check('QR-antallet står på 0', (await p.inputValue('#qty_s_qr')) === '0');
     check('QR med i tilbuddet til 0,-',
       await p.$eval('#quote-doc', e => /QR bestilling/.test(e.textContent) && /Inkl\./.test(e.textContent)));
 
@@ -122,6 +133,7 @@ const kr = s => parseFloat(String(s).replace(/\./g, '').replace(/,-$/, '').repla
     check('tillty-bånd på alle sider', pg.bands.every(b => b === 'tillty'));
     check('kontakt i sidefod på alle sider', pg.contact);
     check('intet indhold i sidefoden', pg.bad.length === 0, pg.bad.join('; '));
+    check('ingen eksterne requests', p.external.length === 0, p.external.join(', ') || 'kun lokale filer');
     await p.close();
   }
 
@@ -198,6 +210,32 @@ const kr = s => parseFloat(String(s).replace(/\./g, '').replace(/,-$/, '').repla
 
     const pg = await paginate(p);
     check('intet indhold i sidefoden', pg.bad.length === 0, pg.bad.join('; '));
+    await p.close();
+  }
+
+  /* ---------- 4: nulstil rydder også kunden ---------- */
+  console.log('\n# Nulstil');
+  {
+    const p = await newPage(browser);
+    await p.fill('#c_company', 'Skal Væk ApS');
+    await p.fill('#c_number', '2026-099');
+    await p.fill('#c_note', 'Gammel note');
+    await p.fill('#l_name', 'Gammel lokation');
+    await plus(p, 'm_sot', 2);
+    await p.waitForTimeout(200);
+
+    await p.click('.btn-ghost');            // Nulstil (confirm accepteres i newPage)
+    await p.waitForTimeout(300);
+
+    check('kundeoplysninger ryddet',
+      (await p.inputValue('#c_company')) === '' && (await p.inputValue('#c_number')) === '');
+    check('beskrivelse ryddet', (await p.inputValue('#c_note')) === '');
+    check('produktvalg ryddet', (await p.inputValue('#qty_m_sot')) === '0');
+    check('lokationen er tilbage til én tom', (await p.$$('.loctab')).length === 2); // 1 lokation + "+ Lokation"
+    // Dato og gyldighed er defaults, ikke kundedata — de skal stå igen bagefter.
+    check('dato sat til i dag',
+      (await p.inputValue('#c_date')) === new Date().toISOString().slice(0, 10));
+    check('gyldighed tilbage på 30 dage', (await p.inputValue('#c_valid')) === '30');
     await p.close();
   }
 
