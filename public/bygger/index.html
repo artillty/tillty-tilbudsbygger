@@ -42,9 +42,9 @@
           <label>Adresse<input id="c_addr" placeholder="Vej og nummer" oninput="updateSoon()"></label>
           <label>Postnr. &amp; by
             <span class="felt-par">
-              <input id="c_zip" inputmode="numeric" maxlength="4" placeholder="8000"
+              <input id="c_zip" inputmode="numeric" maxlength="4"
                      oninput="postnrIndtastet(this.value)" aria-label="Postnummer">
-              <input id="c_city" placeholder="By udfyldes automatisk" oninput="updateSoon()" aria-label="By">
+              <input id="c_city" oninput="updateSoon()" aria-label="By">
             </span>
           </label>
           <label>Tilbudsnr.<input id="c_number" placeholder="2026-001" readonly
@@ -53,7 +53,6 @@
           <label>Gælder (dage fra sendt)<input id="c_valid" type="number" min="1" value="30" oninput="updateSoon()"></label>
           <label>Sælger<input id="c_seller" placeholder="Dit navn" oninput="updateSoon()"></label>
           <label>Indløsning<input id="c_indloesning"
-                 placeholder="Fx 0,45 % — tom: “Aftales efter dialog”"
                  title="Skriv satsen i procent. Står feltet tomt, skriver tilbuddet “Indløsning: Aftales efter dialog.”"
                  oninput="updateSoon()"></label>
           <textarea id="c_intro" placeholder="Beskrivelse – vises øverst i tilbuddet (valgfri)" oninput="updateSoon()"></textarea>

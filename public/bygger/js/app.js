@@ -436,11 +436,9 @@ function postnrIndtastet(val){
   const zip=document.getElementById('c_zip');
   const by=document.getElementById('c_city');
   if(zip && zip.value!==nr) zip.value=nr;
-  if(by && nr.length===4){
-    const fundet=POSTNUMRE[nr];
-    by.value = fundet || '';
-    by.placeholder = fundet ? 'By udfyldes automatisk' : 'ukendt postnummer — skriv byen';
-  }
+  // Kendes postnummeret ikke, ryddes byen, og sælgeren skriver den selv.
+  // Felterne står tomme uden pladsholdertekst.
+  if(by && nr.length===4) by.value = POSTNUMRE[nr] || '';
   updateSoon();
 }
 

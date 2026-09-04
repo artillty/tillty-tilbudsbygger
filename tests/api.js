@@ -43,7 +43,8 @@ function check(name, cond, detail) {
 
 const sql = neon(DB);
 const AAR = new Date().getFullYear();
-const nr = (n) => `${AAR}-${String(n).padStart(3, '0')}`;
+// Rækken starter ved 1001 — se lib/nummer.ts.
+const nr = (n) => `${AAR}-${1000 + n}`;
 
 async function ryd() {
   await sql`drop table if exists tilbud`;
@@ -110,7 +111,12 @@ async function vent(url, ms = 90000) {
     await p.waitForTimeout(1500);
     check('rigtigt kodeord lukker op', /\/$|kartotek/.test(new URL(p.url()).pathname));
 
-    /* ---------- 3: første tilbud får 2026-001 ---------- */
+    /* ---------- 3: første tilbud får 2026-1001 ---------- */
+    // Lav en tæller der står lavt, som produktionen gjorde efter de første
+    // prøvetilbud. Rækken skal løftes til forskydningen, ikke fortsætte fra 3.
+    await sql`insert into tilbud_taeller (aar, seq) values (${AAR}, 2)
+              on conflict (aar) do update set seq = 2`;
+
     console.log('\n# Nummertildeling');
     p.mangler = [];   // login-scenariet ovenfor gav med vilje en 401
     await p.goto(BASE + '/bygger/index.html');

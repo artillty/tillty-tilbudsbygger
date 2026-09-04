@@ -83,7 +83,9 @@ Nummeret tildeles af serveren, første gang et tilbud gemmes — enten fordi
 sælgeren trykker Gem, eller fordi eksporten gemmer automatisk først. Et tilbud
 kan altså ikke forlade huset uden at stå i kartoteket.
 
-Formatet er `2026-001`, løbenummer pr. år. Nummeret tildeles med én atomar
+Formatet er `2026-1001`, løbenummer pr. år. Rækken starter ved **1001**, ikke
+ved 1: rent teknisk er `2026-001` lige så godt et nummer, men det fortæller
+kunden, at de er årets første tilbud. Nummeret tildeles med én atomar
 sætning i databasen (`lib/nummer.ts`), så to sælgere der gemmer samtidig ikke
 kan få samme nummer. **Numre genbruges aldrig** — heller ikke når et tilbud
 slettes, for det kan allerede være sendt til en kunde.

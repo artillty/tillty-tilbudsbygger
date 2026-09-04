@@ -131,6 +131,10 @@ skal de holdes i sync med stilarket i hånden.
 - Tildelingen er én atomar `insert … on conflict … returning` (`lib/nummer.ts`).
   Neons HTTP-driver har ikke rigtige transaktioner, så det skal afgøres i
   databasen. Lav den ikke om til læs-så-skriv.
+- **Rækken starter ved 1001**, ikke ved 1 (`START` i `lib/nummer.ts`). Det er
+  kosmetisk: `2026-001` afslører, at kunden er årets første tilbud. `greatest()`
+  i sætningen løfter også en tæller, der står lavere, så et miljø med gamle
+  prøvetilbud retter sig selv.
 - **Numre genbruges aldrig.** Tælleren rulles ikke tilbage, når et tilbud
   slettes — det kan allerede være sendt til en kunde.
 
