@@ -80,3 +80,38 @@ const MODULES = [
 /* Opslag: modul-id -> id på det modul der inkluderer det (undgår dobbeltfakturering). */
 const INCLUDED_BY = {};
 MODULES.forEach(m=>(m.includes||[]).forEach(inc=>{INCLUDED_BY[inc]=m.id;}));
+
+/* ---------- officielle produktfotos ----------
+   tilltys egne billeder, som følger med værktøjet. De vises i byggeren i
+   stedet for de grå pladsholdere OG kommer med i kundens PDF — modsat
+   pladsholderne, som aldrig må ud af huset.
+
+   Sælgeren kan stadig uploade sit eget billede oveni; en upload vinder altid
+   over det officielle foto. Flere produkter deler samme foto med vilje —
+   tabletterne ligner hinanden, og de to KDS-størrelser gør også. */
+const PRODUKTFOTO = {
+  sot:'sot', pos154:'pos154',
+  tab87:'tablet', tab11:'tablet', tab14:'tablet',
+  kds185:'kds', kds22:'kds',
+  termstat:'termstat', termmobil:'termmobil',
+  lan:'printer', wifi:'printer',
+};
+/* Vesa Arm og Pengeskuffe mangler stadig et foto — de får en pladsholder,
+   som ikke kommer med i PDF'en. */
+const TILBEHOERFOTO = {
+  floor:'floor', term_holder:'term_holder', mount:'mount', desktop:'desktop',
+  multi:'multi', tsfixed:'tsfixed', tsstand:'tsstand', hand:'hand', cradle:'cradle',
+};
+
+/* Slå fotos op på hele varenøglen, så resten af koden slipper for at parse
+   nøgler. Bygges her, hvor både katalog og fotoliste er kendt. */
+const FOTO = {};
+CATALOG.forEach(p=>{
+  if(PRODUKTFOTO[p.id]) FOTO['m_'+p.id] = 'produktbilleder/'+PRODUKTFOTO[p.id]+'.png';
+  p.acc.forEach(aid=>{
+    if(TILBEHOERFOTO[aid]) FOTO['a_'+p.id+'_'+aid] = 'produktbilleder/'+TILBEHOERFOTO[aid]+'.png';
+  });
+});
+ACC_IDS.forEach(aid=>{
+  if(TILBEHOERFOTO[aid]) FOTO['x_'+aid] = 'produktbilleder/'+TILBEHOERFOTO[aid]+'.png';
+});

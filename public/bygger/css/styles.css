@@ -102,13 +102,21 @@
   .cust-grid label{display:flex;flex-direction:column;font-size:12px;font-weight:700;color:var(--muted);gap:4px;font-family:var(--font-heading)}
   .cust-grid input,.cust-grid textarea{border:1px solid var(--line);border-radius:7px;padding:8px 10px;font-size:14px;font-family:inherit}
   .cust-grid textarea{grid-column:1/-1;resize:vertical;min-height:44px}
+  /* postnr. og by deler én celle, så rækken flugter med de øvrige felter */
+  .felt-par{display:grid;grid-template-columns:5.5em 1fr;gap:8px}
+  /* Skrivebeskyttede felter skal ikke ligne noget, man kan taste i. */
+  .cust-grid input[readonly]{background:var(--bg-sunken);color:var(--muted);cursor:default}
+  .cust-grid input[readonly]:focus{outline:none;border-color:var(--line)}
 
   /* ---- produktrækker ---- */
   .group{border:1px solid var(--line);border-radius:10px;margin-bottom:14px;overflow:hidden;transition:border-color var(--duration-fast) ease-out}
   .group.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
   .group>.main{display:flex;gap:12px;padding:12px;align-items:flex-start;background:#fbfcfe}
   .group.on>.main{background:#f2f8ff}
-  .thumb{width:64px;height:64px;border-radius:8px;object-fit:cover;border:1px solid var(--line);background:#eef2f7;flex-shrink:0;cursor:pointer}
+  /* contain, ikke cover: produktfotos har vidt forskellige formater — SOT'en er
+     næsten tre gange så høj som bred — og en firkantet beskæring klipper
+     produktet midt over. Hellere lidt luft i siderne end et halvt produkt. */
+  .thumb{width:64px;height:64px;border-radius:8px;object-fit:contain;border:1px solid var(--line);background:#fff;flex-shrink:0;cursor:pointer}
   .thumb-wrap{position:relative}
   .thumb-wrap .cam{position:absolute;right:-6px;bottom:-6px;background:var(--navy);color:#fff;border-radius:50%;width:22px;height:22px;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid #fff}
   .prod-info{flex:1;min-width:0}
@@ -160,7 +168,7 @@
   table.pv tr.acc td{font-size:12px}
   table.pv tfoot td{font-weight:800;border-top:2px solid var(--navy);border-bottom:none;font-family:var(--font-heading)}
   table.pv tfoot td.num{font-family:var(--font-mono)}
-  .pv-img{width:34px;height:34px;object-fit:cover;border-radius:5px;border:1px solid var(--line);vertical-align:middle;margin-right:8px}
+  .pv-img{width:34px;height:34px;object-fit:contain;border-radius:5px;border:1px solid var(--line);background:#fff;vertical-align:middle;margin-right:8px}
   /* ---- nummer-chip: binder oversigtstabellen sammen med blokkene bagi ---- */
   .lo-n{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:var(--radius-full);
         background:var(--accent);color:#fff;font-family:var(--font-mono);font-weight:700;font-size:10px;

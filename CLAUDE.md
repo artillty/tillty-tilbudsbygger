@@ -117,6 +117,11 @@ skal de holdes i sync med stilarket i hånden.
 
 ## Tilbudsnumre
 
+- **Feltet er skrivebeskyttet.** Sælgeren taster aldrig et nummer selv — heller
+  ikke når byggeren åbnes som løs fil. Gør det ikke redigerbart igen; hele
+  pointen med kartoteket er, at numre er entydige.
+- `resetAll()` kalder `slipTilbud()`, som nulstiller `aktivtNr`. Uden det ville
+  næste Gem sende det gamle nummer med og **overskrive kundens forrige tilbud**.
 - Nummeret tildeles **af serveren** ved første gem — også når eksporten gemmer
   automatisk først. Feltet er skrivebeskyttet, når der er en server bag.
 - Tildelingen er én atomar `insert … on conflict … returning` (`lib/nummer.ts`).
@@ -124,6 +129,17 @@ skal de holdes i sync med stilarket i hånden.
   databasen. Lav den ikke om til læs-så-skriv.
 - **Numre genbruges aldrig.** Tælleren rulles ikke tilbage, når et tilbud
   slettes — det kan allerede være sendt til en kunde.
+
+## Billeder og adresser
+
+- **Produktfotos i `public/bygger/produktbilleder/`** kommer med i kundens PDF.
+  Grå canvas-pladsholdere gør ikke — den regel står stadig. `pdfImg()` afgør
+  forskellen; `getImg()` er kun til skærmen.
+- Fotos vises med `object-fit:contain`, ikke `cover`. Produkterne har vidt
+  forskellige formater — SOT'en er næsten tre gange så høj som bred — og en
+  firkantet beskæring klipper produktet midt over.
+- Adressen er delt i vej, postnr. og by. `js/postnumre.js` er en lokal tabel;
+  slå ikke op mod en API, af samme grund som med fontene.
 
 ## Test
 

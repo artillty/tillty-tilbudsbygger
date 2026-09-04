@@ -34,6 +34,7 @@ koden — hvis du finder et beløb uden for den fil, er det en fejl.
 | Hvad                | Hvor i `js/data.js` |
 |---------------------|---------------------|
 | Hardware            | `CATALOG`           |
+| Produktfotos        | `PRODUKTFOTO` / `TILBEHOERFOTO` (filer i `public/bygger/produktbilleder/`) |
 | Tilbehør            | `ACCESSORIES`       |
 | Licenstyper og dagspris | `LICENSE_TYPES` |
 | Hvilke produkter der udløser licens | `PRODUCT_LICENSE` |
@@ -61,6 +62,8 @@ public/bygger/            byggeren — uændret vanilla, ingen build
   css/fonts.css           @font-face for de selvhostede brandfonte
   fonts/                  selve fontfilerne (woff2, latin + latin-ext)
   js/data.js              priser og katalog  ← den fil forretningen retter i
+  js/postnumre.js         postnr. -> by, 1.089 danske postnumre
+  produktbilleder/        tilltys officielle produktfotos
   js/app.js               state (lokationer, antal) og byggerens venstre side
   js/quote.js             selve tilbudsdokumentet
   js/print.js             paginering og PDF-eksport
@@ -88,14 +91,41 @@ slettes, for det kan allerede være sendt til en kunde.
 Feltet er skrivebeskyttet i browseren. Åbnes byggeren som løs fil, uden server,
 kan man taste et nummer selv — der er jo ingen til at tildele et.
 
+## Produktfotos
+
+tilltys egne fotos ligger i `public/bygger/produktbilleder/` og kobles til
+varenøglerne i `js/data.js`. De vises i byggeren i stedet for de grå
+pladsholdere **og kommer med i kundens PDF**. Sælgeren kan stadig uploade sit
+eget billede oveni; en upload vinder altid.
+
+Flere produkter deler samme foto med vilje — de tre tabletstørrelser ligner
+hinanden, og det gør de to KDS-størrelser også. **Vesa Arm og Pengeskuffe
+mangler et foto** og viser en pladsholder, som aldrig kommer med i PDF'en.
+
+Nyt foto: læg en PNG i mappen, maks. 600 px på den lange led, og peg på den
+fra `PRODUKTFOTO` eller `TILBEHOERFOTO`.
+
+## Postnumre
+
+`js/postnumre.js` er en lokal tabel over alle danske postnumre. Skriver
+sælgeren fire cifre, udfyldes byen selv. Tabellen ligger lokalt af samme grund
+som fontene — værktøjet skal virke uden net. Opdatér den med:
+
+```bash
+curl -s https://api.dataforsyningen.dk/postnumre   # kilde: DAWA / Dataforsyningen
+```
+
 ## Test
 
 ```bash
 npm install
-npm test          # byggeren: 38 checks, ingen server eller database nødvendig
+npm test          # byggeren: 44 checks, ingen server eller database nødvendig
 
-TEST_DATABASE_URL="postgres://…" npm run test:api    # kartoteket: 25 checks
+TEST_DATABASE_URL="postgres://…" npm run test:api    # kartoteket: 33 checks
 ```
+
+`npm test` kan ikke køre samtidig med `npm run dev` — begge bruger `.next` i
+samme mappe. Stop dev-serveren først.
 
 `test:api` starter selv en dev-server og kræver en **separat** database — den
 tømmer tabellerne og ville ellers brænde rigtige tilbudsnumre. Den nægter at

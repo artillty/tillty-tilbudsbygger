@@ -62,6 +62,19 @@ async function gemTilbud(status){
   return d.nr;
 }
 
+/* Nulstil binder til kartoteket: efter en nulstilling er vi i gang med et NYT
+   tilbud, ikke en rettelse af det forrige. Uden det her ville næste Gem sende
+   det gamle nummer med og overskrive kundens tidligere tilbud. */
+function slipTilbud(){
+  aktivtNr = null;
+  const felt = document.getElementById('c_number');
+  if(felt) felt.value = '';
+  if(HAR_API){
+    history.replaceState(null, '', '/bygger/index.html');
+    saetStatus('Nyt tilbud — nummer tildeles når du gemmer');
+  }
+}
+
 /* ---------- hent ---------- */
 async function hentTilbud(nr){
   const r = await fetch('/api/tilbud/' + encodeURIComponent(nr));

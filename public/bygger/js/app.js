@@ -48,7 +48,11 @@ function setQ(key,n){
 }
 function locHasContent(Q){ return Object.keys(Q).some(k=>Q[k]>0); }
 function locItemCount(Q){ return Object.keys(Q).reduce((s,k)=>s+(Q[k]||0),0); }
-function getImg(key,label){ return images[key] || ph(label); }
+/* Sælgerens egen upload vinder; ellers tilltys officielle foto; ellers en
+   grå pladsholder, der fungerer som upload-knap. */
+function getImg(key,label){ return images[key] || FOTO[key] || ph(label); }
+/* Det billede der må ud til kunden. Pladsholdere er bevidst ikke med. */
+function pdfImg(key){ return images[key] || FOTO[key] || ''; }
 
 /* ---------- beløb ----------
    ALLE beløb ender på ",-" — også dem med ører, altså "1.234,-" og "97,50,-".
@@ -348,16 +352,16 @@ function collectFor(Q){
       const an=qOf(Q,keyAcc(p.id,aid)); if(!an) return;
       const a=ACCESSORIES[aid];
       // Kun rigtige, uploadede billeder må med i kundedokumentet — aldrig pladsholdere.
-      accs.push({name:a.name,desc:a.desc,qty:an,price:a.price,img:images[keyAcc(p.id,aid)]||''});
+      accs.push({name:a.name,desc:a.desc,qty:an,price:a.price,img:pdfImg(keyAcc(p.id,aid))});
     });
-    hw.push({name:p.name,desc:p.desc,qty:n,price:p.price,img:images[keyMain(p.id)]||'',accessories:accs});
+    hw.push({name:p.name,desc:p.desc,qty:n,price:p.price,img:pdfImg(keyMain(p.id)),accessories:accs});
   });
 
   const extras=[];
   ACC_IDS.forEach(aid=>{
     const n=qOf(Q,keyExtra(aid)); if(!n) return;
     const a=ACCESSORIES[aid];
-    extras.push({name:a.name,desc:a.desc,qty:n,price:a.price,img:images[keyExtra(aid)]||''});
+    extras.push({name:a.name,desc:a.desc,qty:n,price:a.price,img:pdfImg(keyExtra(aid))});
   });
 
   const modules=[];
@@ -424,6 +428,22 @@ function parseISODate(iso){
   const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(iso||''); if(!m) return null;
   return new Date(+m[1], +m[2]-1, +m[3]);
 }
+/* Postnummer -> by. Tabellen ligger lokalt (js/postnumre.js), så feltet også
+   udfyldes hos en kunde uden net. Sælgeren kan rette bynavnet bagefter; det
+   bliver først overskrevet igen, hvis postnummeret ændres. */
+function postnrIndtastet(val){
+  const nr=String(val||'').replace(/\D/g,'').slice(0,4);
+  const zip=document.getElementById('c_zip');
+  const by=document.getElementById('c_city');
+  if(zip && zip.value!==nr) zip.value=nr;
+  if(by && nr.length===4){
+    const fundet=POSTNUMRE[nr];
+    by.value = fundet || '';
+    by.placeholder = fundet ? 'By udfyldes automatisk' : 'ukendt postnummer — skriv byen';
+  }
+  updateSoon();
+}
+
 function validUntil(){
   const dt=parseISODate(v('c_date')); if(!dt) return '';
   const days=parseInt(v('c_valid'))||30;

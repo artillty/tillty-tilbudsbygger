@@ -76,7 +76,6 @@ const kr = s => parseFloat(String(s).replace(/\./g, '').replace(/,-$/, '').repla
     const p = await newPage(browser);
     await p.fill('#c_company', 'Café Mikkeller ApS');
     await p.fill('#c_contact', 'Mette Sørensen');
-    await p.fill('#c_number', '2026-014');
     await p.fill('#c_seller', 'Rask');
 
     await plus(p, 'm_sot', 2);
@@ -116,6 +115,23 @@ const kr = s => parseFloat(String(s).replace(/\./g, '').replace(/,-$/, '').repla
     check('stationær terminal udløser ingen licens', posQty === '6',
       `POS-licenser: ${posQty === null ? 'ingen licensrække fundet' : posQty} (forventet 6)`);
 
+    // Postnummeret slår byen op lokalt — feltet må også virke uden net.
+    await p.fill('#c_zip', '8000');
+    await p.waitForTimeout(250);
+    check('postnummer udfylder byen', (await p.inputValue('#c_city')) === 'Aarhus C',
+      await p.inputValue('#c_city'));
+    await p.fill('#c_zip', '9999');
+    await p.waitForTimeout(250);
+    check('ukendt postnummer rydder byen', (await p.inputValue('#c_city')) === '');
+    await p.fill('#c_zip', '2100');
+    await p.waitForTimeout(250);
+    check('nyt postnummer opdaterer byen', (await p.inputValue('#c_city')) === 'København Ø',
+      await p.inputValue('#c_city'));
+    check('postnr. og by står i tilbuddet',
+      await p.$eval('#quote-doc .qp-parties', e => /2100 København Ø/.test(e.textContent)));
+
+    check('tilbudsnr. kan ikke tastes i', await p.getAttribute('#c_number', 'readonly') !== null);
+
     check('QR låst når Takeaway er valgt',
       await p.isDisabled('[data-qwrap="s_qr"] button:last-child'));
     // Feltet skal låses sammen med knapperne — ellers kan der tastes et antal
@@ -126,7 +142,16 @@ const kr = s => parseFloat(String(s).replace(/\./g, '').replace(/,-$/, '').repla
       await p.$eval('#quote-doc', e => /QR bestilling/.test(e.textContent) && /Inkl\./.test(e.textContent)));
 
     check('kun én spec-blok', (await p.$$('#quote-doc .loc-block')).length === 1);
-    check('ingen pladsholderbilleder i dokumentet', (await p.$$('#quote-doc img')).length === 0);
+    // Officielle produktfotos SKAL med i kundens PDF; de grå canvas-pladsholdere
+    // må aldrig. Vi tjekker mod pladsholder-cachen i stedet for at tælle billeder.
+    const billeder = await p.evaluate(() => {
+      const alle = [...document.querySelectorAll('#quote-doc img')];
+      const ph = Object.values(_phCache);
+      return { ialt: alle.length, pladsholdere: alle.filter(i => ph.includes(i.src)).length };
+    });
+    check('ingen pladsholderbilleder i dokumentet', billeder.pladsholdere === 0,
+      `${billeder.pladsholdere} af ${billeder.ialt}`);
+    check('produktfotos er med i dokumentet', billeder.ialt > 0, `${billeder.ialt} billeder`);
 
     const nums = await p.$$eval('#quote-doc td.num', els =>
       els.map(e => e.textContent.trim()).filter(t => /\d/.test(t) && !/^\d+$/.test(t)));
@@ -158,7 +183,6 @@ const kr = s => parseFloat(String(s).replace(/\./g, '').replace(/,-$/, '').repla
     const p = await newPage(browser);
     await p.fill('#c_company', 'Kaffe & Co Holding ApS');
     await p.fill('#c_contact', 'Sofie Dahl');
-    await p.fill('#c_number', '2026-044');
     await p.fill('#c_seller', 'Rask');
     await p.fill('#l_name', 'Aarhus C');
 
@@ -211,7 +235,6 @@ const kr = s => parseFloat(String(s).replace(/\./g, '').replace(/,-$/, '').repla
   {
     const p = await newPage(browser);
     await p.fill('#c_company', 'Bageriet Bro ApS');
-    await p.fill('#c_number', '2026-021');
     await p.fill('#c_seller', 'Rask');
     await p.fill('#c_note', 'Installation og oplæring er inkluderet i prisen.');
     await plus(p, 'm_sot', 1);
@@ -233,7 +256,6 @@ const kr = s => parseFloat(String(s).replace(/\./g, '').replace(/,-$/, '').repla
   {
     const p = await newPage(browser);
     await p.fill('#c_company', 'Skal Væk ApS');
-    await p.fill('#c_number', '2026-099');
     await p.fill('#c_note', 'Gammel note');
     await p.fill('#l_name', 'Gammel lokation');
     await plus(p, 'm_sot', 2);

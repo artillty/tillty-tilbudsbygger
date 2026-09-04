@@ -5,8 +5,8 @@
 /* Felter der hører til tilbuddet — ikke til produktvalget. Nulstilles sammen
    med resten, så næste kunde ikke arver den forriges navn og tilbudsnummer. */
 const QUOTE_FIELDS = ['c_company','c_cvr','c_contact','c_email','c_phone',
-                      'c_addr','c_number','c_date','c_valid','c_seller',
-                      'c_intro','c_note'];
+                      'c_addr','c_zip','c_city','c_number','c_date','c_valid',
+                      'c_seller','c_intro','c_note'];
 
 /* Tomt udgangspunkt: dagens dato og 30 dages gyldighed er defaults, ikke data. */
 function applyDefaults(){
@@ -21,6 +21,9 @@ function resetAll(){
   applyDefaults();
   Object.keys(images).forEach(k=>delete images[k]);
   locSeq=0; LOCATIONS=[newLoc()]; activeIdx=0;
+  // Slip det gemte tilbud, ellers ville næste Gem overskrive det forrige
+  // tilbud i stedet for at oprette et nyt.
+  if(typeof slipTilbud==='function') slipTilbud();
   renderAll();
 }
 

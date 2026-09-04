@@ -120,6 +120,11 @@ async function vent(url, ms = 90000) {
 
     await p.fill('#c_company', 'Første Kunde ApS');
     await p.fill('#c_seller', 'Rask');
+    await p.fill('#c_addr', 'Åboulevarden 69');
+    await p.fill('#c_zip', '8000');
+    await p.waitForTimeout(250);
+    check('postnummeret slog byen op', (await p.inputValue('#c_city')) === 'Aarhus C',
+      await p.inputValue('#c_city'));
     for (let i = 0; i < 2; i++) {
       await p.click('[data-qwrap="m_sot"] button:last-child');
       await p.waitForTimeout(60);
@@ -157,25 +162,49 @@ async function vent(url, ms = 90000) {
     check('kontakt gendannet', (await p.inputValue('#c_contact')) === 'Mette Sørensen');
     check('antal gendannet', (await p.inputValue('#qty_m_sot')) === '2',
       await p.inputValue('#qty_m_sot'));
+    check('vej gendannet', (await p.inputValue('#c_addr')) === 'Åboulevarden 69');
+    check('postnr. og by gendannet',
+      (await p.inputValue('#c_zip')) === '8000' && (await p.inputValue('#c_city')) === 'Aarhus C');
+    check('adressen står i tilbuddet',
+      await p.$eval('#quote-doc .qp-parties', e => /Åboulevarden 69[\s\S]*8000 Aarhus C/.test(e.textContent)));
+    check('produktfotos er med i tilbuddet',
+      (await p.$$('#quote-doc img')).length > 0);
     const total = await p.$eval('#quote-doc table.loc-overview tfoot td:nth-child(2)',
       (e) => e.textContent.trim());
     check('totalen er den samme som før', total === '27.990,-', total);
+
+    /* ---------- 5b: Nulstil slipper tilbuddet ---------- */
+    await p.click('button[onclick="resetAll()"]');
+    await p.waitForTimeout(1000);
+    check('nulstil rydder nummeret', (await p.inputValue('#c_number')) === '',
+      await p.inputValue('#c_number'));
+    await p.fill('#c_company', 'Efter Nulstil ApS');
+    await p.click('[data-qwrap="m_lan"] button:last-child');
+    await p.waitForTimeout(80);
+    await p.click('button[onclick="gemTilbud()"]');
+    await p.waitForTimeout(1500);
+    const efterNulstil = await p.inputValue('#c_number');
+    check('gem efter nulstil laver et NYT tilbud, ikke en overskrivning',
+      efterNulstil === nr(3), efterNulstil);
+    const stadig = await sql`select firma from tilbud where nr = ${nr(1)}`;
+    check('det oprindelige tilbud er urørt', stadig[0]?.firma === 'Første Kunde ApS',
+      stadig[0]?.firma);
 
     /* ---------- 6: kartoteket ---------- */
     console.log('\n# Kartotek');
     await p.goto(BASE + '/');
     await p.waitForTimeout(1200);
     const raekker = await p.$$eval('table.kart tbody tr', (r) => r.length);
-    check('begge tilbud står i kartoteket', raekker === 2, `${raekker} rækker`);
+    check('alle tre tilbud står i kartoteket', raekker === 3, `${raekker} rækker`);
     check('nyeste står øverst',
-      (await p.$eval('table.kart tbody tr:first-child .nr', (e) => e.textContent)) === nr(2));
+      (await p.$eval('table.kart tbody tr:first-child .nr', (e) => e.textContent)) === nr(3));
 
     await p.fill('.soeg', 'Første');
     await p.waitForTimeout(400);
     check('søgning filtrerer',
       (await p.$$eval('table.kart tbody tr', (r) => r.length)) === 1);
 
-    await p.fill('.soeg', nr(2));
+    await p.fill('.soeg', nr(3));
     await p.waitForTimeout(400);
     check('søgning på nummer virker',
       (await p.$$eval('table.kart tbody tr', (r) => r.length)) === 1);
@@ -193,11 +222,11 @@ async function vent(url, ms = 90000) {
     await p.evaluate(() => { window.print = () => { window.__printKaldt = true; }; });
     await p.click('button[onclick="exportPDF()"]');
     await p.waitForTimeout(2000);
-    check('eksport tildelte ' + nr(3), (await p.inputValue('#c_number')) === nr(3),
+    check('eksport tildelte ' + nr(4), (await p.inputValue('#c_number')) === nr(4),
       await p.inputValue('#c_number'));
     check('der blev rent faktisk printet', await p.evaluate(() => window.__printKaldt === true));
 
-    const status = await sql`select status from tilbud where nr = ${nr(3)}`;
+    const status = await sql`select status from tilbud where nr = ${nr(4)}`;
     check('eksporteret tilbud står som sendt', status[0]?.status === 'sendt', status[0]?.status);
 
     const kladde = await sql`select status from tilbud where nr = ${nr(1)}`;
@@ -210,7 +239,7 @@ async function vent(url, ms = 90000) {
     await p.click('table.kart tbody tr:first-child button.rowbtn.fare');
     await p.waitForTimeout(1200);
     check('tilbuddet er væk fra kartoteket',
-      (await p.$$eval('table.kart tbody tr', (r) => r.length)) === 2);
+      (await p.$$eval('table.kart tbody tr', (r) => r.length)) === 3);
 
     await p.goto(BASE + '/bygger/index.html');
     await p.waitForTimeout(1000);
@@ -220,7 +249,7 @@ async function vent(url, ms = 90000) {
     await p.click('button[onclick="gemTilbud()"]');
     await p.waitForTimeout(1500);
     check('nummeret efter en sletning genbruges ikke',
-      (await p.inputValue('#c_number')) === nr(4), await p.inputValue('#c_number'));
+      (await p.inputValue('#c_number')) === nr(5), await p.inputValue('#c_number'));
 
     await p.close();
   } finally {

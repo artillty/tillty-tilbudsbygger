@@ -122,7 +122,10 @@ function update(){
   /* Parterne — afsender og modtager. Uden denne blok er dokumentet ikke et tilbud. */
   const send=[SENDER.company,SENDER.addr,'CVR '+SENDER.cvr,SENDER.email,SENDER.phone].filter(Boolean);
   const custCvr=v('c_cvr');
-  const cust=[v('c_company'),v('c_contact'),v('c_addr'),custCvr?('CVR '+custCvr):'',v('c_email'),v('c_phone')].filter(Boolean);
+  // Postnr. og by står på samme linje under vejnavnet, som på et brev.
+  const postby=[v('c_zip'),v('c_city')].filter(Boolean).join(' ');
+  const cust=[v('c_company'),v('c_contact'),v('c_addr'),postby,
+              custCvr?('CVR '+custCvr):'',v('c_email'),v('c_phone')].filter(Boolean);
   b+='<div class="qp-parties">'
     +'<div class="qp-col"><div class="qp-lbl">Fra</div>'+send.map(esc).join('<br>')+'</div>'
     +'<div class="qp-col"><div class="qp-lbl">Til</div>'

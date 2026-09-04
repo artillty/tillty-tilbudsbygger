@@ -186,10 +186,10 @@ async function exportPDF(){
   if(!node){ alert('Sæt antal på mindst ét produkt før du eksporterer.'); return; }
 
   // Simpel validering — et tilbud uden kunde skal ikke ud af huset.
-  // Tilbudsnr. kræves kun uden server; med kartotek bag tildeles det nedenfor.
+  // Tilbudsnr. står ikke på listen: det tildeles af serveren nedenfor, og
+  // uden server er der ingen til at tildele et.
   const missing=[];
   if(!v('c_company') && !v('c_contact')) missing.push('kunde/kontaktperson');
-  if(!v('c_number') && !window.HAR_API) missing.push('tilbudsnr.');
   if(!v('c_date'))   missing.push('dato');
   if(!v('c_seller')) missing.push('sælger');
   if(missing.length && !confirm('Følgende mangler: '+missing.join(', ')+'\n\nEksportér alligevel?')) return;

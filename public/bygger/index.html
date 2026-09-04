@@ -39,8 +39,16 @@
           <label>Kontaktperson<input id="c_contact" placeholder="Navn" oninput="updateSoon()"></label>
           <label>E-mail<input id="c_email" placeholder="mail@kunde.dk" oninput="updateSoon()"></label>
           <label>Telefon<input id="c_phone" placeholder="+45 ..." oninput="updateSoon()"></label>
-          <label>Adresse<input id="c_addr" placeholder="Kundens adresse" oninput="updateSoon()"></label>
-          <label>Tilbudsnr.<input id="c_number" placeholder="2026-001" oninput="updateSoon()"></label>
+          <label>Adresse<input id="c_addr" placeholder="Vej og nummer" oninput="updateSoon()"></label>
+          <label>Postnr. &amp; by
+            <span class="felt-par">
+              <input id="c_zip" inputmode="numeric" maxlength="4" placeholder="8000"
+                     oninput="postnrIndtastet(this.value)" aria-label="Postnummer">
+              <input id="c_city" placeholder="By udfyldes automatisk" oninput="updateSoon()" aria-label="By">
+            </span>
+          </label>
+          <label>Tilbudsnr.<input id="c_number" placeholder="2026-001" readonly
+                 title="Tildeles automatisk, når tilbuddet gemmes"></label>
           <label>Dato sendt<input id="c_date" type="date" oninput="updateSoon()"></label>
           <label>Gælder (dage fra sendt)<input id="c_valid" type="number" min="1" value="30" oninput="updateSoon()"></label>
           <label>Sælger<input id="c_seller" placeholder="Dit navn" oninput="updateSoon()"></label>
@@ -101,6 +109,7 @@
 
 <!-- Rækkefølgen betyder noget: data først, derefter state/UI, dokument, print, opstart. -->
 <script src="js/data.js"></script>
+<script src="js/postnumre.js"></script>
 <script src="js/app.js"></script>
 <script src="js/quote.js"></script>
 <script src="js/print.js"></script>
