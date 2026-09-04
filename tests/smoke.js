@@ -141,8 +141,13 @@ const kr = s => parseFloat(String(s).replace(/\./g, '').replace(/,-$/, '').repla
     check('ingen eksterne requests', p.external.length === 0, p.external.join(', ') || 'kun lokale filer');
     check('ingen filer mangler', p.mangler.length === 0, p.mangler.join(', ') || 'alt fundet');
     // Fontene skal være indlæst, ikke bare refereret.
-    const fonte = await p.evaluate(() => ['Nunito', 'Open Sans', 'JetBrains Mono', 'Fugaz One']
-      .filter(f => !document.fonts.check(`12px "${f}"`)));
+    // Vægten skal med: browseren henter kun de vægte siden faktisk bruger, og
+    // document.fonts.check() spørger som standard efter 400. JetBrains Mono
+    // bruges kun i 700 (.price, .qty input), så et check uden vægt melder
+    // falsk negativ, hvis der ikke tilfældigvis står et tal i vægt 400 på siden.
+    const fonte = await p.evaluate(() => ([
+      ['Nunito', 700], ['Open Sans', 400], ['JetBrains Mono', 700], ['Fugaz One', 400],
+    ]).filter(([f, w]) => !document.fonts.check(`${w} 12px "${f}"`, 'Tilbud 1234')).map(([f]) => f));
     check('brandfontene er indlæst', fonte.length === 0, fonte.join(', ') || 'alle fire');
     await p.close();
   }
