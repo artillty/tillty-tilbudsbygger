@@ -224,6 +224,10 @@ let STANDARD_START = null;
     check('intet indhold i sidefoden', pg.bad.length === 0, pg.bad.join('; '));
     check('ingen eksterne requests', p.external.length === 0, p.external.join(', ') || 'kun lokale filer');
     check('ingen filer mangler', p.mangler.length === 0, p.mangler.join(', ') || 'alt fundet');
+    // Ikonet skal også findes når byggeren åbnes som løs fil — deraf den
+    // relative sti. En forkert sti her giver ingen fejl, bare et blankt faneblad.
+    const ikoner = await p.$$eval('link[rel*="icon"]', els => els.map(e => e.getAttribute('href')));
+    check('faviconet er sat', ikoner.length >= 2, ikoner.join(', ') || 'ingen');
     // Fontene skal være indlæst, ikke bare refereret.
     // Vægten skal med: browseren henter kun de vægte siden faktisk bruger, og
     // document.fonts.check() spørger som standard efter 400. JetBrains Mono

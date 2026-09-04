@@ -20,6 +20,6 @@ export const config = {
   // Undtaget er kun brandfontene, så login-siden kan se rigtig ud; fontfiler
   // er ikke hemmelige, priserne i js/data.js er.
   matcher: [
-    "/((?!login|api/auth|bygger/fonts|bygger/css/fonts.css|_next/static|_next/image|favicon.ico).*)",
+    "/((?!login|api/auth|bygger/fonts|bygger/css/fonts.css|_next/static|_next/image|favicon|apple-touch-icon).*)",
   ],
 };
