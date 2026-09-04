@@ -104,7 +104,7 @@ function priceOverview(live,days,sum){
     +'</tr></tfoot></table>';
   if(sum.licDaily)
     b+='<div class="qp-assump">Licenser afregnes <b>pr. dag i brug</b> — '+fmt(sum.licDaily)
-      +' pr. dag. Månedsprisen er regnet med en måned på '+days+' dage; I betaler kun for de dage, terminalerne rent faktisk er i brug.</div>';
+      +' pr. dag. Månedsprisen er regnet med en måned på '+days+' dage; I betaler kun for de dage, terminalen er slået til.</div>';
   /* Indløsning står altid i tilbuddet. Er der skrevet en sats, står præcis
      det der — ikke omskrevet. Ellers står forbeholdet. Et tilbud må ikke være
      tavst om indløsning, bare fordi sælgeren sprang feltet over. */

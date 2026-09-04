@@ -132,6 +132,11 @@ const kr = s => parseFloat(String(s).replace(/\./g, '').replace(/,-$/, '').repla
 
     check('tilbudsnr. kan ikke tastes i', await p.getAttribute('#c_number', 'readonly') !== null);
 
+    // Ordlyden om licenser er salgsargumentet og skal stå ordret.
+    check('licensforbeholdet taler om dage terminalen er slået til',
+      await p.$eval('#quote-doc', e => /I betaler kun for de dage, terminalen er slået til\./.test(
+        e.textContent.replace(/\s+/g, ' '))));
+
     // Indløsning står altid i tilbuddet. Uden en sats står forbeholdet der.
     check('tomt indløsningsfelt giver "Aftales efter dialog"',
       await p.$eval('#quote-doc', e => /Indløsning: Aftales efter dialog\./.test(
