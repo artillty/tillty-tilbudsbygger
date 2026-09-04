@@ -47,10 +47,10 @@ udledes af koden — og de fejl der allerede er begået én gang.
 - **QR bestilling er inkluderet i Takeaway.** Vælges Takeaway, låses QR til 0
   og vises i tilbuddet som en gratis underlinje. Reglen ligger i data
   (`MODULES[].includes`), ikke i logikken — nye bundles tilføjes samme sted.
-- **Indløsning står altid i tilbuddet.** Enten den aftalte sats fra feltet,
-  eller forbeholdet "aftales særskilt og beregnes efter IC++". Gør den ikke
-  betinget af, at feltet er udfyldt — et tilbud må ikke være tavst om, hvad
-  korttransaktionerne koster.
+- **Indløsning står altid i tilbuddet.** Enten satsen fra feltet, ordret, eller
+  `Indløsning: Aftales efter dialog.` Gør den ikke betinget af, at feltet er
+  udfyldt. Omskriv ikke det indtastede — tillty arbejder kun med procentsatser,
+  og sælgeren skriver dem selv.
 - **En måned er altid 30 dage** ved omregning fra dagslicens til månedspris.
   Ingen indstilling, ingen "ca."-forbehold.
 - Licenser afregnes **pr. dag i brug**. Det er et salgsargument og skal stå i

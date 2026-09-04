@@ -108,14 +108,16 @@ fra `PRODUKTFOTO` eller `TILBEHOERFOTO`.
 
 ## Indløsning
 
-Feltet **Indløsning** er valgfrit. Udfyldes det, står satsen i tilbuddet:
-*"Indløsning er aftalt til 0,45 % + 0,15 kr. pr. transaktion."* Står det tomt,
-skriver tilbuddet i stedet forbeholdet: *"Indløsning aftales særskilt og
-beregnes efter IC++."*
+Feltet **Indløsning** er valgfrit, og tillty arbejder kun med procentsatser.
 
-Linjen står **altid** i tilbuddet, lige under prisoverblikket sammen med de
-øvrige prisforbehold. Et tilbud må ikke være tavst om, hvad korttransaktionerne
-koster, bare fordi sælgeren ikke nåede at udfylde feltet.
+| Feltet | I tilbuddet står |
+|---|---|
+| tomt | `Indløsning: Aftales efter dialog.` |
+| `0,45 %` | `Indløsning: 0,45 %` |
+
+Det der skrives, står **ordret** — teksten omskrives ikke. Linjen står altid i
+tilbuddet, lige under prisoverblikket sammen med de øvrige prisforbehold: et
+tilbud må ikke være tavst om indløsning, bare fordi feltet blev sprunget over.
 
 ## Postnumre
 

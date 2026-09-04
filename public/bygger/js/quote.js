@@ -105,13 +105,12 @@ function priceOverview(live,days,sum){
   if(sum.licDaily)
     b+='<div class="qp-assump">Licenser afregnes <b>pr. dag i brug</b> — '+fmt(sum.licDaily)
       +' pr. dag. Månedsprisen er regnet med en måned på '+days+' dage; I betaler kun for de dage, terminalerne rent faktisk er i brug.</div>';
-  /* Indløsning står altid i tilbuddet — enten den aftalte sats, eller
-     forbeholdet. Et tilbud må ikke være tavst om, hvad korttransaktionerne
-     koster, bare fordi sælgeren ikke nåede at udfylde feltet. */
+  /* Indløsning står altid i tilbuddet. Er der skrevet en sats, står præcis
+     det der — ikke omskrevet. Ellers står forbeholdet. Et tilbud må ikke være
+     tavst om indløsning, bare fordi sælgeren sprang feltet over. */
   const indl=v('c_indloesning');
-  b+='<div class="qp-assump"><b>Indløsning</b> '+(indl
-    ? 'er aftalt til '+esc(indl)+'.'
-    : 'aftales særskilt og beregnes efter IC++.')+'</div>';
+  b+='<div class="qp-assump"><b>Indløsning:</b> '
+    +(indl ? esc(indl) : 'Aftales efter dialog.')+'</div>';
   return b;
 }
 
