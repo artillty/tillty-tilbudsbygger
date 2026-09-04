@@ -8,9 +8,9 @@
 /* ---------- katalog ---------- */
 const CATALOG = [
   {id:'sot', name:'Selvbetjeningsterminal (SOT)', desc:'Til hurtig og effektiv ordreafgivelse (inkl. vægbeslag).', price:13995,
-   acc:['floor','term_holder','mount']},
+   acc:['floor','term_holder']},
   {id:'pos154', name:'15.4" POS Kasseskærm', desc:'Stationær skærm til kassesystemet.', price:4995,
-   acc:['desktop','multi','vesa','mount','drawer']},
+   acc:['drawer']},
   {id:'tab87', name:'8.7" POS Tablet', desc:'Både stationær og mobil skærm til kassesystemet.', price:2495,
    acc:['tsfixed','tsstand','desktop','multi','mount','hand']},
   {id:'tab11', name:'11" POS Tablet', desc:'Både stationær og mobil skærm til kassesystemet.', price:2995,
