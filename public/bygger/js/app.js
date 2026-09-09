@@ -67,20 +67,34 @@ function keyExtra(accId){return 'x_'+accId}
 function keyMod(id){return 's_'+id}
 const KEY_DS='dslic';
 
-function newLoc(name,qty){ locSeq++; return {id:'loc'+locSeq, name:name||('Lokation '+locSeq), qty:Object.assign({},qty||{})}; }
+/* En lokation har to antalskort: `qty` er det vi sælger, `eget` er det kunden
+   allerede har. Eget udstyr koster 0, men tæller med i licenserne — det er
+   stadig terminaler, der kører på systemet. */
+function newLoc(name,qty,eget){
+  locSeq++;
+  return {id:'loc'+locSeq, name:name||('Lokation '+locSeq),
+          qty:Object.assign({},qty||{}), eget:Object.assign({},eget||{})};
+}
 function O(){ return OPTIONS[optIdx]; }
 /* Lokationerne i den aktive mulighed. Resten af koden rører aldrig OPTIONS
    direkte, så et almindeligt tilbud opfører sig som før. */
 function LOKATIONER(){ return O().lokationer; }
 function L(){ return LOKATIONER()[activeIdx]; }
 function q(key){ return (L().qty[key])||0; }
+function qEget(key){ return (L().eget[key])||0; }
 function qOf(Q,key){ return Q[key]||0; }
+function reneAntal(n){ n=parseInt(n); if(isNaN(n)||n<0) n=0; return n>999?999:n; }
 function setQ(key,n){
-  n=parseInt(n); if(isNaN(n)||n<0) n=0; if(n>999) n=999;
+  n=reneAntal(n);
   if(n===0) delete L().qty[key]; else L().qty[key]=n;
 }
-function locHasContent(Q){ return Object.keys(Q).some(k=>Q[k]>0); }
-function locItemCount(Q){ return Object.keys(Q).reduce((s,k)=>s+(Q[k]||0),0); }
+function setEget(key,n){
+  n=reneAntal(n);
+  if(n===0) delete L().eget[key]; else L().eget[key]=n;
+}
+function antalIKort(K){ return Object.keys(K||{}).reduce((s,k)=>s+(K[k]||0),0); }
+function locHasContent(l){ return antalIKort(l.qty)>0 || antalIKort(l.eget)>0; }
+function locItemCount(l){ return antalIKort(l.qty)+antalIKort(l.eget); }
 /* Sælgerens egen upload vinder; ellers tilltys officielle foto; ellers en
    grå pladsholder, der fungerer som upload-knap. */
 function getImg(key,label){ return images[key] || FOTO[key] || ph(label); }
@@ -96,23 +110,30 @@ const fmt = n => (Number.isInteger(n)
   ? n.toLocaleString('da-DK')
   : n.toLocaleString('da-DK',{minimumFractionDigits:2,maximumFractionDigits:2})) + ',-';
 
-/* ---------- stepper ---------- */
-function stepper(key){
-  const n=q(key);
-  return `<div class="qty${n?' on':''}" data-qwrap="${key}">
-    <button type="button" class="qbtn" ${n?'':'disabled'} onclick="bump('${key}',-1)" aria-label="Færre">−</button>
-    <input type="number" min="0" value="${n}" id="qty_${key}" data-qinput="${key}"
-           oninput="typeQty('${key}',this.value)" aria-label="Antal">
-    <button type="button" class="qbtn" onclick="bump('${key}',1)" aria-label="Flere">+</button>
+/* ---------- stepper ----------
+   `kort` er 'ny' (det vi sælger) eller 'eget' (det kunden allerede har).
+   De to har hver sit antal på samme varenøgle, så et produkt kan optræde
+   som fx "1 ny + 2 jeres" — præcis den situation genbrugstilbud handler om. */
+function stepper(key,kort){
+  const eget = kort==='eget';
+  const n = eget ? qEget(key) : q(key);
+  const pre = eget ? 'eget_' : '';
+  return `<div class="qty${n?' on':''}${eget?' qty-eget':''}" data-qwrap="${pre}${key}">
+    <button type="button" class="qbtn" ${n?'':'disabled'} onclick="bump('${key}',-1,'${kort||'ny'}')" aria-label="Færre">−</button>
+    <input type="number" min="0" value="${n}" id="qty_${pre}${key}" data-qinput="${pre}${key}"
+           oninput="typeQty('${key}',this.value,'${kort||'ny'}')" aria-label="Antal">
+    <button type="button" class="qbtn" onclick="bump('${key}',1,'${kort||'ny'}')" aria-label="Flere">+</button>
   </div>`;
 }
-function bump(key,d){ setQ(key,q(key)+d); syncUI(); }
-function typeQty(key,val){ setQ(key,val); syncUI(); }
+function laesKort(key,kort){ return kort==='eget' ? qEget(key) : q(key); }
+function skrivKort(key,n,kort){ if(kort==='eget') setEget(key,n); else setQ(key,n); }
+function bump(key,d,kort){ skrivKort(key, laesKort(key,kort)+d, kort); syncUI(); }
+function typeQty(key,val,kort){ skrivKort(key,val,kort); syncUI(); }
 
 /* ---------- muligheds-faner ---------- */
 /* Antal varer i en hel mulighed — tælleren på fanen, så man kan se hvilke
    muligheder der er tomme uden at klikke sig ind i dem. */
-function optItemCount(o){ return o.lokationer.reduce((s,l)=>s+locItemCount(l.qty),0); }
+function optItemCount(o){ return o.lokationer.reduce((s,l)=>s+locItemCount(l),0); }
 
 function renderOptTabs(){
   const panel=document.getElementById('panel_muligheder');
@@ -150,7 +171,7 @@ function dupOpt(){
   // Hele opsætningen kopieres med — det er som regel derfor man laver en
   // ekstra mulighed: samme grundopsætning med én ting lavet om.
   kopi.intro=src.intro;
-  kopi.lokationer=src.lokationer.map(l=>newLoc(l.name,l.qty));
+  kopi.lokationer=src.lokationer.map(l=>newLoc(l.name,l.qty,l.eget));
   OPTIONS.splice(optIdx+1,0,kopi); optIdx++; activeIdx=0; renderAll();
 }
 function delOpt(){
@@ -179,7 +200,7 @@ function renderLocTabs(){
   LOKATIONER().forEach((l,i)=>{
     const b=document.createElement('button');
     b.className='loctab'+(i===activeIdx?' active':'');
-    const n=locItemCount(l.qty);
+    const n=locItemCount(l);
     b.innerHTML=esc(l.name)+(n?' <span class="cnt">'+n+'</span>':'');
     b.onclick=()=>switchLoc(i);
     el.appendChild(b);
@@ -193,12 +214,12 @@ function switchLoc(i){ activeIdx=i; renderAll(); }
 function addLoc(){ LOKATIONER().push(newLoc()); activeIdx=LOKATIONER().length-1; renderAll(); }
 function dupLoc(){
   const src=L();
-  LOKATIONER().splice(activeIdx+1,0,newLoc(src.name+' (kopi)',src.qty));
+  LOKATIONER().splice(activeIdx+1,0,newLoc(src.name+' (kopi)',src.qty,src.eget));
   activeIdx=activeIdx+1; renderAll();
 }
 function delLoc(){
   if(LOKATIONER().length===1){ alert('Der skal være mindst én lokation.'); return; }
-  if(locHasContent(L().qty) && !confirm('Slet "'+L().name+'" og alle dens valg?')) return;
+  if(locHasContent(L()) && !confirm('Slet "'+L().name+'" og alle dens valg?')) return;
   LOKATIONER().splice(activeIdx,1);
   if(activeIdx>=LOKATIONER().length) activeIdx=LOKATIONER().length-1;
   renderAll();
@@ -224,7 +245,10 @@ function renderCatalog(){
         </div>
         <div class="prod-right">
           <div class="price">${fmt(p.price)}</div>
-          <div class="ctrl-row">${stepper(mk)}</div>
+          <div class="ctrl-row"><span class="qty-mrk">Nye</span>${stepper(mk,'ny')}</div>
+          <div class="ctrl-row" title="Udstyr kunden allerede har. Koster 0, men tæller med i licenserne.">
+            <span class="qty-mrk mrk-eget">Jeres</span>${stepper(mk,'eget')}
+          </div>
         </div>
       </div>
       <div class="acc-list" id="acc_${p.id}">
@@ -358,19 +382,24 @@ function syncUI(){
   syncIncludedModules();
   // steppere
   document.querySelectorAll('[data-qwrap]').forEach(w=>{
-    const key=w.dataset.qwrap, n=q(key);
+    const raa=w.dataset.qwrap, eget=raa.indexOf('eget_')===0;
+    const key=eget?raa.slice(5):raa;
+    const n=eget?qEget(key):q(key);
     w.classList.toggle('on', n>0);
     const inp=w.querySelector('input'); if(inp && inp.value!==String(n)) inp.value=n;
     const minus=w.querySelector('button'); if(minus) minus.disabled=(n===0);
   });
   // rækkemarkering
   document.querySelectorAll('[data-rowkey]').forEach(r=>{
-    r.classList.toggle('on', q(r.dataset.rowkey)>0);
+    const k=r.dataset.rowkey;
+    r.classList.toggle('on', q(k)>0 || qEget(k)>0);
   });
   // tilbehørslister foldes ud når produktet har antal
   CATALOG.forEach(p=>{
     const list=document.getElementById('acc_'+p.id);
-    if(list) list.classList.toggle('show', q(keyMain(p.id))>0);
+    // Foldes også ud ved eget udstyr: kunden kan sagtens mangle en holder til
+    // en tablet, de allerede ejer.
+    if(list) list.classList.toggle('show', q(keyMain(p.id))>0 || qEget(keyMain(p.id))>0);
     // "= N"-knappen vises kun når den gør en forskel
     p.acc.forEach(aid=>{
       const ak=keyAcc(p.id,aid), mk=keyMain(p.id);
@@ -400,9 +429,9 @@ function renderAll(){ renderCatalog(); renderExtras(); renderSoftware(); syncUI(
 
 /* små tællere i panel-headerne, så man kan se hvad der ligger i et foldet panel */
 function refreshPanelSubs(){
-  const Q=L().qty;
+  const Q=L().qty, E=L().eget;
   const cnt=pref=>Object.keys(Q).filter(k=>k.indexOf(pref)===0).reduce((s,k)=>s+Q[k],0);
-  const hw=CATALOG.reduce((s,p)=>s+qOf(Q,keyMain(p.id)),0);
+  const hw=CATALOG.reduce((s,p)=>s+qOf(Q,keyMain(p.id))+qOf(E,keyMain(p.id)),0);
   const accUnder=Object.keys(Q).filter(k=>k.indexOf('a_')===0).reduce((s,k)=>s+Q[k],0);
   const ex=cnt('x_');
   const sw=MODULES.reduce((s,m)=>s+qOf(Q,keyMod(m.id)),0)+qOf(Q,KEY_DS);
@@ -425,11 +454,17 @@ function onFile(e){
 }
 
 /* ---------- opsamling pr. lokation ---------- */
-function computeLicensesFor(Q){
+/* Licenser regnes af BÅDE det vi sælger og kundens eget udstyr. En tablet
+   kunden allerede ejer, kører stadig på systemet og kræver stadig licens —
+   den er bare gratis at anskaffe. Det er et af de steder, et tilbud let
+   kommer til at love for lidt. */
+function computeLicensesFor(Q,E){
+  E = E || {};
   const counts={};
   CATALOG.forEach(p=>{
     const lt=PRODUCT_LICENSE[p.id]; if(!lt) return;
-    const n=qOf(Q,keyMain(p.id)); if(n) counts[lt]=(counts[lt]||0)+n;
+    const n=qOf(Q,keyMain(p.id)) + qOf(E,keyMain(p.id));
+    if(n) counts[lt]=(counts[lt]||0)+n;
   });
   const dsN=qOf(Q,KEY_DS); if(dsN) counts['ds']=(counts['ds']||0)+dsN;
   const out=[];
@@ -441,19 +476,37 @@ function computeLicensesFor(Q){
   return out;
 }
 
-function collectFor(Q){
+/* Tager hele lokationen — den har både `qty` (det vi sælger) og `eget`. */
+function collectFor(loc){
+  const Q = loc.qty || {}, E = loc.eget || {};
   const hw=[];
+  // Kundens eget udstyr samles for sig og lægges nederst i tabellen. Blandet
+  // ind mellem de nye linjer bliver det svært at se, hvad der rent faktisk
+  // købes — og det er det tal, kunden leder efter.
+  const egetHw=[];
   CATALOG.forEach(p=>{
-    const n=qOf(Q,keyMain(p.id)); if(!n) return;
-    const accs=[];
-    p.acc.forEach(aid=>{
-      const an=qOf(Q,keyAcc(p.id,aid)); if(!an) return;
-      const a=ACCESSORIES[aid];
-      // Kun rigtige, uploadede billeder må med i kundedokumentet — aldrig pladsholdere.
-      accs.push({name:a.name,desc:a.desc,qty:an,price:a.price,img:pdfImg(keyAcc(p.id,aid))});
-    });
-    hw.push({name:p.name,desc:p.desc,qty:n,price:p.price,img:pdfImg(keyMain(p.id)),accessories:accs});
+    const n=qOf(Q,keyMain(p.id)), e=qOf(E,keyMain(p.id));
+    if(n){
+      const accs=[];
+      p.acc.forEach(aid=>{
+        const an=qOf(Q,keyAcc(p.id,aid)); if(!an) return;
+        const a=ACCESSORIES[aid];
+        // Kun rigtige, uploadede billeder må med i kundedokumentet — aldrig pladsholdere.
+        accs.push({name:a.name,desc:a.desc,qty:an,price:a.price,img:pdfImg(keyAcc(p.id,aid))});
+      });
+      // "NY" kun når samme produkt også står som kundens eget — ellers er der
+      // ingen tvivl at rydde af vejen, og mærkatet er bare støj.
+      hw.push({name:p.name,desc:p.desc,qty:n,price:p.price,img:pdfImg(keyMain(p.id)),
+               accessories:accs, nyt:e>0});
+    }
+    if(e){
+      // Kundens eget udstyr: står i specifikationen, så kunden kan se at vi har
+      // regnet med det — men uden pris, og uden tilbehør vi ikke leverer.
+      egetHw.push({name:p.name,desc:'Jeres nuværende udstyr — vi sætter det op i systemet.',
+                   qty:e, price:0, img:pdfImg(keyMain(p.id)), accessories:[], eget:true});
+    }
   });
+  egetHw.forEach(x=>hw.push(x));
 
   const extras=[];
   ACC_IDS.forEach(aid=>{
@@ -472,13 +525,15 @@ function collectFor(Q){
     modules.push({name:s.name,desc:s.desc,qty:n,price:s.price,included:inc});
   });
 
-  const licenses=computeLicensesFor(Q);
+  const licenses=computeLicensesFor(Q,E);
+  // Kundens eget udstyr har prisen 0 og trækker derfor ingenting med i totalen.
   const oneOff = hw.reduce((s,p)=>s+p.qty*p.price+p.accessories.reduce((t,a)=>t+a.qty*a.price,0),0)
                + extras.reduce((s,a)=>s+a.qty*a.price,0);
   const licDaily = licenses.reduce((s,l)=>s+l.total,0);
   const modMonthly = modules.reduce((s,m)=>s+m.qty*m.price,0);
   const has = hw.length||extras.length||modules.length||licenses.length;
-  return {hw,extras,modules,licenses,oneOff,licDaily,modMonthly,has};
+  const harEget = hw.some(p=>p.eget);
+  return {hw,extras,modules,licenses,oneOff,licDaily,modMonthly,has,harEget};
 }
 
 /* live licens-visning for den aktive lokation */

@@ -123,6 +123,19 @@ den helt. `Nulstil` sætter den tilbage.
 
 Ordlyden ligger i `STANDARD_NOTE` i `js/init.js`.
 
+## Muligheder og kundens eget udstyr
+
+Når et tilbud oprettes, vælges formen: **flere muligheder**, **flere
+lokationer**, begge dele eller ingen af delene. Byggeren viser kun de paneler,
+tilbuddet faktisk indeholder. Modellen er den samme uanset — et tilbud er
+altid en liste af muligheder, der hver har en liste af lokationer, og et
+almindeligt tilbud er 1×1.
+
+Hvert hardwareprodukt har **to tællere**: *Nye* (det vi sælger) og *Jeres*
+(det kunden allerede har). Eget udstyr står i specifikationen til 0,- nederst
+i hardwaretabellen, men **tæller med i licenserne** — en tablet kunden ejer,
+kører stadig på systemet.
+
 ## Indløsning
 
 Feltet **Indløsning** er valgfrit, og tillty arbejder kun med procentsatser.

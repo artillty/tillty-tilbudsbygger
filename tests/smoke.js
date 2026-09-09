@@ -434,6 +434,76 @@ let STANDARD_START = null;
     await p.close();
   }
 
+  /* ---------- 6: kundens eget udstyr ---------- */
+  console.log('\n# Jeres eget udstyr');
+  {
+    const p = await newPage(browser);
+    await p.fill('#c_company', 'Restaurant Havnen ApS');
+    await p.fill('#c_seller', 'Rask');
+
+    // Genbrugsscenariet fra buddet: SOT + betalingsterminal + KDS er nyt,
+    // to 11" tablets og LAN-printeren har kunden i forvejen.
+    await plus(p, 'm_sot', 1);
+    await plus(p, 'm_termstat', 1);
+    await plus(p, 'm_kds185', 1);
+    await plus(p, 'eget_m_tab11', 2);
+    await plus(p, 'eget_m_lan', 1);
+    await p.waitForTimeout(400);
+
+    // Kun det nye koster noget.
+    const HW = 13995 + 1995 + 5995;
+    const row = await p.$$eval('#quote-doc table.loc-overview tfoot td',
+      (td) => td.map((t) => t.textContent.trim()));
+    check('eget udstyr koster ingenting', kr(row[1]) === HW, `${row[1]} vs ${HW}`);
+
+    // ... men tæller med i licenserne: 1 SOT + 2 egne tablets = 3 POS.
+    // Den stationære betalingsterminal udløser stadig ingen licens.
+    const posQty = await p.$$eval('#quote-doc table.pv tbody tr', (rows) => {
+      const r = rows.find((x) => /POS & SOT licens/.test(x.cells[0].textContent));
+      return r ? r.cells[1].textContent.trim() : null;
+    });
+    check('eget udstyr tæller med i licenserne', posQty === '3',
+      `POS-licenser: ${posQty} (forventet 3 = 1 SOT + 2 egne tablets)`);
+    const LIC = 3 * 15 + 7.5;   // 3 POS + 1 KDS
+    check('licens/dag stemmer med eget udstyr', kr(row[2]) === LIC, `${row[2]} vs ${LIC}`);
+
+    // Specifikationen skal vise det, så kunden kan se vi har regnet med det.
+    const dok = await p.$eval('#quote-doc', (e) => e.textContent.replace(/\s+/g, ' '));
+    check('eget udstyr står i specifikationen', /Jeres eget/.test(dok));
+    check('eget udstyr står til 0', await p.$eval('#quote-doc', (e) => {
+      const r = [...e.querySelectorAll('tr.eget')];
+      return r.length === 2 && r.every((x) => /^0,-$/.test(x.cells[3].textContent.trim()));
+    }));
+    // Det man køber skal stå samlet — eget udstyr hører nederst i tabellen.
+    check('eget udstyr står nederst i hardwaretabellen', await p.$eval('#quote-doc', (e) => {
+      // Tabellens navn står i første kolonne af header-rækken — se CLAUDE.md.
+      const t = [...e.querySelectorAll('table.pv')]
+        .find((x) => /^Hardware$/.test(x.querySelector('thead th')?.textContent.trim() || ''));
+      if (!t) return false;
+      const r = [...t.querySelectorAll('tbody tr')];
+      const foerste = r.findIndex((x) => x.classList.contains('eget'));
+      return foerste > 0 && r.slice(foerste).every((x) => x.classList.contains('eget'));
+    }));
+    check('licensforbeholdet nævner eget udstyr',
+      /jeres eget udstyr også kræver licens/.test(dok));
+
+    // Samme produkt både nyt og eget — så skal det nye mærkes "Ny".
+    await plus(p, 'm_tab11', 1);
+    await p.waitForTimeout(400);
+    const mrk = await p.$$eval('#quote-doc .pv-mrk', (e) => e.map((x) => x.textContent.trim()));
+    check('nyt eksemplar mærkes "Ny" når kunden også har eget',
+      mrk.filter((m) => m === 'Ny').length === 1, mrk.join(', '));
+    const posQty2 = await p.$$eval('#quote-doc table.pv tbody tr', (rows) => {
+      const r = rows.find((x) => /POS & SOT licens/.test(x.cells[0].textContent));
+      return r ? r.cells[1].textContent.trim() : null;
+    });
+    check('den ekstra tablet tæller også med', posQty2 === '4', posQty2);
+
+    const pg = await paginate(p);
+    check('intet indhold i sidefoden', pg.bad.length === 0, pg.bad.join('; '));
+    await p.close();
+  }
+
   await browser.close();
   console.log(`\n${ok.length} ok, ${fails.length} fejl`);
   if (fails.length) { console.error('\nFejlede:\n  ' + fails.join('\n  ')); process.exit(1); }

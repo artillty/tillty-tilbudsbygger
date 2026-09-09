@@ -189,7 +189,18 @@
   .prod-desc{font-size:12.5px;color:var(--muted);margin-top:2px}
   .price{font-weight:700;white-space:nowrap;font-family:var(--font-mono);font-size:13.5px}
   .prod-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0}
-  .ctrl-row{display:flex;align-items:center;gap:8px}
+  .ctrl-row{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+  /* Mærkat foran hver tæller. Uden dem ligner to steppere over hinanden en fejl. */
+  .qty-mrk{font-size:10.5px;font-weight:700;font-family:var(--font-heading);
+    text-transform:uppercase;letter-spacing:.4px;color:var(--muted);min-width:34px;text-align:right}
+  .mrk-eget{color:var(--navy-light)}
+  /* Kundens eget udstyr er gratis — tælleren er derfor visuelt lettere end
+     den vi tjener penge på, så de to ikke kan forveksles i en fart. */
+  .qty-eget{border-style:dashed}
+  .qty-eget.on{border-color:var(--navy-light);border-style:solid;background:var(--bg-elevated)}
+  .qty-eget input{font-size:14px}
+  .qty-eget .qbtn{background:transparent}
+  .qty-eget .qbtn:hover:not(:disabled){background:var(--navy-light);color:#fff}
   .acc-hint{font-size:11.5px;color:var(--muted);margin-top:5px;font-weight:600}
   .incl-hint{color:var(--color-success)}
   .dup-hint{color:var(--color-warning);margin-top:4px}
@@ -230,6 +241,14 @@
   table.pv td.num{font-family:var(--font-mono);font-size:12px}
   table.pv td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
   table.pv tr.acc td:first-child{padding-left:22px;color:var(--muted)}
+  /* Kundens eget udstyr står med i specifikationen, men dæmpet — det er ikke
+     noget vi sælger, og det må ikke ligne en post kunden skal betale for. */
+  table.pv tr.eget td{color:var(--muted);background:var(--bg-elevated)}
+  .pv-mrk{display:inline-block;border-radius:var(--radius-sm);padding:1px 6px;margin-left:7px;
+    font-family:var(--font-heading);font-size:9px;font-weight:800;letter-spacing:.5px;
+    text-transform:uppercase;vertical-align:1px}
+  .pv-mrk.eget{background:var(--bg-sunken);color:var(--text-secondary);border:1px solid var(--line)}
+  .pv-mrk.ny{background:var(--accent);color:#fff}
   table.pv tr.acc td{font-size:12px}
   table.pv tfoot td{font-weight:800;border-top:2px solid var(--navy);border-bottom:none;font-family:var(--font-heading)}
   table.pv tfoot td.num{font-family:var(--font-mono)}

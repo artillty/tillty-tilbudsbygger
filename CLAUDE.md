@@ -40,6 +40,15 @@ udledes af koden — og de fejl der allerede er begået én gang.
 
 ## Forretningsregler der ikke må brydes
 
+- **Kundens eget udstyr koster 0, men udløser licens.** En tablet kunden
+  allerede ejer, kører stadig på systemet. `computeLicensesFor(Q,E)` lægger
+  begge antalskort sammen; `oneOff` gør ikke. Det er et af de steder, et
+  tilbud let kommer til at love for lidt.
+- Eget udstyr står **nederst** i hardwaretabellen, ikke blandet ind mellem de
+  nye linjer — ellers er det svært at se, hvad der rent faktisk købes.
+- Mærkatet **"Ny"** sættes kun, når samme produkt også står som kundens eget.
+  Uden den tvivl er mærkatet bare støj.
+
 - **Stationær betalingsterminal (`termstat`) udløser ingen licens.** Den tager
   kun imod betalinger og har intet særligt datatræk. Den mobile terminal
   (`termmobil`) har POS ombord og udløser derfor licens. Asymmetrien er

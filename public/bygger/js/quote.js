@@ -8,7 +8,11 @@ function tableHW(d){
   b+='<table class="pv"><thead><tr><th>Hardware</th><th class="num">Antal</th><th class="num">Stk. pris</th><th class="num">I alt</th></tr></thead><tbody>';
   d.hw.forEach(p=>{ const line=p.qty*p.price; total+=line;
     const pimg=p.img?`<img class="pv-img" src="${p.img}">`:'';
-    b+=`<tr><td>${pimg}${esc(p.name)}<span class="pv-d">${esc(p.desc)}</span></td><td class="num">${p.qty}</td><td class="num">${fmt(p.price)}</td><td class="num">${fmt(line)}</td></tr>`;
+    // Kundens eget udstyr: ingen stykpris at vise, og linjen er 0.
+    const mrk = p.eget ? '<span class="pv-mrk eget">Jeres eget</span>'
+              : p.nyt ? '<span class="pv-mrk ny">Ny</span>' : '';
+    const stk = p.eget ? '—' : fmt(p.price);
+    b+=`<tr${p.eget?' class="eget"':''}><td>${pimg}${esc(p.name)}${mrk}<span class="pv-d">${esc(p.desc)}</span></td><td class="num">${p.qty}</td><td class="num">${stk}</td><td class="num">${fmt(line)}</td></tr>`;
     p.accessories.forEach(a=>{ const al=a.qty*a.price; total+=al;
       const aimg=a.img?`<img class="pv-img" style="width:26px;height:26px" src="${a.img}">`:'';
       b+=`<tr class="acc"><td>↳ ${aimg}${esc(a.name)}<span class="pv-d">${esc(a.desc)}</span></td><td class="num">${a.qty}</td><td class="num">${fmt(a.price)}</td><td class="num">${fmt(al)}</td></tr>`;
@@ -102,9 +106,16 @@ function priceOverview(live,days,sum){
     +`<td class="num">${cell(sum.oneOff)}</td><td class="num">${cell(sum.licDaily)}</td>`
     +`<td class="num">${cell(sum.modMonthly)}</td><td class="num">${cell(sum.licDaily*days+sum.modMonthly)}</td>`
     +'</tr></tfoot></table>';
-  if(sum.licDaily)
+  if(sum.licDaily){
+    // Har kunden eget udstyr med, skal det siges eksplicit at det også koster
+    // licens. Ellers er regnestykket i licenstabellen ikke til at følge.
+    const eget = live.some(x=>x.d.harEget)
+      ? ' Bemærk at jeres eget udstyr også kræver licens — det tæller med i licenserne ovenfor.'
+      : '';
     b+='<div class="qp-assump">Licenser afregnes <b>pr. dag i brug</b> — '+fmt(sum.licDaily)
-      +' pr. dag. Månedsprisen er regnet med en måned på '+days+' dage; I betaler kun for de dage, terminalen er slået til.</div>';
+      +' pr. dag. Månedsprisen er regnet med en måned på '+days+' dage; I betaler kun for de dage, terminalen er slået til.'
+      +eget+'</div>';
+  }
   /* Indløsning står altid i tilbuddet. Er der skrevet en sats, står præcis
      det der — ikke omskrevet. Ellers står forbeholdet. Et tilbud må ikke være
      tavst om indløsning, bare fordi sælgeren sprang feltet over. */
@@ -121,7 +132,7 @@ function update(){
   // én side pr. mulighed kommer i næste bid; indtil da renderer et tilbud med
   // flere muligheder som den man har fremme, så previewet altid matcher
   // det man arbejder i.
-  const per=LOKATIONER().map(l=>({loc:l,d:collectFor(l.qty)}));
+  const per=LOKATIONER().map(l=>({loc:l,d:collectFor(l)}));
   refreshLicensePanel(per[activeIdx].d);
   const live=per.filter(x=>x.d.has);
 

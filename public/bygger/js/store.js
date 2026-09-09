@@ -21,7 +21,7 @@ function samlTotaler(){
   const o = OPTIONS.find(x=>x.anbefalet) || OPTIONS[0];
   const s = {engangs:0, licDag:0, modMd:0};
   o.lokationer.forEach(l=>{
-    const d = collectFor(l.qty);
+    const d = collectFor(l);
     s.engangs += d.oneOff; s.licDag += d.licDaily; s.modMd += d.modMonthly;
   });
   return s;
@@ -51,7 +51,7 @@ async function gemTilbud(status){
         form: FORM,
         muligheder: OPTIONS.map(o=>({
           id:o.id, navn:o.navn, tagline:o.tagline, anbefalet:o.anbefalet, intro:o.intro,
-          lokationer: o.lokationer.map(l=>({id:l.id, name:l.name, qty:l.qty})),
+          lokationer: o.lokationer.map(l=>({id:l.id, name:l.name, qty:l.qty, eget:l.eget})),
         })),
       },
       totaler: samlTotaler(),
@@ -122,7 +122,11 @@ function laesOpsaetning(d){
     tagline: o.tagline || '',
     anbefalet: !!o.anbefalet,
     intro: o.intro || '',
-    lokationer: (o.lokationer||[]).map(l=>({id:l.id, name:l.name, qty:Object.assign({}, l.qty)})),
+    lokationer: (o.lokationer||[]).map(l=>({
+      id:l.id, name:l.name,
+      qty:Object.assign({}, l.qty),
+      eget:Object.assign({}, l.eget),   // mangler i tilbud gemt før genbrug fandtes
+    })),
   }));
   OPTIONS.forEach(o=>{ if(!o.lokationer.length) o.lokationer=[newLoc()]; });
   if(!OPTIONS.length) OPTIONS=[newOpt()];
