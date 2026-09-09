@@ -31,6 +31,39 @@
   </div>
 </header>
 
+<!-- Opstartslaget. Formen vælges én gang, når tilbuddet oprettes, så
+     byggeren kun viser det tilbuddet faktisk indeholder. Åbnes et gemt
+     tilbud, springes det over. -->
+<div id="opstart" class="opstart" style="display:none">
+  <div class="opstart-kort">
+    <h1>Nyt tilbud</h1>
+    <p class="opstart-sub">Hvad skal tilbuddet indeholde? Du kan skifte undervejs.</p>
+
+    <label class="opstart-valg">
+      <input type="checkbox" id="f_muligheder">
+      <span>
+        <b>Flere muligheder</b>
+        <em>Kunden vælger mellem 2-4 opsætninger — fx genbrug af eget udstyr,
+        en balanceret løsning, eller alt nyt. Tilbuddet får en sammenligning
+        forrest og én side pr. mulighed.</em>
+      </span>
+    </label>
+
+    <label class="opstart-valg">
+      <input type="checkbox" id="f_lokationer">
+      <span>
+        <b>Flere lokationer</b>
+        <em>Kæder med flere forretninger. Hver lokation får sit eget setup,
+        og tilbuddet viser både delpriser og en samlet total.</em>
+      </span>
+    </label>
+
+    <button class="btn-pdf opstart-start" onclick="startTilbud()">Kom i gang</button>
+    <p class="opstart-note">Vælger du ingen af delene, får du et almindeligt
+    tilbud til én forretning — præcis som før.</p>
+  </div>
+</div>
+
 <div class="layout">
   <!-- LEFT: builder -->
   <div>
@@ -65,7 +98,31 @@
       </div>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="panel_muligheder" style="display:none">
+      <h2>Muligheder</h2>
+      <div class="body">
+        <p class="hint">Kunden vælger én af dem. Byg den første færdig og brug
+        “Kopiér” til de næste — så skal du kun rette det, der er forskellen.</p>
+        <div class="loctabs" id="opttabs"></div>
+        <div class="optbar">
+          <label>Navn<input id="o_navn" placeholder="fx Genbrug" oninput="renameOpt(this.value)"></label>
+          <label>Underrubrik<input id="o_tagline" placeholder="fx Mindst mulig investering" oninput="setTagline(this.value)"></label>
+          <label class="opt-anb">
+            <input type="checkbox" id="o_anbefalet" onchange="setAnbefalet(this.checked)">
+            <span>Vi anbefaler denne</span>
+          </label>
+        </div>
+        <label class="opt-intro">Beskrivelse af muligheden — står øverst på dens side i tilbuddet
+          <textarea id="o_intro" placeholder="fx: I beholder de to 11&quot; tablets og LAN-printeren I allerede har…" oninput="setOptIntro(this.value)"></textarea>
+        </label>
+        <div class="locbar" style="margin-top:10px">
+          <button class="minibtn" onclick="dupOpt()" title="Opret en ny mulighed med samme opsætning">⧉ Kopiér mulighed</button>
+          <button class="minibtn danger" onclick="delOpt()" title="Slet den valgte mulighed">✕ Slet mulighed</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel_lokationer">
       <h2>Lokationer</h2>
       <div class="body">
         <p class="hint">Har kunden flere forretninger, kan hver lokation få sit eget setup. Vælg en fane for at redigere den lokation — tilbuddet samler dem til sidst med både delpriser og en samlet total.</p>

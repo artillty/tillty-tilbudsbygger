@@ -16,7 +16,9 @@ function check(name, cond, detail) {
   console.log(`${cond ? '  ok  ' : ' FEJL '} ${name}${detail ? ' — ' + detail : ''}`);
 }
 
-async function newPage(browser) {
+/* form: { muligheder, lokationer } — hvad tilbuddet skal indeholde.
+   Standarden er et almindeligt tilbud: én mulighed, én lokation. */
+async function newPage(browser, form = {}) {
   const p = await browser.newPage({ viewport: { width: 1500, height: 1300 } });
   p.on('pageerror', e => check('ingen JS-fejl', false, e.message));
   p.on('dialog', d => d.accept());
@@ -30,6 +32,14 @@ async function newPage(browser) {
   p.on('response', r => { if (r.status() >= 400) p.mangler.push(r.url().split('/').pop()); });
   await p.goto(URL);
   await p.waitForTimeout(400);
+  // Nye tilbud starter med formvalget. Scenarierne herunder tester det
+  // almindelige tilbud — én mulighed, én lokation — så vi tager standarden.
+  if (await p.isVisible('#opstart')) {
+    if (form.muligheder) await p.check('#f_muligheder');
+    if (form.lokationer) await p.check('#f_lokationer');
+    await p.click('#opstart .opstart-start');
+    await p.waitForTimeout(250);
+  }
   return p;
 }
 
@@ -243,7 +253,7 @@ let STANDARD_START = null;
   /* ---------- 2: tre lokationer ---------- */
   console.log('\n# Tre lokationer');
   {
-    const p = await newPage(browser);
+    const p = await newPage(browser, { lokationer: true });
     await p.fill('#c_company', 'Kaffe & Co Holding ApS');
     await p.fill('#c_contact', 'Sofie Dahl');
     await p.fill('#c_seller', 'Rask');
@@ -262,11 +272,11 @@ let STANDARD_START = null;
     check('kopi arvede antal', (await p.inputValue('#qty_m_tab11')) === '4');
     for (let i = 0; i < 2; i++) { await p.click('[data-qwrap="m_tab11"] button:first-child'); await p.waitForTimeout(40); }
 
-    await p.click('.loctabs button:nth-child(1)');          // tilbage til lokation 1
+    await p.click('#loctabs .loctab:nth-child(1)');          // tilbage til lokation 1
     await p.waitForTimeout(250);
     check('state overlever fane-skift', (await p.inputValue('#qty_m_tab11')) === '4');
 
-    await p.click('.loctab-add');
+    await p.click('#loctabs .loctab-add');
     await p.waitForTimeout(250);
     await p.fill('#l_name', 'Food truck');
     check('ny lokation starter tom', (await p.inputValue('#qty_m_tab11')) === '0');
@@ -326,7 +336,8 @@ let STANDARD_START = null;
   /* ---------- 4: nulstil rydder også kunden ---------- */
   console.log('\n# Nulstil');
   {
-    const p = await newPage(browser);
+    // Med lokationer til, så nulstillingen også kan tjekkes på dem.
+    const p = await newPage(browser, { lokationer: true });
     await p.fill('#c_company', 'Skal Væk ApS');
     await p.fill('#c_note', 'Gammel note');
     await p.fill('#l_name', 'Gammel lokation');
@@ -343,11 +354,83 @@ let STANDARD_START = null;
       (await p.inputValue('#c_note')) === STANDARD_START,
       (await p.inputValue('#c_note')).slice(0, 40) + '…');
     check('produktvalg ryddet', (await p.inputValue('#qty_m_sot')) === '0');
-    check('lokationen er tilbage til én tom', (await p.$$('.loctab')).length === 2); // 1 lokation + "+ Lokation"
+    // Nulstil sender én tilbage til formvalget, så opsætningen skal bekræftes igen.
+    check('formvalget vises igen efter nulstil', await p.isVisible('#opstart'));
+    await p.check('#f_lokationer');
+    await p.click('#opstart .opstart-start');
+    await p.waitForTimeout(300);
+    check('lokationen er tilbage til én tom',
+      (await p.$$('#loctabs .loctab')).length === 2); // 1 lokation + "+ Lokation"
     // Dato og gyldighed er defaults, ikke kundedata — de skal stå igen bagefter.
     check('dato sat til i dag',
       (await p.inputValue('#c_date')) === new Date().toISOString().slice(0, 10));
     check('gyldighed tilbage på 30 dage', (await p.inputValue('#c_valid')) === '30');
+    await p.close();
+  }
+
+  /* ---------- 5: formvalget ved oprettelse ---------- */
+  console.log('\n# Form: muligheder og lokationer');
+  {
+    // Standarden: hverken muligheder eller lokationer.
+    const p = await newPage(browser);
+    check('mulighedspanelet er skjult som standard', !(await p.isVisible('#panel_muligheder')));
+    check('lokationspanelet er skjult som standard', !(await p.isVisible('#panel_lokationer')));
+    check('opstartslaget er væk efter valget', !(await p.isVisible('#opstart')));
+    await p.close();
+  }
+  {
+    const p = await newPage(browser, { muligheder: true });
+    check('mulighedspanelet vises', await p.isVisible('#panel_muligheder'));
+    check('lokationspanelet er stadig skjult', !(await p.isVisible('#panel_lokationer')));
+    // To muligheder fra start — ellers er der ingenting at sammenligne.
+    check('der oprettes to muligheder med det samme',
+      (await p.$$eval('#opttabs .loctab:not(.loctab-add)', (e) => e.length)) === 2);
+    check('første mulighed hedder Genbrug', (await p.inputValue('#o_navn')) === 'Genbrug');
+
+    // Valgene skal høre til hver sin mulighed.
+    await p.click('[data-qwrap="m_sot"] button:last-child');
+    await p.waitForTimeout(120);
+    await p.click('#opttabs .loctab:nth-child(2)');
+    await p.waitForTimeout(250);
+    check('mulighed 2 starter tom', (await p.inputValue('#qty_m_sot')) === '0');
+    await p.click('[data-qwrap="m_tab11"] button:last-child');
+    await p.waitForTimeout(120);
+    await p.click('#opttabs .loctab:nth-child(1)');
+    await p.waitForTimeout(250);
+    check('mulighed 1 har sit eget valg i behold', (await p.inputValue('#qty_m_sot')) === '1');
+    check('mulighed 1 har ikke mulighed 2s valg', (await p.inputValue('#qty_m_tab11')) === '0');
+
+    // Kun én anbefaling ad gangen — to anbefalinger er ingen anbefaling.
+    await p.check('#o_anbefalet');
+    await p.waitForTimeout(150);
+    await p.click('#opttabs .loctab:nth-child(2)');
+    await p.waitForTimeout(250);
+    await p.check('#o_anbefalet');
+    await p.waitForTimeout(150);
+    check('kun én mulighed kan være anbefalet',
+      (await p.$$eval('#opttabs .loctab.anbefalet', (e) => e.length)) === 1);
+
+    // Kopiér tager hele opsætningen med.
+    await p.click('button[onclick="dupOpt()"]');
+    await p.waitForTimeout(300);
+    check('kopi arvede opsætningen', (await p.inputValue('#qty_m_tab11')) === '1');
+    check('kopien er en ny mulighed',
+      (await p.$$eval('#opttabs .loctab:not(.loctab-add)', (e) => e.length)) === 3);
+    await p.close();
+  }
+  {
+    const p = await newPage(browser, { muligheder: true, lokationer: true });
+    check('begge paneler vises når begge er valgt',
+      (await p.isVisible('#panel_muligheder')) && (await p.isVisible('#panel_lokationer')));
+    // Lokationer hører til den enkelte mulighed.
+    await p.click('#loctabs .loctab-add');
+    await p.waitForTimeout(250);
+    check('mulighed 1 har to lokationer',
+      (await p.$$eval('#loctabs .loctab:not(.loctab-add)', (e) => e.length)) === 2);
+    await p.click('#opttabs .loctab:nth-child(2)');
+    await p.waitForTimeout(300);
+    check('mulighed 2 har sin egen ene lokation',
+      (await p.$$eval('#loctabs .loctab:not(.loctab-add)', (e) => e.length)) === 1);
     await p.close();
   }
 

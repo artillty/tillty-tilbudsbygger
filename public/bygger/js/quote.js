@@ -117,7 +117,11 @@ function priceOverview(live,days,sum){
 function update(){
   const el=document.getElementById('preview');
   const days=licenseDays();
-  const per=LOCATIONS.map(l=>({loc:l,d:collectFor(l.qty)}));
+  // Bid 1 viser stadig kun den aktive mulighed. Sammenligningstabellen og
+  // én side pr. mulighed kommer i næste bid; indtil da renderer et tilbud med
+  // flere muligheder som den man har fremme, så previewet altid matcher
+  // det man arbejder i.
+  const per=LOKATIONER().map(l=>({loc:l,d:collectFor(l.qty)}));
   refreshLicensePanel(per[activeIdx].d);
   const live=per.filter(x=>x.d.has);
 

@@ -14,9 +14,13 @@ let aktivtNr = null;          // tilbuddets nummer, når det først er tildelt
 const synkedeBilleder = {};   // varenøgle -> dataURL, som allerede ligger på serveren
 
 /* ---------- totaler til kartotekslisten ---------- */
+/* Totalerne i kartotekslisten. Har tilbuddet flere muligheder, kan de ikke
+   lægges sammen — kunden vælger én. Vi viser den anbefalede, ellers den
+   første, så listen har ét tal at sortere og scanne på. */
 function samlTotaler(){
+  const o = OPTIONS.find(x=>x.anbefalet) || OPTIONS[0];
   const s = {engangs:0, licDag:0, modMd:0};
-  LOCATIONS.forEach(l=>{
+  o.lokationer.forEach(l=>{
     const d = collectFor(l.qty);
     s.engangs += d.oneOff; s.licDag += d.licDaily; s.modMd += d.modMonthly;
   });
@@ -42,7 +46,14 @@ async function gemTilbud(status){
     body: JSON.stringify({
       nr: aktivtNr,
       status: status || 'kladde',
-      data: { felter, lokationer: LOCATIONS.map(l=>({id:l.id, name:l.name, qty:l.qty})) },
+      data: {
+        felter,
+        form: FORM,
+        muligheder: OPTIONS.map(o=>({
+          id:o.id, navn:o.navn, tagline:o.tagline, anbefalet:o.anbefalet, intro:o.intro,
+          lokationer: o.lokationer.map(l=>({id:l.id, name:l.name, qty:l.qty})),
+        })),
+      },
       totaler: samlTotaler(),
     }),
   });
@@ -85,17 +96,41 @@ async function hentTilbud(nr){
   Object.entries(d.felter || {}).forEach(([id,val])=>{
     const e = document.getElementById(id); if(e) e.value = val;
   });
-  LOCATIONS = (d.lokationer || []).map(l=>({id:l.id, name:l.name, qty:Object.assign({}, l.qty)}));
-  if(!LOCATIONS.length) LOCATIONS = [newLoc()];
-  // Nye lokationer må ikke få et id, der allerede er i brug.
-  locSeq = LOCATIONS.reduce((m,l)=>Math.max(m, parseInt(String(l.id).replace('loc','')) || 0), 0);
+  laesOpsaetning(d);
   activeIdx = 0;
+  optIdx = 0;
   aktivtNr = tilbud.nr;
 
   const felt = document.getElementById('c_number');
   if(felt){ felt.value = tilbud.nr; felt.readOnly = true; }
   renderAll();
   saetStatus('Åbnet ' + tilbud.nr);
+}
+
+/* Læser opsætningen fra et gemt tilbud.
+   Tilbud gemt før muligheder fandtes har `lokationer` i roden og ingen `form`
+   — de læses som ét tilbud med én mulighed, så gamle tilbud åbner uændret. */
+function laesOpsaetning(d){
+  FORM = Object.assign({muligheder:false, lokationer:false}, d.form || {});
+  const raa = d.muligheder && d.muligheder.length
+    ? d.muligheder
+    : [{navn:'', tagline:'', anbefalet:false, intro:'', lokationer: d.lokationer || []}];
+
+  OPTIONS = raa.map((o,i)=>({
+    id: o.id || ('opt'+(i+1)),
+    navn: o.navn || ('Mulighed '+(i+1)),
+    tagline: o.tagline || '',
+    anbefalet: !!o.anbefalet,
+    intro: o.intro || '',
+    lokationer: (o.lokationer||[]).map(l=>({id:l.id, name:l.name, qty:Object.assign({}, l.qty)})),
+  }));
+  OPTIONS.forEach(o=>{ if(!o.lokationer.length) o.lokationer=[newLoc()]; });
+  if(!OPTIONS.length) OPTIONS=[newOpt()];
+
+  // Nye id'er må ikke kollidere med dem der allerede er i brug.
+  const tal = (v,p)=>parseInt(String(v||'').replace(p,'')) || 0;
+  optSeq = OPTIONS.reduce((m,o)=>Math.max(m, tal(o.id,'opt')), 0);
+  locSeq = OPTIONS.reduce((m,o)=>o.lokationer.reduce((n,l)=>Math.max(n, tal(l.id,'loc')), m), 0);
 }
 
 /* ---------- produktbilleder ----------
@@ -135,6 +170,6 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
   await hentBilleder();
   const nr = new URLSearchParams(location.search).get('nr');
-  if(nr) await hentTilbud(nr);
-  else { renderAll(); saetStatus('Nyt tilbud — nummer tildeles når du gemmer'); }
+  if(nr){ skjulOpstart(); await hentTilbud(nr); }
+  else { renderAll(); visOpstart(); saetStatus('Nyt tilbud — nummer tildeles når du gemmer'); }
 });

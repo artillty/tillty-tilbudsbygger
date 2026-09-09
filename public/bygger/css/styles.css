@@ -98,6 +98,47 @@
   .panel.fold.closed>h2::after{transform:rotate(-90deg)}
   .panel.fold.closed>.body{display:none}
 
+  /* ---- opstartslag ---- */
+  .opstart{position:fixed;inset:0;z-index:50;background:var(--navy);
+    display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto}
+  .opstart-kort{background:#fff;border-radius:var(--radius-lg);padding:30px;max-width:560px;width:100%}
+  .opstart-kort h1{font-family:var(--font-display);font-size:30px;margin:0;text-transform:lowercase;color:var(--navy)}
+  .opstart-sub{margin:2px 0 20px;font-size:13.5px;color:var(--muted);font-family:var(--font-heading)}
+  .opstart-valg{display:flex;gap:12px;align-items:flex-start;border:1.5px solid var(--line);
+    border-radius:var(--radius-md);padding:14px;margin-bottom:12px;cursor:pointer;
+    transition:border-color var(--duration-fast) ease-out}
+  .opstart-valg:hover{border-color:var(--accent)}
+  .opstart-valg:has(input:checked){border-color:var(--accent);background:#f2f8ff}
+  .opstart-valg input{margin-top:2px;width:18px;height:18px;accent-color:var(--accent);flex-shrink:0}
+  .opstart-valg b{display:block;font-family:var(--font-heading);font-size:14.5px;color:var(--navy)}
+  .opstart-valg em{display:block;font-style:normal;font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.5}
+  /* Knappen står uden for .actions, så den arver ikke formen derfra. */
+  .opstart-start{width:100%;margin-top:6px;border:none;border-radius:var(--radius-md);
+    padding:12px 18px;font-size:15px;font-weight:700;font-family:var(--font-heading);
+    background:var(--accent);color:#fff;cursor:pointer;
+    transition:background var(--duration-fast) ease-out}
+  .opstart-start:hover{background:var(--accent-hover)}
+  .opstart-note{font-size:11.5px;color:var(--muted);text-align:center;margin:12px 0 0}
+
+  /* ---- mulighedsfaner ---- */
+  .loctab .opt-n{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;
+    border-radius:var(--radius-full);background:var(--accent);color:#fff;font-family:var(--font-mono);
+    font-weight:700;font-size:10px;margin-right:6px}
+  .loctab.active .opt-n{background:#fff;color:var(--navy)}
+  .loctab.anbefalet{box-shadow:inset 0 0 0 1.5px var(--accent)}
+  .optbar{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+  .optbar label{display:flex;flex-direction:column;font-size:12px;font-weight:700;color:var(--muted);
+    gap:4px;font-family:var(--font-heading);flex:1;min-width:150px}
+  .optbar input[type=text],.optbar input:not([type]){border:1px solid var(--line);border-radius:7px;
+    padding:8px 10px;font-size:14px;font-family:inherit}
+  .optbar .opt-anb{flex-direction:row;align-items:center;gap:8px;flex:0 0 auto;min-width:0;
+    color:var(--navy);padding-bottom:9px;cursor:pointer;white-space:nowrap}
+  .optbar .opt-anb input{width:17px;height:17px;accent-color:var(--accent)}
+  .opt-intro{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;
+    color:var(--muted);font-family:var(--font-heading);margin-top:12px}
+  .opt-intro textarea{border:1px solid var(--line);border-radius:7px;padding:8px 10px;
+    font-size:14px;font-family:inherit;resize:vertical;min-height:64px;line-height:1.5}
+
   /* ---- lokations-faner ---- */
   .loctabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
   .loctab{display:inline-flex;align-items:center;gap:7px;border:1.5px solid var(--line);background:var(--bg-elevated);color:var(--navy);

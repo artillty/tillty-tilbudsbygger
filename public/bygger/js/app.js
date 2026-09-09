@@ -28,9 +28,38 @@ function ph(label){
    State er kilden til sandhed; DOM'en tegnes altid ud fra den.
    ========================================================================== */
 const images = {};        // varenøgle -> dataURL. Delt på tværs af lokationer.
-let LOCATIONS = [];       // [{id, name, qty:{nøgle:antal}}]
-let activeIdx = 0;
+
+/* Tilbuddets form vælges når det oprettes, og styrer kun HVAD der vises.
+   Modellen er den samme uanset: et tilbud er altid en liste af muligheder,
+   der hver har en liste af lokationer. Et almindeligt tilbud er 1×1 og
+   renderer nøjagtig som før. */
+let FORM = { muligheder:false, lokationer:false };
+
+let OPTIONS = [];         // [{id, navn, tagline, anbefalet, intro, lokationer:[…]}]
+let optIdx = 0;           // aktiv mulighed
+let activeIdx = 0;        // aktiv lokation inden for den aktive mulighed
 let locSeq = 0;
+let optSeq = 0;
+
+/* Navnene sælgeren oftest skal bruge — hentes ved oprettelse, kan rettes. */
+const MULIGHED_FORSLAG = [
+  {navn:'Genbrug',     tagline:'Mindst mulig investering'},
+  {navn:'Opgradering', tagline:'Balanceret'},
+  {navn:'Alt nyt',     tagline:'Fuld opsætning'},
+];
+
+function newOpt(forslag){
+  optSeq++;
+  const f = forslag || MULIGHED_FORSLAG[(optSeq-1) % MULIGHED_FORSLAG.length];
+  return {
+    id:'opt'+optSeq,
+    navn: f.navn || ('Mulighed '+optSeq),
+    tagline: f.tagline || '',
+    anbefalet: false,
+    intro: '',
+    lokationer: [newLoc()],
+  };
+}
 
 function keyMain(id){return 'm_'+id}
 function keyAcc(mainId,accId){return 'a_'+mainId+'_'+accId}
@@ -39,7 +68,11 @@ function keyMod(id){return 's_'+id}
 const KEY_DS='dslic';
 
 function newLoc(name,qty){ locSeq++; return {id:'loc'+locSeq, name:name||('Lokation '+locSeq), qty:Object.assign({},qty||{})}; }
-function L(){ return LOCATIONS[activeIdx]; }
+function O(){ return OPTIONS[optIdx]; }
+/* Lokationerne i den aktive mulighed. Resten af koden rører aldrig OPTIONS
+   direkte, så et almindeligt tilbud opfører sig som før. */
+function LOKATIONER(){ return O().lokationer; }
+function L(){ return LOKATIONER()[activeIdx]; }
 function q(key){ return (L().qty[key])||0; }
 function qOf(Q,key){ return Q[key]||0; }
 function setQ(key,n){
@@ -76,10 +109,74 @@ function stepper(key){
 function bump(key,d){ setQ(key,q(key)+d); syncUI(); }
 function typeQty(key,val){ setQ(key,val); syncUI(); }
 
+/* ---------- muligheds-faner ---------- */
+/* Antal varer i en hel mulighed — tælleren på fanen, så man kan se hvilke
+   muligheder der er tomme uden at klikke sig ind i dem. */
+function optItemCount(o){ return o.lokationer.reduce((s,l)=>s+locItemCount(l.qty),0); }
+
+function renderOptTabs(){
+  const panel=document.getElementById('panel_muligheder');
+  if(panel) panel.style.display = FORM.muligheder ? '' : 'none';
+  if(!FORM.muligheder) return;
+  const el=document.getElementById('opttabs'); el.innerHTML='';
+  OPTIONS.forEach((o,i)=>{
+    const b=document.createElement('button');
+    b.className='loctab'+(i===optIdx?' active':'')+(o.anbefalet?' anbefalet':'');
+    const n=optItemCount(o);
+    b.innerHTML='<span class="opt-n">'+(i+1)+'</span>'+esc(o.navn)
+      +(n?' <span class="cnt">'+n+'</span>':'');
+    b.onclick=()=>switchOpt(i);
+    el.appendChild(b);
+  });
+  if(OPTIONS.length<4){
+    const add=document.createElement('button');
+    add.className='loctab loctab-add'; add.textContent='+ Mulighed';
+    add.onclick=addOpt; el.appendChild(add);
+  }
+  const o=O();
+  document.getElementById('o_navn').value=o.navn;
+  document.getElementById('o_tagline').value=o.tagline;
+  document.getElementById('o_intro').value=o.intro;
+  document.getElementById('o_anbefalet').checked=!!o.anbefalet;
+}
+function switchOpt(i){ optIdx=i; activeIdx=0; renderAll(); }
+function addOpt(){
+  if(OPTIONS.length>=4) return;
+  OPTIONS.push(newOpt()); optIdx=OPTIONS.length-1; activeIdx=0; renderAll();
+}
+function dupOpt(){
+  const src=O();
+  const kopi=newOpt({navn:src.navn+' (kopi)', tagline:src.tagline});
+  // Hele opsætningen kopieres med — det er som regel derfor man laver en
+  // ekstra mulighed: samme grundopsætning med én ting lavet om.
+  kopi.intro=src.intro;
+  kopi.lokationer=src.lokationer.map(l=>newLoc(l.name,l.qty));
+  OPTIONS.splice(optIdx+1,0,kopi); optIdx++; activeIdx=0; renderAll();
+}
+function delOpt(){
+  if(OPTIONS.length===1){ alert('Der skal være mindst én mulighed.'); return; }
+  if(optItemCount(O()) && !confirm('Slet muligheden "'+O().navn+'" og alle dens valg?')) return;
+  OPTIONS.splice(optIdx,1);
+  if(optIdx>=OPTIONS.length) optIdx=OPTIONS.length-1;
+  activeIdx=0; renderAll();
+}
+function renameOpt(val){ O().navn=val; renderOptTabs(); updateSoon(); }
+function setTagline(val){ O().tagline=val; updateSoon(); }
+function setOptIntro(val){ O().intro=val; updateSoon(); }
+/* Kun én mulighed kan anbefales — to anbefalinger er ingen anbefaling. */
+function setAnbefalet(on){
+  OPTIONS.forEach(o=>o.anbefalet=false);
+  O().anbefalet=!!on;
+  renderOptTabs(); updateSoon();
+}
+
 /* ---------- lokations-faner ---------- */
 function renderLocTabs(){
+  const panel=document.getElementById('panel_lokationer');
+  if(panel) panel.style.display = FORM.lokationer ? '' : 'none';
+  if(!FORM.lokationer) return;
   const el=document.getElementById('loctabs'); el.innerHTML='';
-  LOCATIONS.forEach((l,i)=>{
+  LOKATIONER().forEach((l,i)=>{
     const b=document.createElement('button');
     b.className='loctab'+(i===activeIdx?' active':'');
     const n=locItemCount(l.qty);
@@ -93,17 +190,17 @@ function renderLocTabs(){
   document.getElementById('l_name').value=L().name;
 }
 function switchLoc(i){ activeIdx=i; renderAll(); }
-function addLoc(){ LOCATIONS.push(newLoc()); activeIdx=LOCATIONS.length-1; renderAll(); }
+function addLoc(){ LOKATIONER().push(newLoc()); activeIdx=LOKATIONER().length-1; renderAll(); }
 function dupLoc(){
   const src=L();
-  LOCATIONS.splice(activeIdx+1,0,newLoc(src.name+' (kopi)',src.qty));
+  LOKATIONER().splice(activeIdx+1,0,newLoc(src.name+' (kopi)',src.qty));
   activeIdx=activeIdx+1; renderAll();
 }
 function delLoc(){
-  if(LOCATIONS.length===1){ alert('Der skal være mindst én lokation.'); return; }
+  if(LOKATIONER().length===1){ alert('Der skal være mindst én lokation.'); return; }
   if(locHasContent(L().qty) && !confirm('Slet "'+L().name+'" og alle dens valg?')) return;
-  LOCATIONS.splice(activeIdx,1);
-  if(activeIdx>=LOCATIONS.length) activeIdx=LOCATIONS.length-1;
+  LOKATIONER().splice(activeIdx,1);
+  if(activeIdx>=LOKATIONER().length) activeIdx=LOKATIONER().length-1;
   renderAll();
 }
 function renameLoc(val){ L().name=val; renderLocTabs(); updateSoon(); }
@@ -294,6 +391,7 @@ function syncUI(){
     hint.style.display=dup?'block':'none';
     hint.textContent=dup?'⚠ Også lagt på et nyt produkt ovenfor — tjek at antallet er rigtigt.':'';
   });
+  renderOptTabs();
   renderLocTabs();
   refreshPanelSubs();
   update();

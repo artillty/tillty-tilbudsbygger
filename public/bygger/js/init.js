@@ -25,16 +25,45 @@ function applyDefaults(){
   document.getElementById('c_note').value=STANDARD_NOTE;
 }
 
+/* Tomt udgangspunkt for selve opsætningen — én mulighed med én lokation.
+   Formen (FORM) røres ikke her; den vælges i opstartslaget. */
+function nulstilOpsaetning(){
+  locSeq=0; optSeq=0;
+  OPTIONS=[newOpt()]; optIdx=0; activeIdx=0;
+}
+
 /* ---------- nulstil ---------- */
 function resetAll(){
-  if(!confirm('Nulstil hele tilbuddet — kundeoplysninger, lokationer og valg?')) return;
+  if(!confirm('Nulstil hele tilbuddet — kundeoplysninger, muligheder og valg?')) return;
   QUOTE_FIELDS.forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
   applyDefaults();
   Object.keys(images).forEach(k=>delete images[k]);
-  locSeq=0; LOCATIONS=[newLoc()]; activeIdx=0;
+  nulstilOpsaetning();
   // Slip det gemte tilbud, ellers ville næste Gem overskrive det forrige
   // tilbud i stedet for at oprette et nyt.
   if(typeof slipTilbud==='function') slipTilbud();
+  visOpstart();
+  renderAll();
+}
+
+/* ---------- opstartslaget ---------- */
+function visOpstart(){
+  const e=document.getElementById('opstart'); if(!e) return;
+  document.getElementById('f_muligheder').checked=FORM.muligheder;
+  document.getElementById('f_lokationer').checked=FORM.lokationer;
+  e.style.display='flex';
+}
+function skjulOpstart(){
+  const e=document.getElementById('opstart'); if(e) e.style.display='none';
+}
+function startTilbud(){
+  FORM.muligheder=document.getElementById('f_muligheder').checked;
+  FORM.lokationer=document.getElementById('f_lokationer').checked;
+  // To muligheder fra start — ellers er der ingenting at sammenligne, og
+  // sælgeren skal alligevel trykke "+ Mulighed" med det samme.
+  if(FORM.muligheder && OPTIONS.length===1) OPTIONS.push(newOpt());
+  optIdx=0; activeIdx=0;
+  skjulOpstart();
   renderAll();
 }
 
@@ -47,6 +76,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.querySelectorAll('.panel.fold>h2').forEach(h=>{
     h.addEventListener('click',()=>h.parentElement.classList.toggle('closed'));
   });
-  LOCATIONS=[newLoc()]; activeIdx=0;
+  nulstilOpsaetning();
   renderAll();
+  // Uden server er der intet gemt tilbud at åbne, så formen vælges med det
+  // samme. Med server afgør store.js det: nyt tilbud -> opstart, ?nr= -> spring over.
+  if(location.protocol==='file:') visOpstart();
 });
