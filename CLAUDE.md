@@ -138,10 +138,14 @@ skal de holdes i sync med stilarket i hånden.
 - Tildelingen er én atomar `insert … on conflict … returning` (`lib/nummer.ts`).
   Neons HTTP-driver har ikke rigtige transaktioner, så det skal afgøres i
   databasen. Lav den ikke om til læs-så-skriv.
-- **Rækken starter ved 1001**, ikke ved 1 (`START` i `lib/nummer.ts`). Det er
-  kosmetisk: `2026-001` afslører, at kunden er årets første tilbud. `greatest()`
-  i sætningen løfter også en tæller, der står lavere, så et miljø med gamle
-  prøvetilbud retter sig selv.
+- **Numrene skal ikke kunne afkodes** (`lib/nummer.ts`). Året starter på et
+  skævt tilfældigt tal (1200-1900), og hvert spring er 2-9. `2026-001` afslører,
+  at kunden er årets første; 1001, 1002, 1003 lader to kunder regne ud, hvor
+  mange tilbud der lå imellem. To fælder, der begge er prøvet af og rettet:
+  et **fast** gulv får enhver lav tæller til at lande på præcis det tal, og
+  `greatest(seq + spring, nyt tilfældigt tal)` trækker et nyt gulv ved hvert
+  kald og giver spring langt over 9. Derfor et eksplicit `case`: løft én gang,
+  dernæst rene spring.
 - **Numre genbruges aldrig.** Tælleren rulles ikke tilbage, når et tilbud
   slettes — det kan allerede være sendt til en kunde.
 

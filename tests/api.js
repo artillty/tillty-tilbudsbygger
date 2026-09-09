@@ -43,8 +43,14 @@ function check(name, cond, detail) {
 
 const sql = neon(DB);
 const AAR = new Date().getFullYear();
-// Rækken starter ved 1001 — se lib/nummer.ts.
-const nr = (n) => `${AAR}-${1000 + n}`;
+/* Numrene er bevidst uforudsigelige (skævt start, tilfældige spring — se
+   lib/nummer.ts), så testen kan ikke slå faste værdier op. Den opsamler
+   numrene efterhånden og efterprøver i stedet kontrakten: entydige, strengt
+   voksende, spring på 2-9, og et startpunkt der ikke er til at gennemskue. */
+const tildelte = [];
+const seqAf = (nr) => Number(String(nr).split('-')[1]);
+function husk(nr) { tildelte.push(nr); return nr; }
+const erNummer = (v) => new RegExp(`^${AAR}-\\d{4}$`).test(v);
 
 async function ryd() {
   await sql`drop table if exists tilbud`;
@@ -111,9 +117,9 @@ async function vent(url, ms = 90000) {
     await p.waitForTimeout(1500);
     check('rigtigt kodeord lukker op', /\/$|kartotek/.test(new URL(p.url()).pathname));
 
-    /* ---------- 3: første tilbud får 2026-1001 ---------- */
+    /* ---------- 3: nummertildeling ---------- */
     // Lav en tæller der står lavt, som produktionen gjorde efter de første
-    // prøvetilbud. Rækken skal løftes til forskydningen, ikke fortsætte fra 3.
+    // prøvetilbud. Den skal løftes op over gulvet, ikke fortsætte fra 3.
     await sql`insert into tilbud_taeller (aar, seq) values (${AAR}, 2)
               on conflict (aar) do update set seq = 2`;
 
@@ -137,15 +143,18 @@ async function vent(url, ms = 90000) {
     }
     await p.click('button[onclick="gemTilbud()"]');
     await p.waitForTimeout(1500);
-    check('første tilbud får ' + nr(1), (await p.inputValue('#c_number')) === nr(1),
-      await p.inputValue('#c_number'));
-    check('URL peger på tilbuddet', p.url().includes('nr=' + nr(1)), p.url());
+    const nr1 = husk(await p.inputValue('#c_number'));
+    check('første tilbud får et nummer', erNummer(nr1), nr1);
+    check('startpunktet er ikke til at gennemskue',
+      seqAf(nr1) >= 1200 && seqAf(nr1) <= 1900 && seqAf(nr1) % 100 !== 0 && seqAf(nr1) % 100 !== 1,
+      nr1);
+    check('URL peger på tilbuddet', p.url().includes('nr=' + nr1), p.url());
 
     // Gem igen — nummeret må ikke skifte.
     await p.fill('#c_contact', 'Mette Sørensen');
     await p.click('button[onclick="gemTilbud()"]');
     await p.waitForTimeout(1200);
-    check('gem igen beholder nummeret', (await p.inputValue('#c_number')) === nr(1),
+    check('gem igen beholder nummeret', (await p.inputValue('#c_number')) === nr1,
       await p.inputValue('#c_number'));
 
     /* ---------- 4: næste tilbud får 2026-002 ---------- */
@@ -157,12 +166,14 @@ async function vent(url, ms = 90000) {
     await p.waitForTimeout(80);
     await p.click('button[onclick="gemTilbud()"]');
     await p.waitForTimeout(1500);
-    check('andet tilbud får ' + nr(2), (await p.inputValue('#c_number')) === nr(2),
-      await p.inputValue('#c_number'));
+    const nr2 = husk(await p.inputValue('#c_number'));
+    const spring = seqAf(nr2) - seqAf(nr1);
+    check('andet tilbud får et højere nummer', seqAf(nr2) > seqAf(nr1), `${nr1} → ${nr2}`);
+    check('springet er 2-9, ikke 1', spring >= 2 && spring <= 9, `spring ${spring}`);
 
     /* ---------- 5: genåbning gendanner alt ---------- */
     console.log('\n# Genåbning');
-    await p.goto(BASE + '/bygger/index.html?nr=' + nr(1));
+    await p.goto(BASE + '/bygger/index.html?nr=' + nr1);
     await p.waitForTimeout(1500);
     check('firma gendannet', (await p.inputValue('#c_company')) === 'Første Kunde ApS');
     check('kontakt gendannet', (await p.inputValue('#c_contact')) === 'Mette Sørensen');
@@ -191,8 +202,9 @@ async function vent(url, ms = 90000) {
     await p.waitForTimeout(1500);
     const efterNulstil = await p.inputValue('#c_number');
     check('gem efter nulstil laver et NYT tilbud, ikke en overskrivning',
-      efterNulstil === nr(3), efterNulstil);
-    const stadig = await sql`select firma from tilbud where nr = ${nr(1)}`;
+      erNummer(efterNulstil) && seqAf(efterNulstil) > seqAf(nr2), efterNulstil);
+    husk(efterNulstil);
+    const stadig = await sql`select firma from tilbud where nr = ${nr1}`;
     check('det oprindelige tilbud er urørt', stadig[0]?.firma === 'Første Kunde ApS',
       stadig[0]?.firma);
 
@@ -203,14 +215,14 @@ async function vent(url, ms = 90000) {
     const raekker = await p.$$eval('table.kart tbody tr', (r) => r.length);
     check('alle tre tilbud står i kartoteket', raekker === 3, `${raekker} rækker`);
     check('nyeste står øverst',
-      (await p.$eval('table.kart tbody tr:first-child .nr', (e) => e.textContent)) === nr(3));
+      (await p.$eval('table.kart tbody tr:first-child .nr', (e) => e.textContent)) === efterNulstil);
 
     await p.fill('.soeg', 'Første');
     await p.waitForTimeout(400);
     check('søgning filtrerer',
       (await p.$$eval('table.kart tbody tr', (r) => r.length)) === 1);
 
-    await p.fill('.soeg', nr(3));
+    await p.fill('.soeg', efterNulstil);
     await p.waitForTimeout(400);
     check('søgning på nummer virker',
       (await p.$$eval('table.kart tbody tr', (r) => r.length)) === 1);
@@ -228,14 +240,15 @@ async function vent(url, ms = 90000) {
     await p.evaluate(() => { window.print = () => { window.__printKaldt = true; }; });
     await p.click('button[onclick="exportPDF()"]');
     await p.waitForTimeout(2000);
-    check('eksport tildelte ' + nr(4), (await p.inputValue('#c_number')) === nr(4),
-      await p.inputValue('#c_number'));
+    const nrEksport = husk(await p.inputValue('#c_number'));
+    check('eksport tildelte et nyt nummer',
+      erNummer(nrEksport) && seqAf(nrEksport) > seqAf(efterNulstil), nrEksport);
     check('der blev rent faktisk printet', await p.evaluate(() => window.__printKaldt === true));
 
-    const status = await sql`select status from tilbud where nr = ${nr(4)}`;
+    const status = await sql`select status from tilbud where nr = ${nrEksport}`;
     check('eksporteret tilbud står som sendt', status[0]?.status === 'sendt', status[0]?.status);
 
-    const kladde = await sql`select status from tilbud where nr = ${nr(1)}`;
+    const kladde = await sql`select status from tilbud where nr = ${nr1}`;
     check('gemt-men-ikke-sendt står som kladde', kladde[0]?.status === 'kladde', kladde[0]?.status);
 
     /* ---------- 8: sletning genbruger ikke nummeret ---------- */
@@ -254,8 +267,17 @@ async function vent(url, ms = 90000) {
     await p.waitForTimeout(80);
     await p.click('button[onclick="gemTilbud()"]');
     await p.waitForTimeout(1500);
+    const nrEfterSletning = husk(await p.inputValue('#c_number'));
     check('nummeret efter en sletning genbruges ikke',
-      (await p.inputValue('#c_number')) === nr(5), await p.inputValue('#c_number'));
+      seqAf(nrEfterSletning) > seqAf(nrEksport), `${nrEksport} → ${nrEfterSletning}`);
+    check('alle tildelte numre er entydige',
+      new Set(tildelte).size === tildelte.length, tildelte.join(', '));
+    check('numrene er strengt voksende',
+      tildelte.every((n, i) => i === 0 || seqAf(n) > seqAf(tildelte[i - 1])), tildelte.join(' → '));
+    // Springkontrakten skal holde for HVER overgang, ikke bare den første.
+    const alleSpring = tildelte.slice(1).map((n, i) => seqAf(n) - seqAf(tildelte[i]));
+    check('alle spring er 2-9', alleSpring.every((d) => d >= 2 && d <= 9),
+      alleSpring.join(', '));
 
     await p.close();
   } finally {

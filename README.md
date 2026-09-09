@@ -83,9 +83,15 @@ Nummeret tildeles af serveren, første gang et tilbud gemmes — enten fordi
 sælgeren trykker Gem, eller fordi eksporten gemmer automatisk først. Et tilbud
 kan altså ikke forlade huset uden at stå i kartoteket.
 
-Formatet er `2026-1001`, løbenummer pr. år. Rækken starter ved **1001**, ikke
-ved 1: rent teknisk er `2026-001` lige så godt et nummer, men det fortæller
-kunden, at de er årets første tilbud. Nummeret tildeles med én atomar
+Formatet er `2026-1543`. Numrene er bevidst **ikke** til at gennemskue:
+
+- året starter på et skævt, tilfældigt tal mellem 1200 og 1900
+- hvert nyt nummer springer 2-9 frem, ikke 1
+
+`2026-001` ville fortælle kunden, at de er årets første tilbud, og en serie der
+tæller 1001, 1002, 1003 lader to kunder regne ud, hvor mange tilbud der lå
+imellem dem. Numrene er stadig strengt voksende og dermed både entydige og
+sorterbare — det er kun *afstanden* mellem dem, der ikke siger noget. Nummeret tildeles med én atomar
 sætning i databasen (`lib/nummer.ts`), så to sælgere der gemmer samtidig ikke
 kan få samme nummer. **Numre genbruges aldrig** — heller ikke når et tilbud
 slettes, for det kan allerede være sendt til en kunde.
