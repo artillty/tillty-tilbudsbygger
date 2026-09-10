@@ -64,7 +64,7 @@ table.kart td.num{font-family:var(--font-mono);font-size:12px}
 .status.kladde{background:var(--bg-sunken);color:var(--text-secondary)}
 .status.sendt{background:#d9f5e9;color:#0a7a53}
 .rowbtn{border:1px solid var(--border-subtle);background:#fff;color:var(--color-primary);
-  border-radius:6px;padding:5px 10px;font-size:12px;font-weight:700;font-family:var(--font-heading);
+  border-radius:var(--radius-md);padding:5px 10px;font-size:12px;font-weight:700;font-family:var(--font-heading);
   cursor:pointer;text-decoration:none;display:inline-block}
 .rowbtn:hover{border-color:var(--color-accent);color:var(--color-accent)}
 .rowbtn.fare:hover{border-color:var(--color-error);color:var(--color-error)}

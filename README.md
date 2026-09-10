@@ -114,9 +114,9 @@ i PDF'en.
 Nyt foto: læg en PNG i mappen, maks. 600 px på den lange led, og peg på den
 fra `PRODUKTFOTO` eller `TILBEHOERFOTO`.
 
-## Standardtekst i beskrivelsen
+## Standardtekst i afslutningen
 
-Den uddybende beskrivelse er forudfyldt med tilltys standardtekst om genbrug af
+Afslutningen er forudfyldt med tilltys standardtekst om genbrug af
 udstyr og afsnittet "Opsamling". Teksten står i **feltet**, ikke som en skjult
 fallback i dokumentet — sælgeren kan rette i den, skrive den om eller slette
 den helt. `Nulstil` sætter den tilbage.
@@ -132,7 +132,7 @@ altid en liste af lokationer, der hver har sine muligheder, og et
 almindeligt tilbud er 1×1. Man starter med én mulighed og tilføjer selv flere,
 og "Kopiér lokation" tager lokationens muligheder med.
 
-Hvert hardwareprodukt og dets tilbehør har **to tællere**: *Nye* (det vi sælger) og *Jeres*
+Alt hardware og tilbehør — også løst tilbehør — har **to tællere**: *Nye* (det vi sælger) og *Kundens egne*
 (det kunden allerede har). Eget udstyr står i specifikationen til 0,- nederst
 i hardwaretabellen, men **tæller med i licenserne** — en tablet kunden ejer,
 kører stadig på systemet.
@@ -175,7 +175,7 @@ curl -s https://api.dataforsyningen.dk/postnumre   # kilde: DAWA / Dataforsyning
 
 ```bash
 npm install
-npm test          # byggeren: 139 checks, ingen server eller database nødvendig
+npm test          # byggeren: 151 checks, ingen server eller database nødvendig
 
 TEST_DATABASE_URL="postgres://…" npm run test:api    # kartoteket: 38 checks
 ```
@@ -187,9 +187,9 @@ samme mappe. Stop dev-serveren først.
 tømmer tabellerne og ville ellers brænde rigtige tilbudsnumre. Den nægter at
 køre mod `DATABASE_URL`.
 
-Testen kører fire scenarier igennem i en rigtig browser — én lokation, tre
-lokationer, et tilbud med beskrivelse, og en nulstilling — og tjekker blandt
-andet at:
+Testen kører scenarierne igennem i en rigtig browser — én lokation, tre
+lokationer, afslutning og indløsning, nulstilling, formvalget, kundens eget
+udstyr, muligheder og lokationer med muligheder — og tjekker blandt andet at:
 
 - totalerne stemmer med håndregnede kontroltal
 - QR hverken kan faktureres eller indtastes oveni Takeaway
@@ -198,6 +198,8 @@ andet at:
 - sidetal og gentaget sidehoved er på plads
 - siden ikke laver en eneste ekstern request
 - Nulstil rydder både kunde, lokationer og valg
+- sammenligningen og prisoverblikket stemmer med buddets tal
+- lokationer og muligheder har de samme knapper
 
 ## Eksport til PDF
 

@@ -13,6 +13,9 @@
      kom PDF'en ud i systemfonte, uden at nogen opdagede det. -->
 <link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/styles.css">
+<!-- Formvalget er synligt fra første tegning. Åbnes et gemt tilbud (?nr=),
+     skjules det her, før siden tegnes — ellers blinker det frem og væk igen. -->
+<script>if(new URLSearchParams(location.search).has('nr')) document.documentElement.classList.add('gemt-tilbud');</script>
 </head>
 <body>
 <header>
@@ -33,14 +36,15 @@
 
 <!-- Opstartslaget. Formen vælges én gang, når tilbuddet oprettes, så
      byggeren kun viser det tilbuddet faktisk indeholder. Åbnes et gemt
-     tilbud, springes det over. -->
-<div id="opstart" class="opstart" style="display:none">
+     tilbud, springes det over. Laget er synligt fra start (ingen
+     display:none her) — ellers når byggeren at blinke frem, før laget kommer. -->
+<div id="opstart" class="opstart">
   <div class="opstart-kort">
     <h1>Nyt tilbud</h1>
-    <p class="opstart-sub">Hvad skal tilbuddet indeholde? Du kan skifte undervejs.</p>
+    <p class="opstart-sub">Hvad skal tilbuddet indeholde?</p>
 
     <label class="opstart-valg">
-      <input type="checkbox" id="f_muligheder">
+      <input type="checkbox" id="f_muligheder" onchange="opdaterStartknap()">
       <span>
         <b>Flere muligheder</b>
         <em>Kunden vælger mellem flere opsætninger — fx genbrug af eget udstyr
@@ -50,17 +54,17 @@
     </label>
 
     <label class="opstart-valg">
-      <input type="checkbox" id="f_lokationer">
+      <input type="checkbox" id="f_lokationer" onchange="opdaterStartknap()">
       <span>
         <b>Flere lokationer</b>
         <em>Kæder med flere forretninger. Hver lokation får sit eget setup,
-        og tilbuddet viser både delpriser og en samlet total.</em>
+        og tilbuddet viser prisen for hver af dem.</em>
       </span>
     </label>
 
-    <button class="btn-pdf opstart-start" onclick="startTilbud()">Kom i gang</button>
-    <p class="opstart-note">Vælger du ingen af delene, får du et almindeligt
-    tilbud til én forretning — præcis som før.</p>
+    <button class="btn-pdf opstart-start" onclick="startTilbud()">Simpelt tilbud</button>
+    <p class="opstart-note">Vælger du ingen af delene, får du et simpelt
+    tilbud til én forretning.</p>
   </div>
 </div>
 
@@ -84,30 +88,32 @@
               <input id="c_city" oninput="updateSoon()" aria-label="By">
             </span>
           </label>
-          <label>Tilbudsnr.<input id="c_number" placeholder="2026-001" readonly
+          <label class="ny-raekke">Tilbudsnr.<input id="c_number" placeholder="Tildeles ved gem" readonly
                  title="Tildeles automatisk, når tilbuddet gemmes"></label>
           <label>Dato sendt<input id="c_date" type="date" oninput="updateSoon()"></label>
-          <label>Gælder (dage fra sendt)<input id="c_valid" type="number" min="1" value="30" oninput="updateSoon()"></label>
           <label>Sælger<input id="c_seller" placeholder="Dit navn" oninput="updateSoon()"></label>
           <label>Indløsning<input id="c_indloesning"
                  title="Skriv satsen i procent. Står feltet tomt, skriver tilbuddet “Indløsning: Aftales efter dialog.”"
                  oninput="updateSoon()"></label>
-          <textarea id="c_intro" placeholder="Beskrivelse – vises øverst i tilbuddet (valgfri)" oninput="updateSoon()"></textarea>
-          <textarea id="c_note" placeholder="Uddybende beskrivelse – vises efter specifikationen, lige inden hilsen (valgfri)" oninput="updateSoon()"></textarea>
+          <!-- Tekstfelterne har feltnavn som alle andre felter. Afslutningen er
+               forudfyldt, så en pladsholder alene ville aldrig blive set. -->
+          <label class="bred">Indledning<textarea id="c_intro" placeholder="Står øverst i tilbuddet. Tomt felt giver en standardindledning." oninput="updateSoon()"></textarea></label>
+          <label class="bred">Afslutning<textarea id="c_note" placeholder="Står nederst i tilbuddet, lige før hilsen." oninput="updateSoon()"></textarea></label>
         </div>
       </div>
     </div>
 
     <!-- Lokationerne står over mulighederne: mulighederne hører til den valgte lokation. -->
-    <div class="panel" id="panel_lokationer">
+    <div class="panel" id="panel_lokationer" style="display:none">
       <h2>Lokationer</h2>
       <div class="body">
         <p class="hint">Har kunden flere forretninger, kan hver lokation få sit eget setup. Vælg en fane for at redigere den lokation. “Kopiér lokation” tager også lokationens muligheder med — “+ Lokation” starter helt tom.</p>
         <div class="loctabs" id="loctabs"></div>
+        <!-- Samme betjening som mulighederne: fanerne, "+" og "Kopiér" i fanerækken,
+             navn og "Slet" herunder. -->
         <div class="locbar">
           <label>Navn på den valgte lokation<input id="l_name" placeholder="fx Aarhus C" oninput="renameLoc(this.value)"></label>
-          <button class="minibtn" onclick="dupLoc()" title="Opret en ny lokation med samme setup og muligheder">⧉ Kopiér lokation</button>
-          <button class="minibtn danger" onclick="delLoc()" title="Slet den valgte lokation">✕ Slet</button>
+          <button class="minibtn danger" onclick="delLoc()" title="Slet den valgte lokation">✕ Slet lokation</button>
         </div>
       </div>
     </div>
@@ -119,19 +125,16 @@
         “Kopiér mulighed” til de næste — så skal du kun rette det, der er forskellen.</p>
         <div class="loctabs" id="opttabs"></div>
         <div class="optbar">
-          <label>Navn<input id="o_navn" placeholder="fx Genbrug" oninput="renameOpt(this.value)"></label>
+          <label>Navn på den valgte mulighed<input id="o_navn" placeholder="fx Genbrug" oninput="renameOpt(this.value)"></label>
           <label>Underrubrik<input id="o_tagline" placeholder="fx Mindst mulig investering" oninput="setTagline(this.value)"></label>
           <label class="opt-anb">
             <input type="checkbox" id="o_anbefalet" onchange="setAnbefalet(this.checked)">
             <span>Vi anbefaler denne</span>
           </label>
-        </div>
-        <div class="locbar" style="margin-top:10px">
           <button class="minibtn danger" onclick="delOpt()" title="Slet den valgte mulighed">✕ Slet mulighed</button>
         </div>
       </div>
     </div>
-
 
     <div class="panel fold">
       <h2>Hardware<span class="h2-sub" id="hw_sub"></span></h2>
@@ -152,7 +155,7 @@
     <div class="panel fold">
       <h2>Licenser &amp; software<span class="h2-sub" id="sw_sub"></span></h2>
       <div class="body">
-        <p class="hint">Licenser beregnes <b>automatisk</b> ud fra de terminaler du har valgt for lokationen og vises som en samlet pris <b>pr. dag</b>. Modulerne nedenfor sættes manuelt og afregnes <b>pr. måned</b>.</p>
+        <p class="hint">Licenser beregnes <b>automatisk</b> ud fra de terminaler, der er valgt ovenfor, og vises som en samlet pris <b>pr. dag</b>. Modulerne nedenfor sættes manuelt og afregnes <b>pr. måned</b>.</p>
         <div id="software"></div>
       </div>
     </div>

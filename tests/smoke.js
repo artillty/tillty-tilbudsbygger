@@ -1,5 +1,5 @@
 /* Regressionstest for tillty Tilbudsbygger.
-   Kører tre scenarier i headless Chromium og fejler med exit-kode 1.
+   Kører scenarierne i headless Chromium og fejler med exit-kode 1.
 
    Kontroltallene nedenfor er HÅNDREGNEDE ud fra js/data.js.
    Ændrer du priser, skal de rettes med — ellers tester vi ingenting. */
@@ -117,8 +117,8 @@ let STANDARD_START = null;
     // håndregnet
     const HW  = 2*13995 + 2*2495 + 2*495 + 4*2995 + 4*195 + 5995 + 1995; // 54.720
     const LIC = 6*15 + 7.5;                                              // 97,50 (termstat: ingen licens)
-    const MOD = 495 + 300;                                               // 795 (QR inkluderet i Takeaway)
-    const REC = LIC*30 + MOD;                                            // 3.720
+    const MOD = 495 + 299;                                               // 794 (QR inkluderet i Takeaway)
+    const REC = LIC*30 + MOD;                                            // 3.719
 
     const row = await p.$$eval('#quote-doc table.loc-overview tfoot td',
       td => td.map(t => t.textContent.trim()));
@@ -151,6 +151,17 @@ let STANDARD_START = null;
       await p.$eval('#quote-doc .qp-parties', e => /2100 København Ø/.test(e.textContent)));
 
     check('tilbudsnr. kan ikke tastes i', await p.getAttribute('#c_number', 'readonly') !== null);
+    // Tilbuddet gælder altid 30 dage — det er ikke et felt, man kan stille på.
+    check('gyldigheden er ikke et felt', !(await p.$('#c_valid')));
+    check('gælder til er 30 dage efter sendt', await p.evaluate(() => {
+      const d = parseISODate(document.getElementById('c_date').value);
+      d.setDate(d.getDate() + 30);
+      return document.querySelector('#quote-doc .qp-meta').textContent.includes('Gælder til: ' + d.toLocaleDateString('da-DK'));
+    }));
+    // Alle felter har et feltnavn — også de to tekstfelter.
+    check('indledning og afslutning har feltnavne', await p.evaluate(() =>
+      /^Indledning/.test(document.getElementById('c_intro').closest('label')?.textContent.trim() || '')
+      && /^Afslutning/.test(document.getElementById('c_note').closest('label')?.textContent.trim() || '')));
 
     // Standardteksten står i feltet fra start og går med i tilbuddet.
     check('standardteksten er forudfyldt', (await p.inputValue('#c_note')) === STANDARD_START);
@@ -248,6 +259,12 @@ let STANDARD_START = null;
       ['Nunito', 700], ['Open Sans', 400], ['JetBrains Mono', 700], ['Fugaz One', 400],
     ]).filter(([f, w]) => !document.fonts.check(`${w} 12px "${f}"`, 'Tilbud 1234')).map(([f]) => f));
     check('brandfontene er indlæst', fonte.length === 0, fonte.join(', ') || 'alle fire');
+    // Fugaz One er forbeholdt ordet "tillty" — ingen overskrifter i logoets skrift.
+    const fugaz = await p.evaluate(() => [...document.querySelectorAll('body *')]
+      .filter((e) => /Fugaz/.test(getComputedStyle(e).fontFamily.split(',')[0]))
+      .filter((e) => [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()))
+      .map((e) => e.textContent.trim()).filter((t) => t !== 'tillty'));
+    check('kun "tillty" står i Fugaz One', fugaz.length === 0, fugaz.join(', ') || 'kun logoet');
     await p.close();
   }
 
@@ -267,7 +284,7 @@ let STANDARD_START = null;
     await plus(p, 'm_kds185', 1);
     await plus(p, 's_takeaway', 1);
 
-    await p.click('button.minibtn[onclick="dupLoc()"]');   // kopiér
+    await p.click('#loctabs .loctab-kopi');   // kopiér
     await p.waitForTimeout(250);
     await p.fill('#l_name', 'Risskov');
     check('kopi arvede antal', (await p.inputValue('#qty_m_tab11')) === '4');
@@ -357,15 +374,19 @@ let STANDARD_START = null;
     check('produktvalg ryddet', (await p.inputValue('#qty_m_sot')) === '0');
     // Nulstil sender én tilbage til formvalget, så opsætningen skal bekræftes igen.
     check('formvalget vises igen efter nulstil', await p.isVisible('#opstart'));
+    // Knappen siger "Simpelt tilbud" uden valg og "Kom i gang", når ét er slået til.
+    const knap = () => p.$eval('#opstart .opstart-start', (e) => e.textContent.trim());
+    await p.uncheck('#f_lokationer'); await p.uncheck('#f_muligheder');
+    check('startknappen siger "Simpelt tilbud" uden valg', (await knap()) === 'Simpelt tilbud', await knap());
     await p.check('#f_lokationer');
+    check('startknappen siger "Kom i gang", når et valg er slået til', (await knap()) === 'Kom i gang', await knap());
     await p.click('#opstart .opstart-start');
     await p.waitForTimeout(300);
     check('lokationen er tilbage til én tom',
-      (await p.$$('#loctabs .loctab')).length === 2); // 1 lokation + "+ Lokation"
-    // Dato og gyldighed er defaults, ikke kundedata — de skal stå igen bagefter.
+      (await p.$$('#loctabs .loctab:not(.loctab-add)')).length === 1);
+    // Datoen er en default, ikke kundedata — den skal stå igen bagefter.
     check('dato sat til i dag',
       (await p.inputValue('#c_date')) === new Date().toISOString().slice(0, 10));
-    check('gyldighed tilbage på 30 dage', (await p.inputValue('#c_valid')) === '30');
     await p.close();
   }
 
@@ -377,6 +398,10 @@ let STANDARD_START = null;
     check('mulighedspanelet er skjult som standard', !(await p.isVisible('#panel_muligheder')));
     check('lokationspanelet er skjult som standard', !(await p.isVisible('#panel_lokationer')));
     check('opstartslaget er væk efter valget', !(await p.isVisible('#opstart')));
+    // Laget skal være synligt fra første tegning. Et display:none i HTML'en får
+    // byggeren til at blinke frem, før scriptet viser laget.
+    const html = require('fs').readFileSync(path.resolve(__dirname, '..', 'public', 'bygger', 'index.html'), 'utf8');
+    check('formvalget er synligt fra første tegning', !/id="opstart"[^>]*display:\s*none/.test(html));
     await p.close();
   }
   {
@@ -447,8 +472,20 @@ let STANDARD_START = null;
 
     // Kopiér lokation tager mulighederne med.
     await p.click('#loctabs .loctab:nth-child(1)'); await p.waitForTimeout(250);
-    await p.click('button.minibtn[onclick="dupLoc()"]'); await p.waitForTimeout(300);
+    await p.click('#loctabs .loctab-kopi'); await p.waitForTimeout(300);
     check('kopiér lokation tager mulighederne med', (await antalMuligheder()) === 2);
+    check('kopien af lokationen lægges sidst',
+      /^3/.test(await p.$eval('#loctabs .loctab.active', (e) => e.textContent)));
+
+    // Lokationer og muligheder betjenes ens: "+" og "Kopiér" i fanerækken,
+    // navnefelt og "Slet" under den, og nummer eller bogstav på fanen.
+    check('lokationer og muligheder har de samme knapper', await p.evaluate(() => {
+      const ens = (faner, panel) => !!(document.querySelector(`${faner} .loctab-add:not(.loctab-kopi)`)
+        && document.querySelector(`${faner} .loctab-kopi`)
+        && document.querySelector(`${panel} .minibtn.danger`)
+        && document.querySelector(`${faner} .loctab:not(.loctab-add) .tab-n`));
+      return ens('#loctabs', '#panel_lokationer') && ens('#opttabs', '#panel_muligheder');
+    }));
     await p.click('#opttabs .loctab:nth-child(2)'); await p.waitForTimeout(250);
     check('... med deres opsætning', (await p.inputValue('#qty_m_tab11')) === '1');
     await p.close();
@@ -490,6 +527,12 @@ let STANDARD_START = null;
     // Specifikationen skal vise det, så kunden kan se vi har regnet med det.
     const dok = await p.$eval('#quote-doc', (e) => e.textContent.replace(/\s+/g, ' '));
     check('eget udstyr står i specifikationen', /Jeres eget/.test(dok));
+    // Byggeren er sælgerens side: "Kundens egne". Tilbuddet er kundens: "Jeres eget".
+    check('byggeren siger "Kundens egne", tilbuddet "Jeres eget"', await p.evaluate(() => {
+      const mrk = [...document.querySelectorAll('.layout > div:first-child .qty-mrk.mrk-eget')];
+      return mrk.length > 0 && mrk.every((m) => m.textContent.trim() === 'Kundens egne')
+        && !/Kundens egne/.test(document.getElementById('quote-doc').textContent);
+    }));
     check('eget udstyr står til 0', await p.$eval('#quote-doc', (e) => {
       const r = [...e.querySelectorAll('tr.eget')];
       return r.length === 2 && r.every((x) => /^0,-$/.test(x.cells[3].textContent.trim()));
@@ -530,6 +573,27 @@ let STANDARD_START = null;
       const r = [...e.querySelectorAll('tr.eget')].map((x) => x.cells[0].textContent.replace(/\s+/g, ' ').trim());
       const i = r.findIndex((t) => /^11" POS Tablet/.test(t));
       return i > -1 && /Desktop Base/.test(r[i + 1] || '') && /Jeres eget/.test(r[i + 1] || '');
+    }));
+
+    // Pengeskuffe kan vælges til alle kasseskærme og tablets.
+    check('pengeskuffe kan vælges til alle tablets', await p.evaluate(() =>
+      ['pos154', 'tab87', 'tab11', 'tab14'].every((id) => !!document.querySelector(`[data-qwrap="a_${id}_drawer"]`))));
+
+    // Kundens eget løse tilbehør: 0,- og nederst i tilbehørstabellen.
+    if (await p.$('.panel.fold.closed > h2')) { await p.click('.panel.fold.closed > h2'); await p.waitForTimeout(150); }
+    await plus(p, 'x_hand', 1);
+    await plus(p, 'eget_x_drawer', 1);
+    await p.waitForTimeout(400);
+    const row3 = await p.$$eval('#quote-doc table.loc-overview tfoot td',
+      (td) => td.map((t) => t.textContent.trim()));
+    check('eget løst tilbehør koster ingenting', kr(row3[1]) === HW + 2995 + 195, `${row3[1]} vs ${HW + 2995 + 195}`);
+    check('eget løst tilbehør står nederst i tilbehørstabellen', await p.$eval('#quote-doc', (e) => {
+      const t = [...e.querySelectorAll('table.pv')]
+        .find((x) => /^Ekstra tilbehør$/.test(x.querySelector('thead th')?.textContent.trim() || ''));
+      if (!t) return false;
+      const r = [...t.querySelectorAll('tbody tr')];
+      return r.length === 2 && !r[0].classList.contains('eget') && r[1].classList.contains('eget')
+        && /Pengeskuffe/.test(r[1].textContent) && /^0,-$/.test(r[1].cells[3].textContent.trim());
     }));
 
     const pg = await paginate(p);
@@ -585,11 +649,11 @@ let STANDARD_START = null;
     // Kontroltallene er buddets egne — og håndregnet ud fra js/data.js:
     // 1: 13995+2495+495+1995+5995+995 = 25.970; (3×15+7,5)×30+495 = 2.070
     // 2: 25.970+2995+995 = 29.960;               (4×15+7,5)×30+495 = 2.520
-    // 3: 48.825;                                  (5×15+7,5)×30+495+300 = 3.270
+    // 3: 48.825;                                  (5×15+7,5)×30+495+299 = 3.269
     const fod = await p.$$eval('#quote-doc table.sml tfoot tr',
       (rows) => rows.map((r) => [...r.cells].slice(1).map((c) => c.textContent.trim())));
     check('engangs pr. mulighed stemmer med buddet', fod[0].map(kr).join() === '25970,29960,48825', fod[0].join(' / '));
-    check('løbende pr. måned stemmer med buddet', fod[1].map(kr).join() === '2070,2520,3270', fod[1].join(' / '));
+    check('løbende pr. måned stemmer med buddet', fod[1].map(kr).join() === '2070,2520,3269', fod[1].join(' / '));
 
     const anb = await p.$$eval('#quote-doc table.sml th.anb', (th) => th.map((t) => t.textContent));
     check('den anbefalede kolonne er fremhævet',

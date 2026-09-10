@@ -139,28 +139,36 @@ function renderLocTabs(){
     const b=document.createElement('button');
     b.className='loctab'+(i===activeIdx?' active':'');
     const n=locItemCount(l);
-    b.innerHTML=esc(l.name)+(n?' <span class="cnt">'+n+'</span>':'');
+    // Samme nummer som lokationen har i tilbuddet.
+    b.innerHTML='<span class="tab-n">'+(i+1)+'</span>'+esc(l.name)
+      +(n?' <span class="cnt">'+n+'</span>':'');
     b.onclick=()=>switchLoc(i);
     el.appendChild(b);
   });
+  // Samme betjening som mulighederne: "+" og "Kopiér" i fanerækken.
   const add=document.createElement('button');
   add.className='loctab loctab-add'; add.textContent='+ Lokation';
   add.onclick=addLoc; el.appendChild(add);
+  const kopi=document.createElement('button');
+  kopi.className='loctab loctab-add loctab-kopi'; kopi.textContent='⧉ Kopiér lokation';
+  kopi.title='Ny lokation med samme setup og muligheder som "'+L().name+'"';
+  kopi.onclick=dupLoc; el.appendChild(kopi);
   document.getElementById('l_name').value=L().name;
 }
-/* Skifter man lokation, bliver man på samme mulighedsnummer, hvis lokationen
-   har det — så kan man hurtigt se "Mulighed 2" i Aarhus og i Risskov. */
+/* Skifter man lokation, bliver man på samme mulighedsbogstav, hvis lokationen
+   har det — så kan man hurtigt se "Mulighed B" i Aarhus og i Risskov. */
 function switchLoc(i){ activeIdx=i; optIdx=Math.min(optIdx, L().muligheder.length-1); renderAll(); }
 /* En ny lokation starter helt tom. Kun "Kopiér lokation" tager muligheder med. */
 function addLoc(){ LOCS.push(newLoc()); activeIdx=LOCS.length-1; optIdx=0; renderAll(); }
+/* Kopien lægges sidst, som ved muligheder, så de andre beholder deres nummer. */
 function dupLoc(){
   const src=L();
-  LOCS.splice(activeIdx+1,0,newLoc(src.name+' (kopi)',src.muligheder));
-  activeIdx=activeIdx+1; renderAll();
+  LOCS.push(newLoc(src.name+' (kopi)',src.muligheder));
+  activeIdx=LOCS.length-1; renderAll();
 }
 function delLoc(){
   if(LOCS.length===1){ alert('Der skal være mindst én lokation.'); return; }
-  if(locHasContent(L()) && !confirm('Slet "'+L().name+'" og alle dens muligheder?')) return;
+  if(locHasContent(L()) && !confirm('Slet lokationen "'+L().name+'" og alle dens valg?')) return;
   LOCS.splice(activeIdx,1);
   if(activeIdx>=LOCS.length) activeIdx=LOCS.length-1;
   optIdx=Math.min(optIdx, L().muligheder.length-1);
@@ -184,7 +192,7 @@ function renderOptTabs(){
     const b=document.createElement('button');
     b.className='loctab'+(i===optIdx?' active':'')+(o.anbefalet?' anbefalet':'');
     const n=optItemCount(o);
-    b.innerHTML='<span class="opt-n bogstav">'+bogstav(i)+'</span>'+esc(o.navn)
+    b.innerHTML='<span class="tab-n bogstav">'+bogstav(i)+'</span>'+esc(o.navn)
       +(n?' <span class="cnt">'+n+'</span>':'');
     b.onclick=()=>switchOpt(i);
     el.appendChild(b);
@@ -216,7 +224,7 @@ function dupOpt(){
   const src=M();
   // Hele opsætningen kopieres med — det er som regel derfor man laver en
   // ekstra mulighed: samme grundopsætning med én ting lavet om. Kopien lægges
-  // sidst, så de andre muligheder beholder deres nummer.
+  // sidst, så de andre muligheder beholder deres bogstav.
   ms.push(newOpt(ms.length+1,{navn:src.navn+' (kopi)', tagline:src.tagline,
                               qty:src.qty, eget:src.eget}));
   optIdx=ms.length-1; renderAll();
@@ -235,7 +243,8 @@ function setTagline(val){ M().tagline=val; updateSoon(); }
 function setAnbefalet(on){
   L().muligheder.forEach(o=>o.anbefalet=false);
   M().anbefalet=!!on;
-  renderOptTabs(); updateSoon();
+  // Et klik opdaterer med det samme — kun tekstfelterne venter (se updateSoon).
+  renderOptTabs(); update();
 }
 
 /* ---------- byg katalog-UI ---------- */
@@ -259,7 +268,7 @@ function renderCatalog(){
           <div class="price">${fmt(p.price)}</div>
           <div class="ctrl-row"><span class="qty-mrk">Nye</span>${stepper(mk,'ny')}</div>
           <div class="ctrl-row" title="Udstyr kunden allerede har. Koster 0, men tæller med i licenserne.">
-            <span class="qty-mrk mrk-eget">Jeres</span>${stepper(mk,'eget')}
+            <span class="qty-mrk mrk-eget">Kundens egne</span>${stepper(mk,'eget')}
           </div>
         </div>
       </div>
@@ -267,7 +276,8 @@ function renderCatalog(){
         ${p.acc.map(aid=>{
           const a=ACCESSORIES[aid], ak=keyAcc(p.id,aid);
           return `<div class="acc-item" data-rowkey="${ak}">
-            <div class="thumb-wrap"><img class="thumb" id="img_${ak}" src="${getImg(ak,a.name)}" onclick="pick('${ak}')"></div>
+            <div class="thumb-wrap"><img class="thumb" id="img_${ak}" src="${getImg(ak,a.name)}" onclick="pick('${ak}')"
+                 title="Klik for at uploade dit eget billede"></div>
             <div class="acc-info">
               <div class="acc-badge">Tilbehør</div>
               <div class="acc-name">${esc(a.name)}</div>
@@ -281,7 +291,7 @@ function renderCatalog(){
                 <span class="qty-mrk">Nye</span>${stepper(ak,'ny')}
               </div>
               <div class="ctrl-row" title="Tilbehør kunden allerede har. Koster 0.">
-                <span class="qty-mrk mrk-eget">Jeres</span>${stepper(ak,'eget')}
+                <span class="qty-mrk mrk-eget">Kundens egne</span>${stepper(ak,'eget')}
               </div>
             </div>
           </div>`;
@@ -312,7 +322,10 @@ function renderExtras(){
       </div>
       <div class="prod-right">
         <div class="price">${fmt(a.price)}</div>
-        <div class="ctrl-row">${stepper(xk)}</div>
+        <div class="ctrl-row"><span class="qty-mrk">Nye</span>${stepper(xk,'ny')}</div>
+        <div class="ctrl-row" title="Tilbehør kunden allerede har. Koster 0.">
+          <span class="qty-mrk mrk-eget">Kundens egne</span>${stepper(xk,'eget')}
+        </div>
       </div>
     </div>`;
     wrap.appendChild(g);
@@ -445,15 +458,19 @@ function renderAll(){ renderCatalog(); renderExtras(); renderSoftware(); syncUI(
 /* små tællere i panel-headerne, så man kan se hvad der ligger i et foldet panel */
 function refreshPanelSubs(){
   const Q=M().qty, E=M().eget;
-  const cnt=pref=>Object.keys(Q).filter(k=>k.indexOf(pref)===0).reduce((s,k)=>s+Q[k],0);
+  // Nye og kundens egne tælles begge med — tælleren viser, hvad der er i panelet.
+  const cnt=pref=>[Q,E].reduce((t,K)=>t+Object.keys(K).filter(k=>k.indexOf(pref)===0).reduce((s,k)=>s+K[k],0),0);
   const hw=CATALOG.reduce((s,p)=>s+qOf(Q,keyMain(p.id))+qOf(E,keyMain(p.id)),0);
-  const accUnder=[Q,E].reduce((t,K)=>t+Object.keys(K).filter(k=>k.indexOf('a_')===0).reduce((s,k)=>s+K[k],0),0);
+  const accUnder=cnt('a_');
   const ex=cnt('x_');
-  const sw=MODULES.reduce((s,m)=>s+qOf(Q,keyMod(m.id)),0)+qOf(Q,KEY_DS);
+  const mod=MODULES.reduce((s,m)=>s+qOf(Q,keyMod(m.id)),0), ds=qOf(Q,KEY_DS);
   const set=(id,txt)=>{const e=document.getElementById(id); if(e) e.textContent=txt;};
-  set('hw_sub', hw||accUnder ? (hw+' produkter · '+accUnder+' tilbehør') : 'ingen valgt');
-  set('ex_sub', ex ? (ex+' stk. valgt') : 'ingen valgt');
-  set('sw_sub', sw ? (sw+' valgt') : 'ingen valgt');
+  // Samme form i alle tre paneler: antal og hvad der er talt, adskilt af "·".
+  const tal=(n,en,flere)=>n+' '+(n===1?en:flere);
+  const liste=(...dele)=>dele.filter(Boolean).join(' · ')||'ingen valgt';
+  set('hw_sub', liste(hw&&tal(hw,'produkt','produkter'), accUnder&&tal(accUnder,'tilbehør','tilbehør')));
+  set('ex_sub', liste(ex&&tal(ex,'tilbehør','tilbehør')));
+  set('sw_sub', liste(mod&&tal(mod,'modul','moduler'), ds&&tal(ds,'DS-licens','DS-licenser')));
 }
 
 /* ---------- billed-upload ---------- */
@@ -468,7 +485,7 @@ function onFile(e){
   r.readAsDataURL(f); e.target.value='';
 }
 
-/* ---------- opsamling pr. lokation ---------- */
+/* ---------- opsamling pr. mulighed ---------- */
 /* Licenser regnes af BÅDE det vi sælger og kundens eget udstyr. En tablet
    kunden allerede ejer, kører stadig på systemet og kræver stadig licens —
    den er bare gratis at anskaffe. Det er et af de steder, et tilbud let
@@ -536,11 +553,15 @@ function collectFor(opsaet){
   egetHw.forEach(x=>hw.push(x));
 
   const extras=[];
+  // Kundens eget løse tilbehør koster 0 og står nederst, som eget udstyr.
+  const egneExtras=[];
   ACC_IDS.forEach(aid=>{
-    const n=qOf(Q,keyExtra(aid)); if(!n) return;
     const a=ACCESSORIES[aid];
-    extras.push({name:a.name,desc:a.desc,qty:n,price:a.price,img:pdfImg(keyExtra(aid))});
+    const n=qOf(Q,keyExtra(aid)), e=qOf(E,keyExtra(aid));
+    if(n) extras.push({name:a.name,desc:a.desc,qty:n,price:a.price,img:pdfImg(keyExtra(aid))});
+    if(e) egneExtras.push({name:a.name,desc:a.desc,qty:e,price:0,img:pdfImg(keyExtra(aid)),eget:true});
   });
+  egneExtras.forEach(x=>extras.push(x));
 
   const modules=[];
   MODULES.forEach(s=>{
@@ -565,7 +586,7 @@ function collectFor(opsaet){
   return {hw,extras,modules,licenses,oneOff,licDaily,modMonthly,has,harEget};
 }
 
-/* live licens-visning for den aktive lokation */
+/* live licens-visning for den valgte mulighed */
 function refreshLicensePanel(data){
   const el=document.getElementById('lic_auto'); if(!el) return;
   const d=licenseDays();
@@ -624,10 +645,11 @@ function postnrIndtastet(val){
   updateSoon();
 }
 
+/* Et tilbud gælder altid 30 dage fra det er sendt. Det er ikke en indstilling. */
+const GYLDIG_DAGE = 30;
 function validUntil(){
   const dt=parseISODate(v('c_date')); if(!dt) return '';
-  const days=parseInt(v('c_valid'))||30;
-  dt.setDate(dt.getDate()+days);
+  dt.setDate(dt.getDate()+GYLDIG_DAGE);
   return dt.toLocaleDateString('da-DK');
 }
 function daDate(iso){ const dt=parseISODate(iso); return dt?dt.toLocaleDateString('da-DK'):''; }

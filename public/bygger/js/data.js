@@ -12,11 +12,11 @@ const CATALOG = [
   {id:'pos154', name:'15.4" POS Kasseskærm', desc:'Stationær skærm til kassesystemet.', price:4995,
    acc:['drawer']},
   {id:'tab87', name:'8.7" POS Tablet', desc:'Både stationær og mobil skærm til kassesystemet.', price:2495,
-   acc:['tsfixed','tsstand','desktop','multi','mount','hand']},
+   acc:['tsfixed','tsstand','desktop','multi','mount','hand','drawer']},
   {id:'tab11', name:'11" POS Tablet', desc:'Både stationær og mobil skærm til kassesystemet.', price:2995,
-   acc:['tsfixed','tsstand','desktop','multi','mount','hand']},
+   acc:['tsfixed','tsstand','desktop','multi','mount','hand','drawer']},
   {id:'tab14', name:'14" POS Tablet', desc:'Både stationær og mobil skærm til kassesystemet.', price:4495,
-   acc:['tsfixed','tsstand','desktop','multi','mount','hand']},
+   acc:['tsfixed','tsstand','desktop','multi','mount','hand','drawer']},
   {id:'kds185', name:'18.5" KDS – Køkkenskærm', desc:'Digital skærm til ordrevisning i køkkenet.', price:5995,
    acc:['vesa']},
   {id:'kds22', name:'22" KDS – Køkkenskærm', desc:'Digital skærm til ordrevisning i køkkenet.', price:6995,
@@ -47,9 +47,9 @@ const ACC_IDS = Object.keys(ACCESSORIES)
 
 /* Licenstyper – dagspris pr. aktiv terminal/skærm. Beregnes automatisk. */
 const LICENSE_TYPES = {
-  pos:{name:'POS & SOT licens', daily:15,  desc:'Pr. aktiv terminal · pr. dag i brug.'},
-  kds:{name:'KDS licens',       daily:7.5, desc:'Pr. aktiv terminal · pr. dag i brug.'},
-  ds: {name:'DS licens',        daily:7.5, desc:'Pr. aktiv skærm · pr. dag i brug.'},
+  pos:{name:'POS & SOT licens', daily:15},
+  kds:{name:'KDS licens',       daily:7.5},
+  ds: {name:'DS licens',        daily:7.5},
 };
 
 /* Faste afsenderoplysninger (tillty). */
@@ -75,7 +75,7 @@ const PRODUCT_LICENSE = {
 const MODULES = [
   {id:'takeaway',name:'Takeaway',      desc:'Online takeaway-modul. Pr. forretning / md.', price:495, includes:['qr']},
   {id:'qr',      name:'QR bestilling', desc:'Bestilling via QR-koder. Inkluderet i Takeaway.', price:495},
-  {id:'bi',      name:'BI',            desc:'Business Intelligence. Pr. md.', price:300},
+  {id:'bi',      name:'BI',            desc:'Business Intelligence. Pr. md.', price:299},
 ];
 /* Opslag: modul-id -> id på det modul der inkluderer det (undgår dobbeltfakturering). */
 const INCLUDED_BY = {};

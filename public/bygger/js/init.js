@@ -5,10 +5,10 @@
 /* Felter der hører til tilbuddet — ikke til produktvalget. Nulstilles sammen
    med resten, så næste kunde ikke arver den forriges navn og tilbudsnummer. */
 const QUOTE_FIELDS = ['c_company','c_cvr','c_contact','c_email','c_phone',
-                      'c_addr','c_zip','c_city','c_number','c_date','c_valid',
+                      'c_addr','c_zip','c_city','c_number','c_date',
                       'c_seller','c_indloesning','c_intro','c_note'];
 
-/* Standardteksten i den uddybende beskrivelse. Den står i feltet fra start,
+/* Standardteksten i afslutningen. Den står i feltet fra start,
    så sælgeren kan rette i den — ikke som en usynlig fallback i dokumentet.
    Slettes den, står der ingenting; det er et bevidst valg fra sælgeren. */
 const STANDARD_NOTE =
@@ -17,11 +17,10 @@ const STANDARD_NOTE =
 Opsamling
 Jeg håber, at dette forslag matcher dine forventninger og strategiske mål for fremtiden. Jeg står naturligvis til rådighed for at gennemgå tilbuddet og besvare eventuelle spørgsmål, du måtte have.`;
 
-/* Tomt udgangspunkt: dagens dato, 30 dages gyldighed og standardteksten er
-   defaults, ikke kundedata. */
+/* Tomt udgangspunkt: dagens dato og standardteksten er defaults, ikke
+   kundedata. Gyldigheden er ikke et felt — et tilbud gælder altid 30 dage. */
 function applyDefaults(){
   document.getElementById('c_date').value=new Date().toISOString().slice(0,10);
-  document.getElementById('c_valid').value=30;
   document.getElementById('c_note').value=STANDARD_NOTE;
 }
 
@@ -34,7 +33,7 @@ function nulstilOpsaetning(){
 
 /* ---------- nulstil ---------- */
 function resetAll(){
-  if(!confirm('Nulstil hele tilbuddet — kundeoplysninger, muligheder og valg?')) return;
+  if(!confirm('Nulstil hele tilbuddet — kundeoplysninger, lokationer, muligheder og valg?')) return;
   QUOTE_FIELDS.forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
   applyDefaults();
   Object.keys(images).forEach(k=>delete images[k]);
@@ -51,7 +50,16 @@ function visOpstart(){
   const e=document.getElementById('opstart'); if(!e) return;
   document.getElementById('f_muligheder').checked=FORM.muligheder;
   document.getElementById('f_lokationer').checked=FORM.lokationer;
+  opdaterStartknap();
   e.style.display='flex';
+}
+/* Knappen siger, hvad man får: uden lokationer og muligheder er det et
+   simpelt tilbud. Er én af dem slået til, står der "Kom i gang". */
+function opdaterStartknap(){
+  const k=document.querySelector('#opstart .opstart-start'); if(!k) return;
+  const valgt=document.getElementById('f_muligheder').checked
+           || document.getElementById('f_lokationer').checked;
+  k.textContent = valgt ? 'Kom i gang' : 'Simpelt tilbud';
 }
 function skjulOpstart(){
   const e=document.getElementById('opstart'); if(e) e.style.display='none';

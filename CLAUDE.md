@@ -26,9 +26,13 @@ udledes af koden — og de fejl der allerede er begået én gang.
 - Alt brugervendt tekst er **dansk**. Kode og kommentarer også.
 - **"tillty" skrives altid med lille t** — også først i en sætning og i
   overskrifter i versaler.
+- **Fugaz One (`--font-display`) bruges kun til ordet "tillty"** — logoet.
+  Overskrifter bruger Nunito (`--font-heading`). Testen håndhæver det.
 - Tone of voice: du/I-form, fagnært ordvalg, verbum-forrest.
 - Selvbetjeningsenheden hedder en **selvbetjeningsterminal**. Aldrig "kiosk",
   "stander" eller "selvbetjeningsskærm".
+- **Kundens udstyr hedder "Kundens egne" i byggeren og "Jeres eget" i
+  tilbuddet.** Byggeren er sælgerens side, tilbuddet er kundens.
 - **Brandfontene er selvhostet i `fonts/`** (se `css/fonts.css`). Hent dem
   aldrig fra Google Fonts igen: sælgere sidder hos kunder uden net, og
   PDF'en faldt tilbage på systemfonte uden at nogen opdagede det. Testen
@@ -48,7 +52,7 @@ udledes af koden — og de fejl der allerede er begået én gang.
   nye linjer — ellers er det svært at se, hvad der rent faktisk købes.
 - **Kundens eget tilbehør koster også 0**, men udløser ingen licens. Det står
   under det egne udstyr, eller — hører det til et nyt produkt — som sin egen
-  linje nederst.
+  linje nederst. Eget løst tilbehør står nederst i tilbehørstabellen.
 - Mærkatet **"Ny"** sættes kun, når samme produkt også står som kundens eget.
   Uden den tvivl er mærkatet bare støj.
 
@@ -65,6 +69,8 @@ udledes af koden — og de fejl der allerede er begået én gang.
   og sælgeren skriver dem selv.
 - **En måned er altid 30 dage** ved omregning fra dagslicens til månedspris.
   Ingen indstilling, ingen "ca."-forbehold.
+- **Et tilbud gælder altid 30 dage** fra det er sendt (`GYLDIG_DAGE`). Der er
+  intet felt til det — det er fjernet med vilje.
 - Licenser afregnes **pr. dag i brug**. Det er et salgsargument og skal stå i
   dokumentet, ikke gemmes væk.
 
@@ -84,7 +90,7 @@ udledes af koden — og de fejl der allerede er begået én gang.
   **Tekstfelterne kalder `updateSoon()`**, som venter 90 ms. `update()` bygger
   hele preview'et forfra inkl. billedernes data-URL'er, og ét kald pr. anslag
   bliver tungt, så snart der er produktfotos i tilbuddet.
-- `resetAll()` rydder **alt** — også kundeoplysningerne. Dato, gyldighed og
+- `resetAll()` rydder **alt** — også kundeoplysningerne. Dato og
   standardteksten sættes tilbage til deres defaults, for de er ikke kundedata.
 - **Standardteksten (`STANDARD_NOTE` i `js/init.js`) står i feltet**, ikke som
   en fallback i dokumentet. Sælgeren skal kunne rette i den og slette den helt;
@@ -140,7 +146,11 @@ flere lokationer: parter → Hej X → indledning → Samlet prisoverblik (lokat
   muligheder. Man bliver stående i lokationen, mens man arbejder med dens
   muligheder.
 - **"Kopiér lokation" tager lokationens muligheder med; "+ Lokation" starter
-  tom.** "Kopiér mulighed" lægger kopien sidst, så de andre beholder nummer.
+  tom.**
+- **Lokationer og muligheder betjenes ens:** fanerne har nummer eller bogstav,
+  "+ …" og "⧉ Kopiér …" står i fanerækken, og navnefelt og "✕ Slet …" står
+  under den. Kopier lægges sidst begge steder, så de andre beholder nummer
+  eller bogstav. Testen holder de to paneler ens.
 - Prisoverblikket har **ingen samlet total**, når en lokation har flere
   muligheder — de er alternativer, og totalen afhænger af kundens valg.
 - Lokationens overskrift (`.lok-titel`) er ikke en blå bjælke — den er

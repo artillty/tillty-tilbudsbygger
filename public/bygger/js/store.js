@@ -174,10 +174,14 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   const felt = document.getElementById('c_number');
   // Nummeret tildeles af serveren; det er hele pointen med kartoteket, at det
   // ikke kan tastes frit.
-  if(felt){ felt.readOnly = true; felt.placeholder = 'tildeles ved gem'; }
+  if(felt) felt.readOnly = true;
 
-  await hentBilleder();
   const nr = new URLSearchParams(location.search).get('nr');
+  // Et nyt tilbud viser formvalget med det samme. Før ventede laget på
+  // billederne fra kartoteket — op til et par sekunder — så byggeren stod
+  // fremme, og laget sprang frem bagefter.
+  if(!nr){ visOpstart(); saetStatus('Nyt tilbud — nummer tildeles når du gemmer'); }
+  await hentBilleder();
   if(nr){ skjulOpstart(); await hentTilbud(nr); }
-  else { renderAll(); visOpstart(); saetStatus('Nyt tilbud — nummer tildeles når du gemmer'); }
+  else renderAll();   // så sælgerens egne billeder kommer med
 });

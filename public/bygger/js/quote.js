@@ -30,7 +30,9 @@ function tableExtras(d){
   b+='<table class="pv"><thead><tr><th>Ekstra tilbehør</th><th class="num">Antal</th><th class="num">Stk. pris</th><th class="num">I alt</th></tr></thead><tbody>';
   d.extras.forEach(a=>{ const line=a.qty*a.price;
     const aimg=a.img?`<img class="pv-img" src="${a.img}">`:'';
-    b+=`<tr><td><div class="pv-prod">${aimg}<div>${esc(a.name)}<span class="pv-d">${esc(a.desc)}</span></div></div></td><td class="num">${a.qty}</td><td class="num">${fmt(a.price)}</td><td class="num">${fmt(line)}</td></tr>`;
+    // Kundens eget løse tilbehør: mærket, dæmpet og 0 — som eget udstyr.
+    const mrk=a.eget?'<span class="pv-mrk eget">Jeres eget</span>':'';
+    b+=`<tr${a.eget?' class="eget"':''}><td><div class="pv-prod">${aimg}<div>${esc(a.name)}${mrk}<span class="pv-d">${esc(a.desc)}</span></div></div></td><td class="num">${a.qty}</td><td class="num">${a.eget?'—':fmt(a.price)}</td><td class="num">${fmt(line)}</td></tr>`;
   });
   b+='</tbody></table>';
   return b;
@@ -89,7 +91,7 @@ function blok(headHtml,bodyHtml,klasse){
 }
 
 /* Én indrammet specifikationsblok. Samme opbygning uanset om bjælken siger
-   "Specifikation" (én lokation) eller "① Lokation Aarhus C" (flere). */
+   "Specifikation" (én lokation) eller "1 Aarhus C" (flere). */
 function specBlock(headHtml,d,days,solo){
   return blok(headHtml, locSections(d,days), solo?'solo':'');
 }
@@ -136,7 +138,7 @@ function prisNoter(harLic,dagspris,harEget,days){
     // Har kunden eget udstyr med, skal det siges eksplicit at det også koster
     // licens. Ellers er regnestykket i licenstabellen ikke til at følge.
     const eget = harEget
-      ? ' Bemærk at jeres eget udstyr også kræver licens — det tæller med i licenserne ovenfor.'
+      ? ' Bemærk at jeres eget udstyr også kræver licens og tæller med i licenserne.'
       : '';
     b+='<div class="qp-assump">Licenser afregnes <b>pr. dag i brug</b>'
       +(dagspris?' — '+fmt(dagspris)+' pr. dag':'')
@@ -333,7 +335,7 @@ function lokationsOverblik(lok,days){
     b+=`<tr class="lo-lok"><td colspan="5">${navn}</td></tr>`;
     x.ml.forEach((m,j)=>{
       b+=`<tr class="lo-opt"><td><span class="lo-n bogstav">${bogstav(j)}</span>${esc(m.o.navn)}`
-        +(m.o.anbefalet?'<span class="lo-anb">Anbefalet</span>':'')+`</td>${tal(m.d)}</tr>`;
+        +(m.o.anbefalet?'<span class="lo-anb">Vi anbefaler</span>':'')+`</td>${tal(m.d)}</tr>`;
     });
   });
   return b+'</tbody></table>'

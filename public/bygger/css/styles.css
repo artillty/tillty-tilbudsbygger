@@ -102,7 +102,9 @@
   .opstart{position:fixed;inset:0;z-index:50;background:var(--navy);
     display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto}
   .opstart-kort{background:#fff;border-radius:var(--radius-lg);padding:30px;max-width:560px;width:100%}
-  .opstart-kort h1{font-family:var(--font-display);font-size:30px;margin:0;text-transform:lowercase;color:var(--navy)}
+  .gemt-tilbud #opstart{display:none}
+  /* Almindelig overskrift — Fugaz One er forbeholdt ordet "tillty". */
+  .opstart-kort h1{font-family:var(--font-heading);font-weight:800;font-size:24px;margin:0;color:var(--color-primary)}
   .opstart-sub{margin:2px 0 20px;font-size:13.5px;color:var(--muted);font-family:var(--font-heading)}
   .opstart-valg{display:flex;gap:12px;align-items:flex-start;border:1.5px solid var(--line);
     border-radius:var(--radius-md);padding:14px;margin-bottom:12px;cursor:pointer;
@@ -120,11 +122,11 @@
   .opstart-start:hover{background:var(--accent-hover)}
   .opstart-note{font-size:11.5px;color:var(--muted);text-align:center;margin:12px 0 0}
 
-  /* ---- mulighedsfaner ---- */
-  .loctab .opt-n{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;
+  /* ---- fanernes nummer (lokationer) og bogstav (muligheder) ---- */
+  .loctab .tab-n{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;
     border-radius:var(--radius-sm);background:var(--accent);color:#fff;font-family:var(--font-mono);
-    font-weight:700;font-size:10px;margin-right:6px}
-  .loctab.active .opt-n{background:#fff;color:var(--navy)}
+    font-weight:700;font-size:10px;margin-right:-1px}
+  .loctab.active .tab-n{background:#fff;color:var(--navy)}
   .loctab.anbefalet{box-shadow:inset 0 0 0 1.5px var(--accent)}
   .optbar{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
   .optbar label{display:flex;flex-direction:column;font-size:12px;font-weight:700;color:var(--muted);
@@ -155,8 +157,12 @@
   .cust-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .cust-grid label{display:flex;flex-direction:column;font-size:12px;font-weight:700;color:var(--muted);gap:4px;font-family:var(--font-heading)}
   .cust-grid input,.cust-grid textarea{border:1px solid var(--line);border-radius:7px;padding:8px 10px;font-size:14px;font-family:inherit}
-  .cust-grid textarea{grid-column:1/-1;resize:vertical;min-height:44px}
-  /* Den uddybende beskrivelse er forudfyldt med en standardtekst — feltet skal
+  .cust-grid textarea{resize:vertical;min-height:44px}
+  .cust-grid .bred{grid-column:1/-1}
+  /* Tilbuddets egne felter starter på en ny række, adskilt fra kundens — og
+     står parvis: tilbudsnr. og dato, sælger og indløsning. */
+  .cust-grid .ny-raekke{grid-column:1}
+  /* Afslutningen er forudfyldt med en standardtekst — feltet skal
      være højt nok til at man kan læse og rette den uden at rulle i en tekstboks
      inde i en rullende spalte. */
   #c_note{min-height:170px;line-height:1.5}
@@ -372,7 +378,8 @@
   /* Kundens eget udstyr er dæmpet her som i specifikationen — det købes ikke. */
   .sml-eget{color:var(--text-secondary)}
   table.pv.sml tfoot td{font-size:13.5px}
-  table.pv.sml tfoot tr + tr td{border-top:none;padding-top:0;font-size:12px;color:var(--color-primary-light)}  .hint{font-size:11.5px;color:var(--muted);margin:0 0 12px}
+  table.pv.sml tfoot tr + tr td{border-top:none;padding-top:0;font-size:12px;color:var(--color-primary-light)}
+  .hint{font-size:11.5px;color:var(--muted);margin:0 0 12px}
   input[type=file]{display:none}
 
   /* ===== Print / Gem som PDF ===== */
