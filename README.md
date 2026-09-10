@@ -119,7 +119,7 @@ fra `PRODUKTFOTO` eller `TILBEHOERFOTO`.
 Afslutningen er forudfyldt med tilltys standardtekst om genbrug af
 udstyr og afsnittet "Opsamling". Teksten står i **feltet**, ikke som en skjult
 fallback i dokumentet — sælgeren kan rette i den, skrive den om eller slette
-den helt. `Nulstil` sætter den tilbage.
+den helt. "+ Nyt tilbud" sætter den tilbage.
 
 Ordlyden ligger i `STANDARD_NOTE` i `js/init.js`.
 
@@ -175,7 +175,7 @@ curl -s https://api.dataforsyningen.dk/postnumre   # kilde: DAWA / Dataforsyning
 
 ```bash
 npm install
-npm test          # byggeren: 151 checks, ingen server eller database nødvendig
+npm test          # byggeren: 152 checks, ingen server eller database nødvendig
 
 TEST_DATABASE_URL="postgres://…" npm run test:api    # kartoteket: 38 checks
 ```
@@ -197,7 +197,7 @@ udstyr, muligheder og lokationer med muligheder — og tjekker blandt andet at:
 - intet indhold løber ud over sidefoden på nogen side
 - sidetal og gentaget sidehoved er på plads
 - siden ikke laver en eneste ekstern request
-- Nulstil rydder både kunde, lokationer og valg
+- "+ Nyt tilbud" rydder både kunde, lokationer og valg
 - sammenligningen og prisoverblikket stemmer med buddets tal
 - lokationer og muligheder har de samme knapper
 
@@ -216,7 +216,7 @@ give os kontrol over filnavnet uden at gå gennem `document.title`.
 
 ## Kendte begrænsninger
 
-- **Nulstil rydder alt** — kunde, lokationer og valg. Er tilbuddet gemt, ligger
+- **"+ Nyt tilbud" rydder alt** — kunde, lokationer og valg. Er tilbuddet gemt, ligger
   det stadig i kartoteket; er det ikke, er det væk.
 - Der er ingen automatisk gem undervejs. Lukker sælgeren fanen uden at trykke
   Gem, er det ugemte væk.

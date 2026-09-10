@@ -33,7 +33,10 @@ function nulstilOpsaetning(){
 
 /* ---------- nulstil ---------- */
 function resetAll(){
-  if(!confirm('Nulstil hele tilbuddet — kundeoplysninger, lokationer, muligheder og valg?')) return;
+  // Knappen hedder "+ Nyt tilbud", som i kartoteket. Med server ligger et gemt
+  // tilbud stadig i kartoteket; uden server er der intet kartotek at nævne.
+  const gemt = window.HAR_API ? ' Er det gemt, ligger det stadig i kartoteket.' : '';
+  if(!confirm('Start et nyt tilbud?\n\nDet nuværende ryddes — kundeoplysninger, lokationer, muligheder og valg.'+gemt)) return;
   QUOTE_FIELDS.forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
   applyDefaults();
   Object.keys(images).forEach(k=>delete images[k]);

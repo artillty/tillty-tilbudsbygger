@@ -28,7 +28,8 @@
     <!-- Kartoteksknapperne giver kun mening når der er en server bag.
          store.js viser dem; åbnet som fil bliver de skjult. -->
     <a class="btn-ghost" href="/" data-kraever-api style="display:none">← Kartotek</a>
-    <button class="btn-ghost" onclick="resetAll()">Nulstil</button>
+    <!-- Samme navn som i kartoteket: det er den samme handling. -->
+    <button class="btn-ghost" onclick="resetAll()">+ Nyt tilbud</button>
     <button class="btn-ghost" onclick="gemTilbud()" data-kraever-api style="display:none">Gem</button>
     <button class="btn-pdf" onclick="exportPDF()">⬇ Eksportér PDF</button>
   </div>

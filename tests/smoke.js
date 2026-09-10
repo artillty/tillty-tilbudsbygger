@@ -362,6 +362,8 @@ let STANDARD_START = null;
     await plus(p, 'm_sot', 2);
     await p.waitForTimeout(200);
 
+    check('knappen hedder "+ Nyt tilbud" som i kartoteket',
+      (await p.textContent('button[onclick="resetAll()"]')).trim() === '+ Nyt tilbud');
     await p.click('button[onclick="resetAll()"]');   // confirm accepteres i newPage
     await p.waitForTimeout(300);
 
