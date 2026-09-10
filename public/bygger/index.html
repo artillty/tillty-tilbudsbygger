@@ -43,9 +43,9 @@
       <input type="checkbox" id="f_muligheder">
       <span>
         <b>Flere muligheder</b>
-        <em>Kunden vælger mellem 2-4 opsætninger — fx genbrug af eget udstyr,
-        en balanceret løsning, eller alt nyt. Tilbuddet får en sammenligning
-        forrest og én side pr. mulighed.</em>
+        <em>Kunden vælger mellem flere opsætninger — fx genbrug af eget udstyr
+        eller alt nyt. Du starter med én og tilføjer selv flere, og tilbuddet
+        stiller dem op side om side.</em>
       </span>
     </label>
 
@@ -98,11 +98,25 @@
       </div>
     </div>
 
+    <!-- Lokationerne står over mulighederne: mulighederne hører til den valgte lokation. -->
+    <div class="panel" id="panel_lokationer">
+      <h2>Lokationer</h2>
+      <div class="body">
+        <p class="hint">Har kunden flere forretninger, kan hver lokation få sit eget setup. Vælg en fane for at redigere den lokation. “Kopiér lokation” tager også lokationens muligheder med — “+ Lokation” starter helt tom.</p>
+        <div class="loctabs" id="loctabs"></div>
+        <div class="locbar">
+          <label>Navn på den valgte lokation<input id="l_name" placeholder="fx Aarhus C" oninput="renameLoc(this.value)"></label>
+          <button class="minibtn" onclick="dupLoc()" title="Opret en ny lokation med samme setup og muligheder">⧉ Kopiér lokation</button>
+          <button class="minibtn danger" onclick="delLoc()" title="Slet den valgte lokation">✕ Slet</button>
+        </div>
+      </div>
+    </div>
+
     <div class="panel" id="panel_muligheder" style="display:none">
-      <h2>Muligheder</h2>
+      <h2>Muligheder<span class="h2-sub" id="opt_sub"></span></h2>
       <div class="body">
         <p class="hint">Kunden vælger én af dem. Byg den første færdig og brug
-        “Kopiér” til de næste — så skal du kun rette det, der er forskellen.</p>
+        “Kopiér mulighed” til de næste — så skal du kun rette det, der er forskellen.</p>
         <div class="loctabs" id="opttabs"></div>
         <div class="optbar">
           <label>Navn<input id="o_navn" placeholder="fx Genbrug" oninput="renameOpt(this.value)"></label>
@@ -112,28 +126,12 @@
             <span>Vi anbefaler denne</span>
           </label>
         </div>
-        <label class="opt-intro">Beskrivelse af muligheden — står øverst på dens side i tilbuddet
-          <textarea id="o_intro" placeholder="fx: I beholder de to 11&quot; tablets og LAN-printeren I allerede har…" oninput="setOptIntro(this.value)"></textarea>
-        </label>
         <div class="locbar" style="margin-top:10px">
-          <button class="minibtn" onclick="dupOpt()" title="Opret en ny mulighed med samme opsætning">⧉ Kopiér mulighed</button>
           <button class="minibtn danger" onclick="delOpt()" title="Slet den valgte mulighed">✕ Slet mulighed</button>
         </div>
       </div>
     </div>
 
-    <div class="panel" id="panel_lokationer">
-      <h2>Lokationer</h2>
-      <div class="body">
-        <p class="hint">Har kunden flere forretninger, kan hver lokation få sit eget setup. Vælg en fane for at redigere den lokation — tilbuddet samler dem til sidst med både delpriser og en samlet total.</p>
-        <div class="loctabs" id="loctabs"></div>
-        <div class="locbar">
-          <label>Navn på den valgte lokation<input id="l_name" placeholder="fx Aarhus C" oninput="renameLoc(this.value)"></label>
-          <button class="minibtn" onclick="dupLoc()" title="Opret en ny lokation med præcis samme setup">⧉ Kopiér lokation</button>
-          <button class="minibtn danger" onclick="delLoc()" title="Slet den valgte lokation">✕ Slet</button>
-        </div>
-      </div>
-    </div>
 
     <div class="panel fold">
       <h2>Hardware<span class="h2-sub" id="hw_sub"></span></h2>

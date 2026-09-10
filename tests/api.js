@@ -70,6 +70,20 @@ async function vent(url, ms = 90000) {
   throw new Error('next dev startede ikke i tide');
 }
 
+/* Et nyt tilbud starter med formvalget (muligheder / lokationer). Uden at
+   vælge dækker laget byggeren, og alle klik rammer laget i stedet. */
+async function aabnNyt(p) {
+  await p.goto(`${BASE}/bygger/index.html`);
+  await p.waitForTimeout(1200);
+  await forbiOpstart(p);
+}
+async function forbiOpstart(p) {
+  if (await p.isVisible('#opstart')) {
+    await p.click('#opstart .opstart-start');
+    await p.waitForTimeout(250);
+  }
+}
+
 (async () => {
   await ryd();
 
@@ -125,7 +139,7 @@ async function vent(url, ms = 90000) {
 
     console.log('\n# Nummertildeling');
     p.mangler = [];   // login-scenariet ovenfor gav med vilje en 401
-    await p.goto(BASE + '/bygger/index.html');
+    await aabnNyt(p);
     await p.waitForTimeout(1200);
     check('byggeren henter alle sine filer', p.mangler.length === 0, p.mangler.join(', ') || 'intet mangler');
     check('nummerfeltet kan ikke tastes i', await p.getAttribute('#c_number', 'readonly') !== null);
@@ -158,7 +172,7 @@ async function vent(url, ms = 90000) {
       await p.inputValue('#c_number'));
 
     /* ---------- 4: næste tilbud får 2026-002 ---------- */
-    await p.goto(BASE + '/bygger/index.html');
+    await aabnNyt(p);
     await p.waitForTimeout(1200);
     await p.fill('#c_company', 'Anden Kunde ApS');
     await p.fill('#c_seller', 'Rask');
@@ -195,6 +209,8 @@ async function vent(url, ms = 90000) {
     await p.waitForTimeout(1000);
     check('nulstil rydder nummeret', (await p.inputValue('#c_number')) === '',
       await p.inputValue('#c_number'));
+    // Nulstil sender tilbage til formvalget.
+    await forbiOpstart(p);
     await p.fill('#c_company', 'Efter Nulstil ApS');
     await p.click('[data-qwrap="m_lan"] button:last-child');
     await p.waitForTimeout(80);
@@ -229,7 +245,7 @@ async function vent(url, ms = 90000) {
 
     /* ---------- 7: eksport gemmer automatisk ---------- */
     console.log('\n# Eksport gemmer først');
-    await p.goto(BASE + '/bygger/index.html');
+    await aabnNyt(p);
     await p.waitForTimeout(1200);
     await p.fill('#c_company', 'Eksport Uden Gem ApS');
     await p.fill('#c_seller', 'Rask');
@@ -260,7 +276,7 @@ async function vent(url, ms = 90000) {
     check('tilbuddet er væk fra kartoteket',
       (await p.$$eval('table.kart tbody tr', (r) => r.length)) === 3);
 
-    await p.goto(BASE + '/bygger/index.html');
+    await aabnNyt(p);
     await p.waitForTimeout(1000);
     await p.fill('#c_company', 'Efter Sletning ApS');
     await p.click('[data-qwrap="m_lan"] button:last-child');

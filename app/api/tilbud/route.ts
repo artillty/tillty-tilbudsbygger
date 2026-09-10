@@ -36,7 +36,16 @@ type GemBody = {
 export async function POST(req: Request) {
   try {
     const body = (await req.json()) as GemBody;
-    if (!body?.data || !Array.isArray(body.data.lokationer)) {
+    // Byggeren sender `lokationer`, der hver har sine muligheder. Den korte
+    // mellemform havde `muligheder` øverst — begge skal kunne gemmes. En periode
+    // blev kun ét format godkendt, og så fejlede ethvert gem med 400.
+    const d = body?.data;
+    const gyldig = !!d && (
+      (Array.isArray(d.muligheder) && d.muligheder.length > 0 &&
+        d.muligheder.every((m) => Array.isArray(m?.lokationer))) ||
+      Array.isArray(d.lokationer)
+    );
+    if (!gyldig) {
       return NextResponse.json({ error: "Ugyldigt tilbud" }, { status: 400 });
     }
     await ensureTables();

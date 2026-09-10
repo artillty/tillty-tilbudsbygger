@@ -128,13 +128,25 @@ Ordlyden ligger i `STANDARD_NOTE` i `js/init.js`.
 Når et tilbud oprettes, vælges formen: **flere muligheder**, **flere
 lokationer**, begge dele eller ingen af delene. Byggeren viser kun de paneler,
 tilbuddet faktisk indeholder. Modellen er den samme uanset — et tilbud er
-altid en liste af muligheder, der hver har en liste af lokationer, og et
-almindeligt tilbud er 1×1.
+altid en liste af lokationer, der hver har sine muligheder, og et
+almindeligt tilbud er 1×1. Man starter med én mulighed og tilføjer selv flere,
+og "Kopiér lokation" tager lokationens muligheder med.
 
-Hvert hardwareprodukt har **to tællere**: *Nye* (det vi sælger) og *Jeres*
+Hvert hardwareprodukt og dets tilbehør har **to tællere**: *Nye* (det vi sælger) og *Jeres*
 (det kunden allerede har). Eget udstyr står i specifikationen til 0,- nederst
 i hardwaretabellen, men **tæller med i licenserne** — en tablet kunden ejer,
 kører stadig på systemet.
+
+Har en lokation mindst to muligheder med indhold, stilles de **op side om
+side** — udstyr, licenser, engangs- og månedspris, den anbefalede fremhævet —
+efterfulgt af mulighedernes specifikation. Har tilbuddet flere lokationer, står
+**prisoverblikket øverst** med mulighederne under hver lokation, og derefter
+kommer hver lokation for sig. Beskrivelsen og hilsen står til sidst, som i et
+almindeligt tilbud. "Kopiér mulighed" står i fanerækken: byg den første færdig,
+kopiér, og ret kun det der er forskellen.
+
+Sammenligningens rækker styres af `SAMMENLIGNING` i `js/data.js`. Kommer der et
+nyt produkt i kataloget, skal det også have en række dér — testen fejler ellers.
 
 ## Indløsning
 
@@ -163,9 +175,9 @@ curl -s https://api.dataforsyningen.dk/postnumre   # kilde: DAWA / Dataforsyning
 
 ```bash
 npm install
-npm test          # byggeren: 44 checks, ingen server eller database nødvendig
+npm test          # byggeren: 139 checks, ingen server eller database nødvendig
 
-TEST_DATABASE_URL="postgres://…" npm run test:api    # kartoteket: 33 checks
+TEST_DATABASE_URL="postgres://…" npm run test:api    # kartoteket: 38 checks
 ```
 
 `npm test` kan ikke køre samtidig med `npm run dev` — begge bruger `.next` i

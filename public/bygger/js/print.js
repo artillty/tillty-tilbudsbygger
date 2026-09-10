@@ -125,7 +125,12 @@ function buildPrintPages(){
         shell=document.createElement('div');
         shell.className=blk.className+' split';
         const hd=head.cloneNode(true);
-        if(cont){ const n=document.createElement('span'); n.className='lh-cont'; n.textContent='(fortsat)'; hd.appendChild(n); }
+        if(cont){
+          const n=document.createElement('span'); n.className='lh-cont'; n.textContent='(fortsat)';
+          // Lige efter navnet — i en mulighedsbjælke følger underrubrik og anbefaling.
+          const nm=hd.querySelector('.lh-name');
+          if(nm) nm.after(n); else hd.appendChild(n);
+        }
         const bd=document.createElement('div'); bd.className='loc-body';
         shell.appendChild(hd); shell.appendChild(bd);
         cur.push(shell);
@@ -155,6 +160,9 @@ function buildPrintPages(){
 
   [...host.children].forEach(node=>{
     const h=outerH(node);
+    // En lokationsoverskrift må ikke stå alene nederst på en side — der skal
+    // være plads til den og en god bid af det, der følger efter.
+    if(node.classList.contains('lok-titel')){ if(h+160>room()) newPage(); put(node.cloneNode(true),h); return; }
     if(node.classList.contains('loc-block')){ placeBlock(node); return; }
     if(node.tagName==='TABLE'){
       if(h<=room()) put(node.cloneNode(true),h); else placeTable(node);
@@ -228,5 +236,10 @@ async function exportPDF(){
   // BEMÆRK: ingen kort timeout her. En tidligere 1,5s-fallback tømte #print-root
   // mens printdialogen stadig var åben og gav tomme/halve PDF'er.
   setTimeout(done,120000);
+  // Printdialogen tager et øjebliksbillede af siden. Et produktfoto der ikke er
+  // afkodet endnu i de nybyggede printsider, kommer ud som et hul. Vent derfor
+  // på dem — men højst 3 sekunder, så et foto der fejler ikke blokerer eksporten.
+  const fotos=[...root.querySelectorAll('img')].map(i=>(i.decode?i.decode():Promise.resolve()).catch(()=>{}));
+  await Promise.race([Promise.all(fotos), new Promise(r=>setTimeout(r,3000))]);
   window.print();
 }

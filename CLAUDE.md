@@ -46,6 +46,9 @@ udledes af koden — og de fejl der allerede er begået én gang.
   tilbud let kommer til at love for lidt.
 - Eget udstyr står **nederst** i hardwaretabellen, ikke blandet ind mellem de
   nye linjer — ellers er det svært at se, hvad der rent faktisk købes.
+- **Kundens eget tilbehør koster også 0**, men udløser ingen licens. Det står
+  under det egne udstyr, eller — hører det til et nyt produkt — som sin egen
+  linje nederst.
 - Mærkatet **"Ny"** sættes kun, når samme produkt også står som kundens eget.
   Uden den tvivl er mærkatet bare støj.
 
@@ -109,6 +112,64 @@ Specifikation (indrammede blokke) → beskrivelse → hilsen
 - **Pladsholderbilleder må aldrig i PDF'en.** Byggeren viser grå
   canvas-pladsholdere som upload-knap; kun rigtige uploads ryger i dokumentet.
 
+- **Fotoet står til venstre for navn og beskrivelse** (`.pv-prod`), ikke over
+  beskrivelsen. Med beskrivelsen under fotoet blev hver række så høj, at en
+  mulighed løb over på en ekstra side med kun opsummeringen på.
+
+## Flere muligheder i dokumentet
+
+**Lokationen er øverst, og mulighederne hører til den.** Et tilbud er en liste
+af lokationer, der hver har sine muligheder, og det er mulighederne der bærer
+opsætningen (`qty`, `eget`). Et almindeligt tilbud er 1×1. Mulighederne er
+først prøvet øverst med lokationer under — det gav lokationer, der ikke passede
+sammen på tværs af muligheder. Vend det ikke om igen.
+
+Har en lokation mindst to muligheder med indhold, bliver dokumentet:
+
+```
+én lokation:      parter → Hej X → indledning → Sammenlign muligheder → forbehold
+                  → mulighedernes blokke → beskrivelse → hilsen
+flere lokationer: parter → Hej X → indledning → Samlet prisoverblik (lokation
+                  med mulighederne under, ingen total) → forbehold →
+                  for hver lokation: overskrift → Sammenlign muligheder →
+                  mulighedernes blokke → beskrivelse → hilsen
+```
+
+- **I byggeren fungerer muligheder som lokationer:** man starter med én og
+  tilføjer selv flere ("Mulighed A", "Mulighed B"). Ingen foruddefinerede
+  muligheder. Man bliver stående i lokationen, mens man arbejder med dens
+  muligheder.
+- **"Kopiér lokation" tager lokationens muligheder med; "+ Lokation" starter
+  tom.** "Kopiér mulighed" lægger kopien sidst, så de andre beholder nummer.
+- Prisoverblikket har **ingen samlet total**, når en lokation har flere
+  muligheder — de er alternativer, og totalen afhænger af kundens valg.
+- Lokationens overskrift (`.lok-titel`) er ikke en blå bjælke — den er
+  forbeholdt blokkene, ellers ligner lokationen endnu en mulighed.
+- **Muligheder har bogstaver (A, B, C), lokationer tal.** Med tal på begge blev
+  "1 Genbrug" og "1 Aarhus C" blandet sammen. Alle mærkater er firkantede.
+- **Muligheder har ingen egen beskrivelse** — kun navn, underrubrik og
+  anbefaling. Feltet er prøvet og fravalgt af tillty; testen holder det ude.
+
+- **Afslutning og hilsen står til sidst i hele tilbuddet**, efter sidste
+  mulighed — ikke på forsiden. Der er heller ingen "Sådan siger I ja"-boks;
+  begge dele er fravalgt af tillty.
+
+- **Mulighederne følger efter hinanden uden sideskift.** Pagineringen flytter
+  eller deler en mulighedsblok ligesom en lokationsblok. Tvungne sideskift pr.
+  mulighed er prøvet og fravalgt af tillty.
+- **Ingen pris i mulighedens bjælke.** Prisen står i blokkens opsummering og i
+  sammenligningen.
+- Kun muligheder **med indhold** kommer med, og de nummereres uden huller. Har
+  kun én indhold, er der intet at sammenligne, og det er et almindeligt tilbud.
+- **Sammenligningens rækker kommer fra `SAMMENLIGNING` i `js/data.js`.** Alle
+  produkter i kataloget skal have en række — ellers er de usynlige på forsiden,
+  og testen fejler. Software og licens bygges automatisk af `MODULES` og
+  `LICENSE_TYPES`.
+- Cellerne siger kun **ny/jeres**, når kunden har eget udstyr i rækken, og kun
+  **varianten** (11", LAN), når mulighederne bruger forskellige. Et ettal alene
+  udelades ved siden af et ord: "Ny WiFi", ikke "1 ny WiFi". Det er bevidst —
+  alt andet er støj i en oversigt, kunden skal læse i ét blik.
+
 ## Paginering (`js/print.js`) — læs før du retter
 
 Chrome kan ikke sætte sidetal via CSS (`@page`-margenbokse understøttes ikke),
@@ -134,6 +195,11 @@ datarække, så vi aldrig efterlader et tomt tabelhoved nederst på en side.
 Højder som blokkens margen og `.loc-body`'s bundpadding måles med
 `getComputedStyle` på originalen — de må ikke hårdkodes som tal i JS, for så
 skal de holdes i sync med stilarket i hånden.
+
+`exportPDF()` venter på, at fotoene i de nybyggede printsider er afkodet (højst
+3 sekunder), før `window.print()` kaldes. Printdialogen tager et øjebliksbillede,
+og et foto der ikke er klar, kan komme ud som et hul. Headless-testene rammer
+aldrig den timing — de kalder `buildPrintPages()` direkte.
 
 ## Tilbudsnumre
 
@@ -171,16 +237,22 @@ skal de holdes i sync med stilarket i hånden.
 
 ## Test
 
-`npm test` kører fire scenarier i headless Chromium mod `file://`, uden server
+`npm test` kører scenarierne i headless Chromium mod `file://`, uden server
 eller database. `npm run test:api` kræver en **separat** database og nægter at
 køre mod `DATABASE_URL` — den tømmer tabellerne og ville ellers brænde rigtige
 tilbudsnumre.
+
+**Ændrer du det, byggeren gemmer, så kør `npm run test:api`.** `npm test`
+kører uden server og opdager ikke, hvis API'et afviser det nye format. Det
+skete med muligheder: `POST /api/tilbud` godkendte kun `lokationer` i roden,
+så ethvert gem fejlede med 400. API'et tager nu imod begge formater — gamle
+tilbud skal stadig kunne gemmes igen.
 
 Testen fanger også tavse 404'er på lokale filer. Det er ikke teoretisk: en
 forkert relativ sti i `css/fonts.css` gjorde, at alle fontene 404'ede, og
 appen kørte i systemfonte uden at nogen opdagede det.
 
-`npm test` kører fire scenarier i headless Chromium. Kontroltallene i testen er
+`npm test` kører scenarierne i headless Chromium. Kontroltallene i testen er
 **håndregnede** — ændrer du priser i `js/data.js`, skal de rettes med, ellers
 er testen værdiløs.
 

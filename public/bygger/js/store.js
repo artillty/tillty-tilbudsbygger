@@ -14,14 +14,14 @@ let aktivtNr = null;          // tilbuddets nummer, når det først er tildelt
 const synkedeBilleder = {};   // varenøgle -> dataURL, som allerede ligger på serveren
 
 /* ---------- totaler til kartotekslisten ---------- */
-/* Totalerne i kartotekslisten. Har tilbuddet flere muligheder, kan de ikke
-   lægges sammen — kunden vælger én. Vi viser den anbefalede, ellers den
-   første, så listen har ét tal at sortere og scanne på. */
+/* Totalerne i kartotekslisten. Mulighederne i en lokation er alternativer og
+   kan ikke lægges sammen — kunden vælger én. For hver lokation tæller den
+   anbefalede, ellers den første, så listen har ét tal at sortere og scanne på. */
 function samlTotaler(){
-  const o = OPTIONS.find(x=>x.anbefalet) || OPTIONS[0];
   const s = {engangs:0, licDag:0, modMd:0};
-  o.lokationer.forEach(l=>{
-    const d = collectFor(l);
+  LOCS.forEach(l=>{
+    const o = l.muligheder.find(x=>x.anbefalet) || l.muligheder[0];
+    const d = collectFor(o);
     s.engangs += d.oneOff; s.licDag += d.licDaily; s.modMd += d.modMonthly;
   });
   return s;
@@ -49,9 +49,12 @@ async function gemTilbud(status){
       data: {
         felter,
         form: FORM,
-        muligheder: OPTIONS.map(o=>({
-          id:o.id, navn:o.navn, tagline:o.tagline, anbefalet:o.anbefalet, intro:o.intro,
-          lokationer: o.lokationer.map(l=>({id:l.id, name:l.name, qty:l.qty, eget:l.eget})),
+        lokationer: LOCS.map(l=>({
+          id:l.id, name:l.name,
+          muligheder: l.muligheder.map(o=>({
+            id:o.id, navn:o.navn, tagline:o.tagline, anbefalet:o.anbefalet,
+            qty:o.qty, eget:o.eget,
+          })),
         })),
       },
       totaler: samlTotaler(),
@@ -107,34 +110,35 @@ async function hentTilbud(nr){
   saetStatus('Åbnet ' + tilbud.nr);
 }
 
-/* Læser opsætningen fra et gemt tilbud.
-   Tilbud gemt før muligheder fandtes har `lokationer` i roden og ingen `form`
-   — de læses som ét tilbud med én mulighed, så gamle tilbud åbner uændret. */
+/* Læser opsætningen fra et gemt tilbud. Tre formater:
+   - nu: `lokationer`, der hver har `muligheder` med opsætningen.
+   - fra før muligheder fandtes: `lokationer` med `qty` direkte på lokationen
+     og ingen `form` — hver lokation får én mulighed, så gamle tilbud åbner uændret.
+   - den korte mellemform (sep. 2026) med `muligheder` øverst og lokationer
+     under: vendes om, så lokation nr. i samler mulighedernes lokation nr. i.
+   Id'erne er kun interne og laves forfra. */
 function laesOpsaetning(d){
   FORM = Object.assign({muligheder:false, lokationer:false}, d.form || {});
-  const raa = d.muligheder && d.muligheder.length
-    ? d.muligheder
-    : [{navn:'', tagline:'', anbefalet:false, intro:'', lokationer: d.lokationer || []}];
-
-  OPTIONS = raa.map((o,i)=>({
-    id: o.id || ('opt'+(i+1)),
-    navn: o.navn || ('Mulighed '+(i+1)),
-    tagline: o.tagline || '',
-    anbefalet: !!o.anbefalet,
-    intro: o.intro || '',
-    lokationer: (o.lokationer||[]).map(l=>({
-      id:l.id, name:l.name,
-      qty:Object.assign({}, l.qty),
-      eget:Object.assign({}, l.eget),   // mangler i tilbud gemt før genbrug fandtes
-    })),
-  }));
-  OPTIONS.forEach(o=>{ if(!o.lokationer.length) o.lokationer=[newLoc()]; });
-  if(!OPTIONS.length) OPTIONS=[newOpt()];
-
-  // Nye id'er må ikke kollidere med dem der allerede er i brug.
-  const tal = (v,p)=>parseInt(String(v||'').replace(p,'')) || 0;
-  optSeq = OPTIONS.reduce((m,o)=>Math.max(m, tal(o.id,'opt')), 0);
-  locSeq = OPTIONS.reduce((m,o)=>o.lokationer.reduce((n,l)=>Math.max(n, tal(l.id,'loc')), m), 0);
+  let raa;
+  if(Array.isArray(d.muligheder) && d.muligheder.length){
+    const n = Math.max(1, ...d.muligheder.map(o=>(o.lokationer||[]).length));
+    raa = Array.from({length:n}, (_,i)=>{
+      const med = d.muligheder.filter(o=>(o.lokationer||[])[i]);
+      return {name: med.length ? med[0].lokationer[i].name : '',
+        muligheder: med.map(o=>Object.assign({}, o, {qty:o.lokationer[i].qty, eget:o.lokationer[i].eget}))};
+    });
+  } else {
+    raa = (d.lokationer||[]).map(l=>({name:l.name,
+      muligheder: Array.isArray(l.muligheder) ? l.muligheder : [{qty:l.qty, eget:l.eget}]}));
+  }
+  locSeq = 0; optSeq = 0;
+  LOCS = raa.map(l=>{
+    const loc = newLoc(l.name);
+    const ms = (l.muligheder||[]).map((o,j)=>Object.assign(newOpt(j+1,o), {anbefalet:!!o.anbefalet}));
+    if(ms.length) loc.muligheder = ms;
+    return loc;
+  });
+  if(!LOCS.length) LOCS=[newLoc()];
 }
 
 /* ---------- produktbilleder ----------

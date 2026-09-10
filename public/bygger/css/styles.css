@@ -122,7 +122,7 @@
 
   /* ---- mulighedsfaner ---- */
   .loctab .opt-n{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;
-    border-radius:var(--radius-full);background:var(--accent);color:#fff;font-family:var(--font-mono);
+    border-radius:var(--radius-sm);background:var(--accent);color:#fff;font-family:var(--font-mono);
     font-weight:700;font-size:10px;margin-right:6px}
   .loctab.active .opt-n{background:#fff;color:var(--navy)}
   .loctab.anbefalet{box-shadow:inset 0 0 0 1.5px var(--accent)}
@@ -134,10 +134,6 @@
   .optbar .opt-anb{flex-direction:row;align-items:center;gap:8px;flex:0 0 auto;min-width:0;
     color:var(--navy);padding-bottom:9px;cursor:pointer;white-space:nowrap}
   .optbar .opt-anb input{width:17px;height:17px;accent-color:var(--accent)}
-  .opt-intro{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;
-    color:var(--muted);font-family:var(--font-heading);margin-top:12px}
-  .opt-intro textarea{border:1px solid var(--line);border-radius:7px;padding:8px 10px;
-    font-size:14px;font-family:inherit;resize:vertical;min-height:64px;line-height:1.5}
 
   /* ---- lokations-faner ---- */
   .loctabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
@@ -253,8 +249,14 @@
   table.pv tfoot td{font-weight:800;border-top:2px solid var(--navy);border-bottom:none;font-family:var(--font-heading)}
   table.pv tfoot td.num{font-family:var(--font-mono)}
   .pv-img{width:34px;height:34px;object-fit:contain;border-radius:5px;border:1px solid var(--line);background:#fff;vertical-align:middle;margin-right:8px}
+  /* Fotoet står til venstre for navn og beskrivelse, ikke over beskrivelsen.
+     Så er en række ikke højere end fotoet, og en mulighed kan stå på én side. */
+  .pv-prod{display:flex;align-items:flex-start;gap:8px}
+  .pv-prod>*{flex-shrink:0}
+  .pv-prod>div{flex-shrink:1;min-width:0}
+  .pv-prod .pv-img{margin-right:0}
   /* ---- nummer-chip: binder oversigtstabellen sammen med blokkene bagi ---- */
-  .lo-n{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:var(--radius-full);
+  .lo-n{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:var(--radius-sm);
         background:var(--accent);color:#fff;font-family:var(--font-mono);font-weight:700;font-size:10px;
         margin-right:7px;vertical-align:1px}
 
@@ -302,8 +304,16 @@
      Ligger de kun i @media print, måler vi på skærmens mål og printer med
      andre — og så flyder indholdet ud over sidefoden. */
   .pg-measure table.pv th, .pg-measure table.pv td,
-  .pg table.pv th, .pg table.pv td{ padding:5px 8px }
-  .pg-measure table.pv, .pg table.pv{ margin-top:12px }
+  .pg table.pv th, .pg table.pv td{ padding:4px 8px }
+  .pg-measure table.pv td .pv-d, .pg table.pv td .pv-d{ margin-top:0 }
+  .pg-measure table.pv, .pg table.pv{ margin-top:10px }
+  /* Fast linjehøjde i tabellerne. Browserens "normal" er ~1,36 for Open Sans
+     og gør hver produktrække 5 px højere — nok til at en mulighed med fuld
+     opsætning ikke kan stå på én side. */
+  .pg-measure table.pv td, .pg table.pv td{ line-height:1.25 }
+  .pg-measure .loc-sub div:not(.ls-strong), .pg .loc-sub div:not(.ls-strong){ padding:1px 0 }
+  /* Sammenligningen er en oversigt — den skal kunne læses i ét blik, ikke fylde siden. */
+  .pg-measure table.pv.sml tbody td, .pg table.pv.sml tbody td{ padding-top:3px;padding-bottom:3px }
   .pg-measure .qp-parties, .pg .qp-parties{ margin-bottom:10px }
   .pg-measure .qp-intro, .pg .qp-intro{ margin:4px 0 9px }
   .pg-measure .qp-greet, .pg .qp-greet{ margin:14px 0 8px }
@@ -317,7 +327,7 @@
   /* Accentfarvet bjælke — kan ikke forveksles med tabellernes navy-headere. */
   .loc-head{display:flex;align-items:center;gap:9px;padding:9px 13px;background:var(--accent);color:#fff}
   .loc-head .lh-n{background:#fff;color:var(--accent);font-family:var(--font-mono);font-weight:700;font-size:11px;
-                  width:21px;height:21px;border-radius:var(--radius-full);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+                  width:21px;height:21px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0}
   .loc-head .lh-name{font-family:var(--font-heading);font-size:14px;font-weight:800;overflow-wrap:anywhere}
   /* Delpriserne lukker blokken som en fodbjælke. */
   .loc-sub{background:var(--bg-sunken);border-top:1px solid var(--line);margin:13px -13px -13px;padding:9px 13px;font-size:12px}
@@ -325,7 +335,44 @@
   .loc-sub div span:last-child{font-family:var(--font-mono)}
   .loc-sub .ls-strong{border-top:1px solid var(--line);margin-top:4px;padding-top:5px;color:var(--navy);font-size:13px}
   table.loc-overview tbody td:first-child{font-family:var(--font-heading);font-weight:700}
-  .hint{font-size:11.5px;color:var(--muted);margin:0 0 12px}
+
+  /* ---- flere muligheder ---- */
+  .opt-block .loc-head{flex-wrap:wrap;row-gap:4px}
+  .loc-head .lh-tag{font-family:var(--font-heading);font-size:10px;font-weight:800;letter-spacing:.6px;
+    text-transform:uppercase;opacity:.85}
+  .loc-head .lh-anb{background:#fff;color:var(--color-accent);border-radius:var(--radius-full);padding:2px 9px;
+    font-family:var(--font-heading);font-size:9.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase}
+  /* Lokationens overskrift, når den har flere muligheder. Den blå bjælke er
+     forbeholdt blokkene, så lokationen står som en overskrift over dem. */
+  .lok-titel{display:flex;align-items:center;margin:30px 0 0;padding-bottom:6px;
+    border-bottom:2px solid var(--color-primary);font-family:var(--font-heading);font-weight:800;
+    font-size:17px;color:var(--color-primary)}
+  .lok-titel .lo-n{width:21px;height:21px;font-size:11px;margin-right:9px}
+  /* Prisoverblik med muligheder: lokationen som mellemrubrik, mulighederne under. */
+  table.loc-overview tr.lo-lok td{background:var(--bg-sunken);font-family:var(--font-heading);font-weight:800;
+    padding-top:5px;padding-bottom:5px}
+  table.loc-overview tbody tr.lo-opt td:first-child{padding-left:30px;font-weight:600}
+  .lo-anb{display:inline-block;margin-left:6px;padding:0 6px;border-radius:var(--radius-full);
+    background:var(--color-accent);color:#fff;font-size:9px;font-weight:800;letter-spacing:.4px;
+    text-transform:uppercase;vertical-align:1px}
+  /* Sammenligningen: én kolonne pr. mulighed, den anbefalede fremhævet hele vejen ned. */
+  table.pv.sml th.sml-opt, table.pv.sml td.num{text-align:center}
+  table.pv.sml th:first-child{width:34%;vertical-align:middle}
+  table.pv.sml th.sml-opt{vertical-align:top}
+  .sml-navn{display:flex;align-items:center;justify-content:center;font-size:12px;white-space:nowrap}
+  .sml-tag{display:inline-block;margin-top:4px;padding:1px 8px;border-radius:var(--radius-full);
+    background:rgba(255,255,255,.14);font-size:9px;font-weight:700;letter-spacing:.4px}
+  table.pv.sml th.anb{background:var(--color-accent)}
+  table.pv.sml th.anb .lo-n, table.pv.sml th.anb .sml-tag{background:#fff;color:var(--color-accent)}
+  table.pv.sml td.anb{background:#eef6ff}
+  table.pv.sml tbody td{font-size:12px;vertical-align:middle}
+  table.pv.sml tr.sml-kat td{background:var(--bg-sunken);color:var(--color-primary);font-family:var(--font-heading);
+    font-size:9.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding-top:4px;padding-bottom:4px}
+  table.pv.sml td.sml-nej{color:#b3bccd}
+  /* Kundens eget udstyr er dæmpet her som i specifikationen — det købes ikke. */
+  .sml-eget{color:var(--text-secondary)}
+  table.pv.sml tfoot td{font-size:13.5px}
+  table.pv.sml tfoot tr + tr td{border-top:none;padding-top:0;font-size:12px;color:var(--color-primary-light)}  .hint{font-size:11.5px;color:var(--muted);margin:0 0 12px}
   input[type=file]{display:none}
 
   /* ===== Print / Gem som PDF ===== */

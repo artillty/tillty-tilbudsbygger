@@ -70,10 +70,19 @@ export function ensureTables() {
   return ready;
 }
 
-/** Det byggeren sender op og får tilbage. `qty` er lokationens antal pr. varenøgle. */
+/** Opsætningen: `qty` er det vi sælger, `eget` det kunden allerede har — pr. varenøgle. */
+type Opsaetning = { qty?: Record<string, number>; eget?: Record<string, number> };
+type MulighedInfo = { id: string; navn: string; tagline: string; anbefalet: boolean };
+
+/** Det byggeren sender op og får tilbage. */
 export type TilbudData = {
   felter: Record<string, string>;
-  lokationer: { id: string; name: string; qty: Record<string, number> }[];
+  form?: { muligheder: boolean; lokationer: boolean };
+  /** Et tilbud er en liste af lokationer, der hver har sine muligheder.
+   *  Tilbud fra før muligheder fandtes har opsætningen direkte på lokationen. */
+  lokationer?: (Opsaetning & { id: string; name: string; muligheder?: (MulighedInfo & Opsaetning)[] })[];
+  /** Kun i den korte mellemform (sep. 2026), hvor mulighederne lå øverst. */
+  muligheder?: (MulighedInfo & { lokationer: (Opsaetning & { id: string; name: string })[] })[];
 };
 
 export type TilbudRow = {

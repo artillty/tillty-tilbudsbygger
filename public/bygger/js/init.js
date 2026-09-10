@@ -25,11 +25,11 @@ function applyDefaults(){
   document.getElementById('c_note').value=STANDARD_NOTE;
 }
 
-/* Tomt udgangspunkt for selve opsætningen — én mulighed med én lokation.
+/* Tomt udgangspunkt for selve opsætningen — én lokation med én mulighed.
    Formen (FORM) røres ikke her; den vælges i opstartslaget. */
 function nulstilOpsaetning(){
   locSeq=0; optSeq=0;
-  OPTIONS=[newOpt()]; optIdx=0; activeIdx=0;
+  LOCS=[newLoc()]; activeIdx=0; optIdx=0;
 }
 
 /* ---------- nulstil ---------- */
@@ -59,10 +59,9 @@ function skjulOpstart(){
 function startTilbud(){
   FORM.muligheder=document.getElementById('f_muligheder').checked;
   FORM.lokationer=document.getElementById('f_lokationer').checked;
-  // To muligheder fra start — ellers er der ingenting at sammenligne, og
-  // sælgeren skal alligevel trykke "+ Mulighed" med det samme.
-  if(FORM.muligheder && OPTIONS.length===1) OPTIONS.push(newOpt());
-  optIdx=0; activeIdx=0;
+  // Man starter med én lokation og én mulighed og tilføjer selv flere, som
+  // med lokationer. Ingen foruddefinerede muligheder.
+  activeIdx=0; optIdx=0;
   skjulOpstart();
   renderAll();
 }

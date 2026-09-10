@@ -81,6 +81,34 @@ const MODULES = [
 const INCLUDED_BY = {};
 MODULES.forEach(m=>(m.includes||[]).forEach(inc=>{INCLUDED_BY[inc]=m.id;}));
 
+/* ---------- sammenligning af muligheder ----------
+   Forsiden i et tilbud med flere muligheder stiller dem op side om side.
+   Produkter der løser samme opgave, deler række — fx er alle fire kasseskærme
+   "Bemandede kassepladser". Teksten ved hvert produkt er varianten, der skiller
+   dem ad, og den vises kun når mulighederne bruger forskellige.
+
+   ALLE produkter i CATALOG skal stå her — ellers er de usynlige på forsiden
+   (testen fanger det). Tilbehør er valgfrit: kun det der gør en forskel for
+   kunden, har en række. Montering som gulvstander og VESA-arm står kun i
+   specifikationen. Software og licens bygges automatisk af MODULES og
+   LICENSE_TYPES. Rækker uden indhold i nogen mulighed udelades. */
+const SAMMENLIGNING = [
+  {kategori:'Kasse og bestilling', raekker:[
+    {navn:'Selvbetjeningsterminal',            produkter:{sot:''}},
+    {navn:'Bemandede kassepladser',            produkter:{pos154:'15.4"', tab87:'8.7"', tab11:'11"', tab14:'14"'}},
+    {navn:'Holder eller base til kassetablet', tilbehoer:['desktop','multi','tsfixed','tsstand']},
+    {navn:'Pengeskuffe',                       tilbehoer:['drawer']},
+  ]},
+  {kategori:'Køkken', raekker:[
+    {navn:'Køkkenskærm (KDS)',                 produkter:{kds185:'18.5"', kds22:'22"'}},
+    {navn:'Bonprinter',                        produkter:{lan:'LAN', wifi:'WiFi'}},
+  ]},
+  {kategori:'Betaling', raekker:[
+    {navn:'Stationær betalingsterminal',       produkter:{termstat:''}},
+    {navn:'Mobil betalingsterminal',           produkter:{termmobil:''}},
+  ]},
+];
+
 /* ---------- officielle produktfotos ----------
    tilltys egne billeder, som følger med værktøjet. De vises i byggeren i
    stedet for de grå pladsholdere OG kommer med i kundens PDF — modsat

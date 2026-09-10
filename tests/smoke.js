@@ -70,6 +70,7 @@ async function paginate(p) {
       feet: pages.map(x => x.querySelector('.qf-page').textContent),
       bands: pages.map(x => x.querySelector('.qp-logo').textContent),
       contact: pages.every(x => /sales@tillty\.com/.test(x.querySelector('.qp-foot').textContent)),
+      hilsenSidst: !!pages[pages.length - 1].querySelector('.qp-greet'),
       bad,
     };
   });
@@ -382,17 +383,18 @@ let STANDARD_START = null;
     const p = await newPage(browser, { muligheder: true });
     check('mulighedspanelet vises', await p.isVisible('#panel_muligheder'));
     check('lokationspanelet er stadig skjult', !(await p.isVisible('#panel_lokationer')));
-    // To muligheder fra start — ellers er der ingenting at sammenligne.
-    check('der oprettes to muligheder med det samme',
-      (await p.$$eval('#opttabs .loctab:not(.loctab-add)', (e) => e.length)) === 2);
-    check('første mulighed hedder Genbrug', (await p.inputValue('#o_navn')) === 'Genbrug');
+    // Man starter med én og tilføjer selv flere — som med lokationer.
+    check('der oprettes kun én mulighed fra start',
+      (await p.$$eval('#opttabs .loctab:not(.loctab-add)', (e) => e.length)) === 1);
+    check('første mulighed hedder Mulighed A', (await p.inputValue('#o_navn')) === 'Mulighed A');
 
     // Valgene skal høre til hver sin mulighed.
     await p.click('[data-qwrap="m_sot"] button:last-child');
     await p.waitForTimeout(120);
-    await p.click('#opttabs .loctab:nth-child(2)');
+    await p.click('#opttabs .loctab-add');
     await p.waitForTimeout(250);
-    check('mulighed 2 starter tom', (await p.inputValue('#qty_m_sot')) === '0');
+    check('en ny mulighed starter tom', (await p.inputValue('#qty_m_sot')) === '0');
+    check('den nye mulighed hedder Mulighed B', (await p.inputValue('#o_navn')) === 'Mulighed B');
     await p.click('[data-qwrap="m_tab11"] button:last-child');
     await p.waitForTimeout(120);
     await p.click('#opttabs .loctab:nth-child(1)');
@@ -410,27 +412,45 @@ let STANDARD_START = null;
     check('kun én mulighed kan være anbefalet',
       (await p.$$eval('#opttabs .loctab.anbefalet', (e) => e.length)) === 1);
 
-    // Kopiér tager hele opsætningen med.
-    await p.click('button[onclick="dupOpt()"]');
+    // Kopiér tager hele opsætningen med og lægges sidst.
+    await p.click('#opttabs .loctab-kopi');
     await p.waitForTimeout(300);
     check('kopi arvede opsætningen', (await p.inputValue('#qty_m_tab11')) === '1');
     check('kopien er en ny mulighed',
       (await p.$$eval('#opttabs .loctab:not(.loctab-add)', (e) => e.length)) === 3);
+    check('kopien lægges sidst', /^C/.test(await p.$eval('#opttabs .loctab.active', (e) => e.textContent)));
     await p.close();
   }
   {
     const p = await newPage(browser, { muligheder: true, lokationer: true });
     check('begge paneler vises når begge er valgt',
       (await p.isVisible('#panel_muligheder')) && (await p.isVisible('#panel_lokationer')));
-    // Lokationer hører til den enkelte mulighed.
-    await p.click('#loctabs .loctab-add');
-    await p.waitForTimeout(250);
-    check('mulighed 1 har to lokationer',
-      (await p.$$eval('#loctabs .loctab:not(.loctab-add)', (e) => e.length)) === 2);
-    await p.click('#opttabs .loctab:nth-child(2)');
-    await p.waitForTimeout(300);
-    check('mulighed 2 har sin egen ene lokation',
-      (await p.$$eval('#loctabs .loctab:not(.loctab-add)', (e) => e.length)) === 1);
+    check('lokationerne står over mulighederne', await p.evaluate(() => {
+      const l = document.getElementById('panel_lokationer'), m = document.getElementById('panel_muligheder');
+      return !!(l.compareDocumentPosition(m) & Node.DOCUMENT_POSITION_FOLLOWING);
+    }));
+    const antalMuligheder = () => p.$$eval('#opttabs .loctab:not(.loctab-add)', (e) => e.length);
+
+    // Mulighederne hører til lokationen, og man bliver stående i den.
+    await p.fill('#l_name', 'Aarhus C');
+    await p.click('[data-qwrap="m_sot"] button:last-child'); await p.waitForTimeout(120);
+    await p.click('#opttabs .loctab-add'); await p.waitForTimeout(250);
+    await p.click('[data-qwrap="m_tab11"] button:last-child'); await p.waitForTimeout(120);
+    check('lokationen har to muligheder', (await antalMuligheder()) === 2);
+    check('man bliver stående i lokationen, når man laver muligheder',
+      (await p.inputValue('#l_name')) === 'Aarhus C');
+
+    // En ny lokation starter helt tom.
+    await p.click('#loctabs .loctab-add'); await p.waitForTimeout(250);
+    check('en ny lokation starter med én tom mulighed',
+      (await antalMuligheder()) === 1 && (await p.inputValue('#qty_m_sot')) === '0');
+
+    // Kopiér lokation tager mulighederne med.
+    await p.click('#loctabs .loctab:nth-child(1)'); await p.waitForTimeout(250);
+    await p.click('button.minibtn[onclick="dupLoc()"]'); await p.waitForTimeout(300);
+    check('kopiér lokation tager mulighederne med', (await antalMuligheder()) === 2);
+    await p.click('#opttabs .loctab:nth-child(2)'); await p.waitForTimeout(250);
+    check('... med deres opsætning', (await p.inputValue('#qty_m_tab11')) === '1');
     await p.close();
   }
 
@@ -499,7 +519,214 @@ let STANDARD_START = null;
     });
     check('den ekstra tablet tæller også med', posQty2 === '4', posQty2);
 
+    // Kundens eget tilbehør: gratis, udløser ingen licens, og står under det egne udstyr.
+    await plus(p, 'eget_a_tab11_desktop', 2);
+    await p.waitForTimeout(400);
+    const row2 = await p.$$eval('#quote-doc table.loc-overview tfoot td',
+      (td) => td.map((t) => t.textContent.trim()));
+    check('eget tilbehør koster ingenting', kr(row2[1]) === HW + 2995, `${row2[1]} vs ${HW + 2995}`);
+    check('eget tilbehør udløser ingen licens', kr(row2[2]) === 4 * 15 + 7.5, row2[2]);
+    check('eget tilbehør står under det egne udstyr', await p.$eval('#quote-doc', (e) => {
+      const r = [...e.querySelectorAll('tr.eget')].map((x) => x.cells[0].textContent.replace(/\s+/g, ' ').trim());
+      const i = r.findIndex((t) => /^11" POS Tablet/.test(t));
+      return i > -1 && /Desktop Base/.test(r[i + 1] || '') && /Jeres eget/.test(r[i + 1] || '');
+    }));
+
     const pg = await paginate(p);
+    check('intet indhold i sidefoden', pg.bad.length === 0, pg.bad.join('; '));
+    await p.close();
+  }
+
+  /* ---------- 7: muligheder i dokumentet ---------- */
+  console.log('\n# Muligheder i dokumentet');
+  {
+    const p = await newPage(browser, { muligheder: true });
+    await p.fill('#c_company', 'Restaurant Havnen ApS');
+    await p.fill('#c_contact', 'Line Mikkelsen');
+    await p.fill('#c_seller', 'Rask');
+    const saet = async (k, n) => { await p.fill(`#qty_${k}`, String(n)); await p.waitForTimeout(40); };
+
+    // Buddets tre muligheder. Fælles for dem alle: SOT med gulvstander og
+    // terminalbeslag, stationær terminal og Takeaway.
+    const faelles = async () => {
+      await saet('m_sot', 1); await saet('a_sot_floor', 1); await saet('a_sot_term_holder', 1);
+      await saet('m_termstat', 1);
+      await saet('s_takeaway', 1);
+    };
+    // 1 Genbrug: kunden beholder to 11" tablets og LAN-printeren.
+    await p.fill('#o_navn', 'Genbrug');
+    await faelles();
+    await saet('m_kds185', 1); await saet('a_kds185_vesa', 1);
+    await saet('eget_m_tab11', 2); await saet('eget_m_lan', 1);
+
+    // 2 Opgradering: som Genbrug plus én ny tablet med base. Anbefalet.
+    await p.click('#opttabs .loctab-add'); await p.waitForTimeout(250);
+    await p.fill('#o_navn', 'Opgradering');
+    await faelles();
+    await saet('m_kds185', 1); await saet('a_kds185_vesa', 1);
+    await saet('eget_m_tab11', 2); await saet('eget_m_lan', 1);
+    await saet('m_tab11', 1); await saet('a_tab11_desktop', 1);
+    await p.check('#o_anbefalet');
+
+    // 3 Alt nyt.
+    await p.click('#opttabs .loctab-add'); await p.waitForTimeout(250);
+    await p.fill('#o_navn', 'Alt nyt');
+    await faelles();
+    await saet('m_tab14', 3); await saet('a_tab14_multi', 3);
+    await saet('m_kds22', 1); await saet('a_kds22_vesa', 1);
+    await saet('m_termmobil', 1); await saet('a_termmobil_cradle', 1);
+    await saet('m_wifi', 1); await saet('s_bi', 1);
+    await p.waitForTimeout(400);
+
+    check('sammenligningen står i dokumentet', !!(await p.$('#quote-doc table.sml')));
+    const kol = await p.$$eval('#quote-doc table.sml th.sml-opt', (th) => th.map((t) => t.textContent));
+    check('én kolonne pr. mulighed', kol.length === 3, kol.join(' | '));
+
+    // Kontroltallene er buddets egne — og håndregnet ud fra js/data.js:
+    // 1: 13995+2495+495+1995+5995+995 = 25.970; (3×15+7,5)×30+495 = 2.070
+    // 2: 25.970+2995+995 = 29.960;               (4×15+7,5)×30+495 = 2.520
+    // 3: 48.825;                                  (5×15+7,5)×30+495+300 = 3.270
+    const fod = await p.$$eval('#quote-doc table.sml tfoot tr',
+      (rows) => rows.map((r) => [...r.cells].slice(1).map((c) => c.textContent.trim())));
+    check('engangs pr. mulighed stemmer med buddet', fod[0].map(kr).join() === '25970,29960,48825', fod[0].join(' / '));
+    check('løbende pr. måned stemmer med buddet', fod[1].map(kr).join() === '2070,2520,3270', fod[1].join(' / '));
+
+    const anb = await p.$$eval('#quote-doc table.sml th.anb', (th) => th.map((t) => t.textContent));
+    check('den anbefalede kolonne er fremhævet',
+      anb.length === 1 && /Opgradering/.test(anb[0]) && /Vi anbefaler/.test(anb[0]), anb.join(' | '));
+
+    // Rækkerne bygges af SAMMENLIGNING i js/data.js. Kontrolværdierne er buddets forside.
+    const kat = await p.$$eval('#quote-doc table.sml tr.sml-kat', (r) => r.map((x) => x.textContent.trim()));
+    check('kategorierne står i buddets rækkefølge',
+      kat.join() === 'Kasse og bestilling,Køkken,Betaling,Software og licens', kat.join(' / '));
+    const sml = await p.$$eval('#quote-doc table.sml tbody tr:not(.sml-kat)', (rows) => Object.fromEntries(
+      rows.map((r) => [r.cells[0].textContent.trim(), [...r.cells].slice(1).map((c) => c.textContent.trim())])));
+    const raekke = (navn, forventet) => check(`rækken ${navn}`,
+      (sml[navn] || []).join(' | ') === forventet.join(' | '), (sml[navn] || ['mangler']).join(' | '));
+    raekke('Selvbetjeningsterminal', ['1', '1', '1']);
+    // Eget udstyr i rækken giver ny/jeres; forskellige størrelser giver størrelsen.
+    raekke('Bemandede kassepladser', ['2 jeres 11"', '2 jeres + 1 ny 11"', '3 nye 14"']);
+    raekke('Holder eller base til kassetablet', ['—', '1', '3']);
+    // Ingen eget udstyr i rækken: kun størrelsen, og et ettal alene udelades.
+    raekke('Køkkenskærm (KDS)', ['18.5"', '18.5"', '22"']);
+    raekke('Bonprinter', ['Jeres LAN', 'Jeres LAN', 'Ny WiFi']);
+    raekke('Stationær betalingsterminal', ['1', '1', '1']);
+    raekke('Mobil betalingsterminal', ['—', '—', '1']);
+    // QR følger Takeaway i alle tre, så de deler række.
+    raekke('Takeaway og QR bestilling', ['✓', '✓', '✓']);
+    raekke('BI', ['—', '—', '✓']);
+    raekke('POS & SOT licens (inkl. jeres eget udstyr)', ['3', '4', '5']);
+    raekke('KDS licens', ['1', '1', '1']);
+    check('rækker uden indhold udelades', !('Pengeskuffe' in sml), Object.keys(sml).join(', '));
+    // Et produkt uden række ville være usynligt på forsiden.
+    const udenRaekke = await p.evaluate(() => CATALOG.map((x) => x.id)
+      .filter((id) => !SAMMENLIGNING.some((k) => k.raekker.some((r) => r.produkter && id in r.produkter))));
+    check('alle produkter har en række i sammenligningen', udenRaekke.length === 0, udenRaekke.join(', ') || 'alle');
+
+    const pos = await p.$$eval('#quote-doc .opt-block', (blks) => blks.map((b) => {
+      const r = [...b.querySelectorAll('tbody tr')].find((x) => /POS & SOT licens/.test(x.cells[0].textContent));
+      return r ? r.cells[1].textContent.trim() : null;
+    }));
+    check('én blok pr. mulighed', pos.length === 3, `${pos.length} blokke`);
+    check('eget udstyr tæller med i hver muligheds licenser', pos.join() === '3,4,5', pos.join(' / '));
+    // Prisen står i opsummeringen og sammenligningen — ikke i bjælken.
+    check('mulighedens bjælke viser ikke prisen',
+      await p.$eval('#quote-doc .opt-block .loc-head', (e) => !/,-/.test(e.textContent)));
+    check('mulighedens opsummering viser prisen',
+      await p.$eval('#quote-doc .opt-block .loc-sub', (e) => /25\.970,-/.test(e.textContent) && /2\.070,-/.test(e.textContent)));
+    // Muligheder har ingen egen beskrivelse — hverken i byggeren eller i tilbuddet.
+    check('muligheder har ingen beskrivelse',
+      !(await p.$('#o_intro')) && !(await p.$('#quote-doc .opt-tekst')));
+
+    const dok = await p.$eval('#quote-doc', (e) => e.textContent.replace(/\s+/g, ' '));
+    check('ingen "Sådan siger I ja"-boks', !/Sådan siger I ja/i.test(dok));
+    check('licensforbeholdet står på forsiden', /I betaler kun for de dage, terminalen er slået til\./.test(dok));
+    check('indløsning står på forsiden', /Indløsning: Aftales efter dialog\./.test(dok));
+
+    const order = await p.$$eval('#quote-doc .qp-content > *',
+      (els) => els.map((e) => e.className.split(' ')[0] || e.tagName.toLowerCase()));
+    check('sammenligningen står før mulighederne',
+      order.indexOf('pv') > -1 && order.indexOf('pv') < order.indexOf('loc-block'), order.join(' → '));
+    // Ingen tvungne sideskift — specifikationerne følger efter hinanden.
+    const navne = await p.$$eval('#quote-doc .opt-block .lh-name', (e) => e.map((x) => x.textContent));
+    check('mulighederne følger efter hinanden uden sideskift',
+      !order.includes('pg-break') && navne.join() === 'Genbrug,Opgradering,Alt nyt', navne.join(' / '));
+    // Afslutning og hilsen står til sidst i hele tilbuddet, som i et almindeligt tilbud.
+    check('afslutning og hilsen står til sidst i tilbuddet',
+      order.slice(-2).join() === 'qp-note,qp-greet' && order.indexOf('qp-note') > order.lastIndexOf('loc-block'),
+      order.join(' → '));
+
+    const pg = await paginate(p);
+    check('sidetal på alle sider', pg.feet.every((f, i) => f === `Side ${i + 1} af ${pg.n}`), pg.feet.join(' / '));
+    check('hilsen står på sidste side', pg.hilsenSidst);
+    check('intet indhold i sidefoden', pg.bad.length === 0, pg.bad.join('; '));
+    await p.close();
+  }
+  {
+    // Kun én mulighed med indhold: intet at sammenligne, så det er et almindeligt tilbud.
+    const p = await newPage(browser, { muligheder: true });
+    await p.fill(`#qty_m_sot`, '1');
+    await p.waitForTimeout(300);
+    check('én mulighed med indhold giver ingen sammenligning', !(await p.$('#quote-doc table.sml')));
+    check('... men et almindeligt prisoverblik', !!(await p.$('#quote-doc table.loc-overview')));
+    await p.close();
+  }
+
+  /* ---------- 8: flere lokationer med muligheder ---------- */
+  console.log('\n# Lokationer med muligheder');
+  {
+    const p = await newPage(browser, { muligheder: true, lokationer: true });
+    await p.fill('#c_company', 'Kaffe & Co ApS');
+    await p.fill('#c_seller', 'Rask');
+    const saet = async (k, n) => { await p.fill(`#qty_${k}`, String(n)); await p.waitForTimeout(40); };
+
+    // Aarhus C: Genbrug (SOT + 2 egne tablets) og Alt nyt (SOT + 2 nye 14").
+    await p.fill('#l_name', 'Aarhus C');
+    await p.fill('#o_navn', 'Genbrug');
+    await saet('m_sot', 1); await saet('eget_m_tab11', 2);
+    await p.click('#opttabs .loctab-add'); await p.waitForTimeout(250);
+    await p.fill('#o_navn', 'Alt nyt');
+    await saet('m_sot', 1); await saet('m_tab14', 2);
+    // Risskov: kun én opsætning.
+    await p.click('#loctabs .loctab-add'); await p.waitForTimeout(250);
+    await p.fill('#l_name', 'Risskov');
+    await saet('m_tab11', 1);
+    await p.waitForTimeout(400);
+
+    // Prisoverblikket øverst: hver mulighed under sin lokation.
+    // Aarhus/Genbrug 13.995 (3 POS), Aarhus/Alt nyt 13.995+2×4.495 = 22.985, Risskov 2.995.
+    check('prisoverblikket står øverst',
+      await p.$eval('#quote-doc .qp-content > table', (t) => t.classList.contains('loc-overview')));
+    const overblik = await p.$$eval('#quote-doc table.loc-overview tbody tr',
+      (rows) => rows.map((r) => [...r.cells].map((c) => c.textContent.replace(/\s+/g, ' ').trim()).join(' | ')));
+    check('prisoverblikket viser mulighederne under deres lokation',
+      overblik.length === 4 && /Aarhus C/.test(overblik[0]) && /Genbrug \| 13\.995,-/.test(overblik[1])
+        && /Alt nyt \| 22\.985,-/.test(overblik[2]) && /Risskov \| 2\.995,-/.test(overblik[3]),
+      overblik.join(' // '));
+    check('ingen samlet total, når en lokation har muligheder',
+      !(await p.$('#quote-doc table.loc-overview tfoot')));
+
+    const order = await p.$$eval('#quote-doc .qp-content > *',
+      (els) => els.map((e) => e.className.split(' ')[0] || e.tagName.toLowerCase()));
+    const titler = await p.$$eval('#quote-doc .lok-titel', (e) => e.map((x) => x.textContent.trim()));
+    check('hver lokation har sin overskrift', titler.join() === '1Aarhus C,2Risskov', titler.join(' / '));
+    // Under Aarhus C: sammenligningen og så de to muligheders blokke.
+    const aarhus = order.slice(order.indexOf('lok-titel'), order.lastIndexOf('lok-titel'));
+    check('lokationen får sin sammenligning og én blok pr. mulighed',
+      aarhus.join() === 'lok-titel,pv,loc-block,loc-block', aarhus.join(' → '));
+    check('sammenligningen gælder kun lokationens muligheder',
+      (await p.$$eval('#quote-doc table.sml th.sml-opt', (th) => th.map((t) => t.textContent))).join() === 'AGenbrug,BAlt nyt');
+    // Muligheder har bogstaver, lokationer tal — ellers blandes "1 Genbrug" og "1 Aarhus C" sammen.
+    check('muligheder har bogstaver, ikke tal', await p.$eval('#quote-doc', (e) =>
+      [...e.querySelectorAll('.lo-n.bogstav, .lh-n.bogstav')].every((x) => /^[A-D]$/.test(x.textContent))
+      && [...e.querySelectorAll('.lok-titel .lo-n')].every((x) => /^\d+$/.test(x.textContent))));
+    const risskov = order.slice(order.lastIndexOf('lok-titel'));
+    check('en lokation med én opsætning får en almindelig specifikation',
+      risskov.slice(0, 2).join() === 'lok-titel,loc-block' && !risskov.includes('pv'), risskov.join(' → '));
+    check('afslutning og hilsen står til sidst', order.slice(-2).join() === 'qp-note,qp-greet', order.join(' → '));
+
+    const pg = await paginate(p);
+    check('sidetal på alle sider', pg.feet.every((f, i) => f === `Side ${i + 1} af ${pg.n}`), pg.feet.join(' / '));
     check('intet indhold i sidefoden', pg.bad.length === 0, pg.bad.join('; '));
     await p.close();
   }

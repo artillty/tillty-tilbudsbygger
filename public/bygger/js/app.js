@@ -23,41 +23,42 @@ function ph(label){
 
 /* ==========================================================================
    STATE
-   Én lokation = ét kort med antal pr. varenøgle. Antal 0 (eller manglende)
+   Én mulighed = ét kort med antal pr. varenøgle. Antal 0 (eller manglende)
    betyder "ikke med i tilbuddet" — der er ingen separat "valgt"-tilstand.
    State er kilden til sandhed; DOM'en tegnes altid ud fra den.
    ========================================================================== */
 const images = {};        // varenøgle -> dataURL. Delt på tværs af lokationer.
 
 /* Tilbuddets form vælges når det oprettes, og styrer kun HVAD der vises.
-   Modellen er den samme uanset: et tilbud er altid en liste af muligheder,
-   der hver har en liste af lokationer. Et almindeligt tilbud er 1×1 og
-   renderer nøjagtig som før. */
+   Modellen er den samme uanset: et tilbud er en liste af lokationer, der hver
+   har sine muligheder. Lokationen er øverst — det er forretningen, kunden
+   skal vælge en løsning til. Et almindeligt tilbud er 1×1 og renderer som før. */
 let FORM = { muligheder:false, lokationer:false };
 
-let OPTIONS = [];         // [{id, navn, tagline, anbefalet, intro, lokationer:[…]}]
-let optIdx = 0;           // aktiv mulighed
-let activeIdx = 0;        // aktiv lokation inden for den aktive mulighed
+let LOCS = [];            // [{id, name, muligheder:[{id, navn, tagline, anbefalet, qty, eget}]}]
+let activeIdx = 0;        // aktiv lokation
+let optIdx = 0;           // aktiv mulighed inden for den aktive lokation
 let locSeq = 0;
 let optSeq = 0;
 
-/* Navnene sælgeren oftest skal bruge — hentes ved oprettelse, kan rettes. */
-const MULIGHED_FORSLAG = [
-  {navn:'Genbrug',     tagline:'Mindst mulig investering'},
-  {navn:'Opgradering', tagline:'Balanceret'},
-  {navn:'Alt nyt',     tagline:'Fuld opsætning'},
-];
-
-function newOpt(forslag){
+/* En mulighed bærer selve opsætningen: `qty` er det vi sælger, `eget` er det
+   kunden allerede har. Eget udstyr koster 0, men tæller med i licenserne — det
+   er stadig terminaler, der kører på systemet.
+   Nye muligheder navngives "Mulighed A", "Mulighed B" …, og der er ingen
+   foruddefinerede. `kilde` gives kun med, når der kopieres. */
+/* Muligheder har bogstaver, lokationer tal. Med tal på begge dele blev
+   "1 Genbrug" og "1 Aarhus C" blandet sammen i tilbuddet. */
+const bogstav = i => String.fromCharCode(65+i);
+function newOpt(nr,kilde){
   optSeq++;
-  const f = forslag || MULIGHED_FORSLAG[(optSeq-1) % MULIGHED_FORSLAG.length];
+  const k = kilde || {};
   return {
     id:'opt'+optSeq,
-    navn: f.navn || ('Mulighed '+optSeq),
-    tagline: f.tagline || '',
+    navn: k.navn || ('Mulighed '+bogstav(nr-1)),
+    tagline: k.tagline || '',
     anbefalet: false,
-    intro: '',
-    lokationer: [newLoc()],
+    qty: Object.assign({}, k.qty||{}),
+    eget: Object.assign({}, k.eget||{}),
   };
 }
 
@@ -67,34 +68,32 @@ function keyExtra(accId){return 'x_'+accId}
 function keyMod(id){return 's_'+id}
 const KEY_DS='dslic';
 
-/* En lokation har to antalskort: `qty` er det vi sælger, `eget` er det kunden
-   allerede har. Eget udstyr koster 0, men tæller med i licenserne — det er
-   stadig terminaler, der kører på systemet. */
-function newLoc(name,qty,eget){
+/* En ny lokation starter tom med én mulighed. `muligheder` gives kun med ved
+   "Kopiér lokation", hvor hele lokationen — alle dens muligheder — følger med. */
+function newLoc(name,muligheder){
   locSeq++;
+  const ms = (muligheder||[]).map((o,i)=>Object.assign(newOpt(i+1,o),{anbefalet:!!o.anbefalet}));
   return {id:'loc'+locSeq, name:name||('Lokation '+locSeq),
-          qty:Object.assign({},qty||{}), eget:Object.assign({},eget||{})};
+          muligheder: ms.length ? ms : [newOpt(1)]};
 }
-function O(){ return OPTIONS[optIdx]; }
-/* Lokationerne i den aktive mulighed. Resten af koden rører aldrig OPTIONS
-   direkte, så et almindeligt tilbud opfører sig som før. */
-function LOKATIONER(){ return O().lokationer; }
-function L(){ return LOKATIONER()[activeIdx]; }
-function q(key){ return (L().qty[key])||0; }
-function qEget(key){ return (L().eget[key])||0; }
+function L(){ return LOCS[activeIdx]; }
+function M(){ return L().muligheder[optIdx]; }
+function q(key){ return (M().qty[key])||0; }
+function qEget(key){ return (M().eget[key])||0; }
 function qOf(Q,key){ return Q[key]||0; }
 function reneAntal(n){ n=parseInt(n); if(isNaN(n)||n<0) n=0; return n>999?999:n; }
 function setQ(key,n){
   n=reneAntal(n);
-  if(n===0) delete L().qty[key]; else L().qty[key]=n;
+  if(n===0) delete M().qty[key]; else M().qty[key]=n;
 }
 function setEget(key,n){
   n=reneAntal(n);
-  if(n===0) delete L().eget[key]; else L().eget[key]=n;
+  if(n===0) delete M().eget[key]; else M().eget[key]=n;
 }
 function antalIKort(K){ return Object.keys(K||{}).reduce((s,k)=>s+(K[k]||0),0); }
-function locHasContent(l){ return antalIKort(l.qty)>0 || antalIKort(l.eget)>0; }
-function locItemCount(l){ return antalIKort(l.qty)+antalIKort(l.eget); }
+function optItemCount(o){ return antalIKort(o.qty)+antalIKort(o.eget); }
+function locItemCount(l){ return l.muligheder.reduce((s,o)=>s+optItemCount(o),0); }
+function locHasContent(l){ return locItemCount(l)>0; }
 /* Sælgerens egen upload vinder; ellers tilltys officielle foto; ellers en
    grå pladsholder, der fungerer som upload-knap. */
 function getImg(key,label){ return images[key] || FOTO[key] || ph(label); }
@@ -130,74 +129,13 @@ function skrivKort(key,n,kort){ if(kort==='eget') setEget(key,n); else setQ(key,
 function bump(key,d,kort){ skrivKort(key, laesKort(key,kort)+d, kort); syncUI(); }
 function typeQty(key,val,kort){ skrivKort(key,val,kort); syncUI(); }
 
-/* ---------- muligheds-faner ---------- */
-/* Antal varer i en hel mulighed — tælleren på fanen, så man kan se hvilke
-   muligheder der er tomme uden at klikke sig ind i dem. */
-function optItemCount(o){ return o.lokationer.reduce((s,l)=>s+locItemCount(l),0); }
-
-function renderOptTabs(){
-  const panel=document.getElementById('panel_muligheder');
-  if(panel) panel.style.display = FORM.muligheder ? '' : 'none';
-  if(!FORM.muligheder) return;
-  const el=document.getElementById('opttabs'); el.innerHTML='';
-  OPTIONS.forEach((o,i)=>{
-    const b=document.createElement('button');
-    b.className='loctab'+(i===optIdx?' active':'')+(o.anbefalet?' anbefalet':'');
-    const n=optItemCount(o);
-    b.innerHTML='<span class="opt-n">'+(i+1)+'</span>'+esc(o.navn)
-      +(n?' <span class="cnt">'+n+'</span>':'');
-    b.onclick=()=>switchOpt(i);
-    el.appendChild(b);
-  });
-  if(OPTIONS.length<4){
-    const add=document.createElement('button');
-    add.className='loctab loctab-add'; add.textContent='+ Mulighed';
-    add.onclick=addOpt; el.appendChild(add);
-  }
-  const o=O();
-  document.getElementById('o_navn').value=o.navn;
-  document.getElementById('o_tagline').value=o.tagline;
-  document.getElementById('o_intro').value=o.intro;
-  document.getElementById('o_anbefalet').checked=!!o.anbefalet;
-}
-function switchOpt(i){ optIdx=i; activeIdx=0; renderAll(); }
-function addOpt(){
-  if(OPTIONS.length>=4) return;
-  OPTIONS.push(newOpt()); optIdx=OPTIONS.length-1; activeIdx=0; renderAll();
-}
-function dupOpt(){
-  const src=O();
-  const kopi=newOpt({navn:src.navn+' (kopi)', tagline:src.tagline});
-  // Hele opsætningen kopieres med — det er som regel derfor man laver en
-  // ekstra mulighed: samme grundopsætning med én ting lavet om.
-  kopi.intro=src.intro;
-  kopi.lokationer=src.lokationer.map(l=>newLoc(l.name,l.qty,l.eget));
-  OPTIONS.splice(optIdx+1,0,kopi); optIdx++; activeIdx=0; renderAll();
-}
-function delOpt(){
-  if(OPTIONS.length===1){ alert('Der skal være mindst én mulighed.'); return; }
-  if(optItemCount(O()) && !confirm('Slet muligheden "'+O().navn+'" og alle dens valg?')) return;
-  OPTIONS.splice(optIdx,1);
-  if(optIdx>=OPTIONS.length) optIdx=OPTIONS.length-1;
-  activeIdx=0; renderAll();
-}
-function renameOpt(val){ O().navn=val; renderOptTabs(); updateSoon(); }
-function setTagline(val){ O().tagline=val; updateSoon(); }
-function setOptIntro(val){ O().intro=val; updateSoon(); }
-/* Kun én mulighed kan anbefales — to anbefalinger er ingen anbefaling. */
-function setAnbefalet(on){
-  OPTIONS.forEach(o=>o.anbefalet=false);
-  O().anbefalet=!!on;
-  renderOptTabs(); updateSoon();
-}
-
 /* ---------- lokations-faner ---------- */
 function renderLocTabs(){
   const panel=document.getElementById('panel_lokationer');
   if(panel) panel.style.display = FORM.lokationer ? '' : 'none';
   if(!FORM.lokationer) return;
   const el=document.getElementById('loctabs'); el.innerHTML='';
-  LOKATIONER().forEach((l,i)=>{
+  LOCS.forEach((l,i)=>{
     const b=document.createElement('button');
     b.className='loctab'+(i===activeIdx?' active':'');
     const n=locItemCount(l);
@@ -210,21 +148,95 @@ function renderLocTabs(){
   add.onclick=addLoc; el.appendChild(add);
   document.getElementById('l_name').value=L().name;
 }
-function switchLoc(i){ activeIdx=i; renderAll(); }
-function addLoc(){ LOKATIONER().push(newLoc()); activeIdx=LOKATIONER().length-1; renderAll(); }
+/* Skifter man lokation, bliver man på samme mulighedsnummer, hvis lokationen
+   har det — så kan man hurtigt se "Mulighed 2" i Aarhus og i Risskov. */
+function switchLoc(i){ activeIdx=i; optIdx=Math.min(optIdx, L().muligheder.length-1); renderAll(); }
+/* En ny lokation starter helt tom. Kun "Kopiér lokation" tager muligheder med. */
+function addLoc(){ LOCS.push(newLoc()); activeIdx=LOCS.length-1; optIdx=0; renderAll(); }
 function dupLoc(){
   const src=L();
-  LOKATIONER().splice(activeIdx+1,0,newLoc(src.name+' (kopi)',src.qty,src.eget));
+  LOCS.splice(activeIdx+1,0,newLoc(src.name+' (kopi)',src.muligheder));
   activeIdx=activeIdx+1; renderAll();
 }
 function delLoc(){
-  if(LOKATIONER().length===1){ alert('Der skal være mindst én lokation.'); return; }
-  if(locHasContent(L()) && !confirm('Slet "'+L().name+'" og alle dens valg?')) return;
-  LOKATIONER().splice(activeIdx,1);
-  if(activeIdx>=LOKATIONER().length) activeIdx=LOKATIONER().length-1;
+  if(LOCS.length===1){ alert('Der skal være mindst én lokation.'); return; }
+  if(locHasContent(L()) && !confirm('Slet "'+L().name+'" og alle dens muligheder?')) return;
+  LOCS.splice(activeIdx,1);
+  if(activeIdx>=LOCS.length) activeIdx=LOCS.length-1;
+  optIdx=Math.min(optIdx, L().muligheder.length-1);
   renderAll();
 }
-function renameLoc(val){ L().name=val; renderLocTabs(); updateSoon(); }
+function renameLoc(val){ L().name=val; renderLocTabs(); renderOptTabs(); updateSoon(); }
+
+/* ---------- muligheds-faner ----------
+   Mulighederne hører til den aktive lokation og fungerer som lokationsfanerne:
+   man starter med én og tilføjer selv flere. Man bliver stående i lokationen.
+   Tælleren på fanen viser, hvilke muligheder der er tomme. */
+function renderOptTabs(){
+  const panel=document.getElementById('panel_muligheder');
+  if(panel) panel.style.display = FORM.muligheder ? '' : 'none';
+  if(!FORM.muligheder) return;
+  const sub=document.getElementById('opt_sub');
+  if(sub) sub.textContent = FORM.lokationer ? L().name : '';
+  const el=document.getElementById('opttabs'); el.innerHTML='';
+  const ms=L().muligheder;
+  ms.forEach((o,i)=>{
+    const b=document.createElement('button');
+    b.className='loctab'+(i===optIdx?' active':'')+(o.anbefalet?' anbefalet':'');
+    const n=optItemCount(o);
+    b.innerHTML='<span class="opt-n bogstav">'+bogstav(i)+'</span>'+esc(o.navn)
+      +(n?' <span class="cnt">'+n+'</span>':'');
+    b.onclick=()=>switchOpt(i);
+    el.appendChild(b);
+  });
+  if(ms.length<4){
+    const add=document.createElement('button');
+    add.className='loctab loctab-add'; add.textContent='+ Mulighed';
+    add.onclick=addOpt; el.appendChild(add);
+    // Kopiér står lige ved siden af "+": det er den hurtige vej til næste
+    // mulighed — samme opsætning, én ting lavet om.
+    const kopi=document.createElement('button');
+    kopi.className='loctab loctab-add loctab-kopi'; kopi.textContent='⧉ Kopiér mulighed';
+    kopi.title='Ny mulighed med samme opsætning som "'+M().navn+'"';
+    kopi.onclick=dupOpt; el.appendChild(kopi);
+  }
+  const o=M();
+  document.getElementById('o_navn').value=o.navn;
+  document.getElementById('o_tagline').value=o.tagline;
+  document.getElementById('o_anbefalet').checked=!!o.anbefalet;
+}
+function switchOpt(i){ optIdx=i; renderAll(); }
+/* En ny mulighed starter tom, som en ny lokation. */
+function addOpt(){
+  const ms=L().muligheder; if(ms.length>=4) return;
+  ms.push(newOpt(ms.length+1)); optIdx=ms.length-1; renderAll();
+}
+function dupOpt(){
+  const ms=L().muligheder; if(ms.length>=4) return;
+  const src=M();
+  // Hele opsætningen kopieres med — det er som regel derfor man laver en
+  // ekstra mulighed: samme grundopsætning med én ting lavet om. Kopien lægges
+  // sidst, så de andre muligheder beholder deres nummer.
+  ms.push(newOpt(ms.length+1,{navn:src.navn+' (kopi)', tagline:src.tagline,
+                              qty:src.qty, eget:src.eget}));
+  optIdx=ms.length-1; renderAll();
+}
+function delOpt(){
+  const ms=L().muligheder;
+  if(ms.length===1){ alert('Der skal være mindst én mulighed.'); return; }
+  if(optItemCount(M()) && !confirm('Slet muligheden "'+M().navn+'" og alle dens valg?')) return;
+  ms.splice(optIdx,1);
+  if(optIdx>=ms.length) optIdx=ms.length-1;
+  renderAll();
+}
+function renameOpt(val){ M().navn=val; renderOptTabs(); updateSoon(); }
+function setTagline(val){ M().tagline=val; updateSoon(); }
+/* Kun én mulighed pr. lokation kan anbefales — to anbefalinger er ingen anbefaling. */
+function setAnbefalet(on){
+  L().muligheder.forEach(o=>o.anbefalet=false);
+  M().anbefalet=!!on;
+  renderOptTabs(); updateSoon();
+}
 
 /* ---------- byg katalog-UI ---------- */
 function renderCatalog(){
@@ -266,7 +278,10 @@ function renderCatalog(){
               <div class="ctrl-row">
                 <button type="button" class="matchbtn" data-match="${ak}" data-main="${mk}"
                         onclick="matchQty('${ak}','${mk}')" style="display:none"></button>
-                ${stepper(ak)}
+                <span class="qty-mrk">Nye</span>${stepper(ak,'ny')}
+              </div>
+              <div class="ctrl-row" title="Tilbehør kunden allerede har. Koster 0.">
+                <span class="qty-mrk mrk-eget">Jeres</span>${stepper(ak,'eget')}
               </div>
             </div>
           </div>`;
@@ -429,10 +444,10 @@ function renderAll(){ renderCatalog(); renderExtras(); renderSoftware(); syncUI(
 
 /* små tællere i panel-headerne, så man kan se hvad der ligger i et foldet panel */
 function refreshPanelSubs(){
-  const Q=L().qty, E=L().eget;
+  const Q=M().qty, E=M().eget;
   const cnt=pref=>Object.keys(Q).filter(k=>k.indexOf(pref)===0).reduce((s,k)=>s+Q[k],0);
   const hw=CATALOG.reduce((s,p)=>s+qOf(Q,keyMain(p.id))+qOf(E,keyMain(p.id)),0);
-  const accUnder=Object.keys(Q).filter(k=>k.indexOf('a_')===0).reduce((s,k)=>s+Q[k],0);
+  const accUnder=[Q,E].reduce((t,K)=>t+Object.keys(K).filter(k=>k.indexOf('a_')===0).reduce((s,k)=>s+K[k],0),0);
   const ex=cnt('x_');
   const sw=MODULES.reduce((s,m)=>s+qOf(Q,keyMod(m.id)),0)+qOf(Q,KEY_DS);
   const set=(id,txt)=>{const e=document.getElementById(id); if(e) e.textContent=txt;};
@@ -471,14 +486,14 @@ function computeLicensesFor(Q,E){
   Object.keys(LICENSE_TYPES).forEach(lt=>{
     const n=counts[lt]||0; if(!n) return;
     const t=LICENSE_TYPES[lt];
-    out.push({name:t.name, qty:n, daily:t.daily, total:n*t.daily});
+    out.push({type:lt, name:t.name, qty:n, daily:t.daily, total:n*t.daily});
   });
   return out;
 }
 
-/* Tager hele lokationen — den har både `qty` (det vi sælger) og `eget`. */
-function collectFor(loc){
-  const Q = loc.qty || {}, E = loc.eget || {};
+/* Tager én opsætning — en mulighed med `qty` (det vi sælger) og `eget`. */
+function collectFor(opsaet){
+  const Q = opsaet.qty || {}, E = opsaet.eget || {};
   const hw=[];
   // Kundens eget udstyr samles for sig og lægges nederst i tabellen. Blandet
   // ind mellem de nye linjer bliver det svært at se, hvad der rent faktisk
@@ -486,6 +501,13 @@ function collectFor(loc){
   const egetHw=[];
   CATALOG.forEach(p=>{
     const n=qOf(Q,keyMain(p.id)), e=qOf(E,keyMain(p.id));
+    // Kundens eget tilbehør koster 0 ligesom eget udstyr, men udløser ingen licens.
+    const egneAcc=[];
+    p.acc.forEach(aid=>{
+      const en=qOf(E,keyAcc(p.id,aid)); if(!en) return;
+      const a=ACCESSORIES[aid];
+      egneAcc.push({name:a.name,desc:a.desc,qty:en,price:0,img:pdfImg(keyAcc(p.id,aid)),eget:true});
+    });
     if(n){
       const accs=[];
       p.acc.forEach(aid=>{
@@ -501,9 +523,14 @@ function collectFor(loc){
     }
     if(e){
       // Kundens eget udstyr: står i specifikationen, så kunden kan se at vi har
-      // regnet med det — men uden pris, og uden tilbehør vi ikke leverer.
+      // regnet med det — men uden pris. Kundens eget tilbehør står under det.
       egetHw.push({name:p.name,desc:'Jeres nuværende udstyr — vi sætter det op i systemet.',
-                   qty:e, price:0, img:pdfImg(keyMain(p.id)), accessories:[], eget:true});
+                   qty:e, price:0, img:pdfImg(keyMain(p.id)), accessories:egneAcc, eget:true});
+    } else if(n){
+      // Eget tilbehør til et nyt produkt (fx en ny tablet på kundens egen base)
+      // står også nederst — alt det kunden selv har, skal stå samlet.
+      egneAcc.forEach(a=>egetHw.push({name:a.name,desc:a.desc,qty:a.qty,price:0,img:a.img,
+                                     accessories:[],eget:true}));
     }
   });
   egetHw.forEach(x=>hw.push(x));
@@ -532,7 +559,9 @@ function collectFor(loc){
   const licDaily = licenses.reduce((s,l)=>s+l.total,0);
   const modMonthly = modules.reduce((s,m)=>s+m.qty*m.price,0);
   const has = hw.length||extras.length||modules.length||licenses.length;
-  const harEget = hw.some(p=>p.eget);
+  // Kun eget udstyr der udløser licens — det er dét, licensforbeholdet handler om.
+  // Eget tilbehør alene skal ikke få tilbuddet til at tale om licens.
+  const harEget = CATALOG.some(p=>PRODUCT_LICENSE[p.id] && qOf(E,keyMain(p.id))>0);
   return {hw,extras,modules,licenses,oneOff,licDaily,modMonthly,has,harEget};
 }
 
