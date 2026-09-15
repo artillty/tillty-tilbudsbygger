@@ -248,31 +248,103 @@ function setAnbefalet(on){
 }
 
 /* ---------- byg katalog-UI ---------- */
-function renderCatalog(){
-  const wrap=document.getElementById('catalog'); wrap.innerHTML='';
-  CATALOG.forEach(p=>{
-    const mk=keyMain(p.id);
-    const g=document.createElement('div'); g.className='group'; g.dataset.rowkey=mk;
-    g.innerHTML=`
-      <div class="main">
-        <div class="thumb-wrap">
-          <img class="thumb" id="img_${mk}" src="${getImg(mk,p.name)}" onclick="pick('${mk}')"
-               title="Klik for at uploade dit eget billede">
-        </div>
-        <div class="prod-info">
-          <div class="prod-name">${esc(p.name)}</div>
-          <div class="prod-desc">${esc(p.desc)}</div>
-          ${p.acc.length?`<div class="acc-hint">· ${p.acc.length} tilbehør folder sig ud herunder</div>`:''}
-        </div>
-        <div class="prod-right">
+/* Delene af et produktkort. `vis` er ekstra attributter, som størrelseskortet
+   bruger til at skjule de størrelser, der ikke er valgt. */
+function kortFoto(p,vis){
+  const mk=keyMain(p.id);
+  return `<img class="thumb" id="img_${mk}" src="${getImg(mk,p.name)}" onclick="pick('${mk}')"
+               title="Klik for at uploade dit eget billede"${vis||''}>`;
+}
+function kortAccHint(p){
+  return p.acc.length?`<div class="acc-hint">· ${p.acc.length} tilbehør folder sig ud herunder</div>`:'';
+}
+function kortAntal(p,vis){
+  const mk=keyMain(p.id);
+  return `<div class="prod-right"${vis||''}>
           <div class="price">${fmt(p.price)}</div>
           <div class="ctrl-row"><span class="qty-mrk">Nye</span>${stepper(mk,'ny')}</div>
           <div class="ctrl-row" title="Udstyr kunden allerede har. Koster 0, men tæller med i licenserne.">
             <span class="qty-mrk mrk-eget">Kundens egne</span>${stepper(mk,'eget')}
           </div>
+        </div>`;
+}
+
+/* ---------- størrelsesvælger ----------
+   Hvilken størrelse et kort viser, er ren UI-state og gemmes ikke. Antallene
+   ligger stadig på hver størrelses egen varenøgle. */
+const valgtStr = {};
+function strAntal(pid){ const k=keyMain(pid); return q(k)+qEget(k); }
+/* Kortet bliver på den valgte størrelse, så længe den har indhold. Ellers
+   springer det til en størrelse der har — fx når man skifter til en mulighed
+   med 14" — og står ellers på den første. */
+function vaelgStr(gr){
+  const ids=Object.keys(gr.varianter), nu=valgtStr[gr.id];
+  if(nu && strAntal(nu)) return nu;
+  return valgtStr[gr.id] = ids.find(strAntal) || nu || ids[0];
+}
+function skiftStr(grId,pid){ valgtStr[grId]=pid; visStr(STOERRELSER.find(g=>g.id===grId)); }
+function visStr(gr){
+  const valgt=valgtStr[gr.id];
+  document.querySelectorAll('[data-str="'+gr.id+'"]').forEach(e=>{ e.hidden = e.dataset.variant!==valgt; });
+  Object.keys(gr.varianter).forEach(pid=>{
+    const b=document.querySelector('[data-strknap="'+pid+'"]'); if(!b) return;
+    b.classList.toggle('active', pid===valgt);
+    b.setAttribute('aria-pressed', pid===valgt);
+    // Tælleren viser, at der også ligger noget i en størrelse man ikke kigger på.
+    const n=strAntal(pid);
+    b.querySelector('.cnt').textContent = n || '';
+  });
+}
+function strKort(gr){
+  const prods=Object.keys(gr.varianter).map(id=>CATALOG.find(p=>p.id===id));
+  const valgt=vaelgStr(gr);
+  const vis=p=>` data-str="${gr.id}" data-variant="${p.id}"${p.id===valgt?'':' hidden'}`;
+  const g=document.createElement('div'); g.className='group';
+  g.dataset.rowkey=prods.map(p=>keyMain(p.id)).join(' ');
+  g.innerHTML=`
+    <div class="main">
+      <div class="thumb-wrap">${prods.map(p=>kortFoto(p,vis(p))).join('')}</div>
+      <div class="prod-info">
+        <div class="prod-name">${esc(gr.navn)}</div>
+        <div class="prod-desc">${esc(prods[0].desc)}</div>
+        <div class="str-vaelger" role="group" aria-label="Størrelse">
+          ${prods.map(p=>`<button type="button" class="str-knap" data-strknap="${p.id}"
+             onclick="skiftStr('${gr.id}','${p.id}')">${esc(gr.varianter[p.id])}<span class="cnt"></span></button>`).join('')}
         </div>
+        ${kortAccHint(prods[0])}
       </div>
-      <div class="acc-list" id="acc_${p.id}">
+      ${prods.map(p=>kortAntal(p,vis(p))).join('')}
+    </div>
+    ${prods.map(p=>kortTilbehoer(p,vis(p))).join('')}`;
+  return g;
+}
+
+function renderCatalog(){
+  const wrap=document.getElementById('catalog'); wrap.innerHTML='';
+  CATALOG.forEach(p=>{
+    // Et produkt i flere størrelser tegnes én gang, der hvor den første står.
+    const gr=STOERRELSER.find(x=>x.varianter[p.id]);
+    if(gr){ if(Object.keys(gr.varianter)[0]===p.id) wrap.appendChild(strKort(gr)); return; }
+    const mk=keyMain(p.id);
+    const g=document.createElement('div'); g.className='group'; g.dataset.rowkey=mk;
+    g.innerHTML=`
+      <div class="main">
+        <div class="thumb-wrap">${kortFoto(p)}</div>
+        <div class="prod-info">
+          <div class="prod-name">${esc(p.name)}</div>
+          <div class="prod-desc">${esc(p.desc)}</div>
+          ${kortAccHint(p)}
+        </div>
+        ${kortAntal(p)}
+      </div>
+      ${kortTilbehoer(p)}`;
+    wrap.appendChild(g);
+  });
+}
+
+function kortTilbehoer(p,vis){
+  const mk=keyMain(p.id);
+  return `<div class="acc-list" id="acc_${p.id}"${vis||''}>
         ${p.acc.map(aid=>{
           const a=ACCESSORIES[aid], ak=keyAcc(p.id,aid);
           return `<div class="acc-item" data-rowkey="${ak}">
@@ -297,8 +369,6 @@ function renderCatalog(){
           </div>`;
         }).join('')}
       </div>`;
-    wrap.appendChild(g);
-  });
 }
 
 /* Sæt tilbehørets antal lig produktets — fx én hand strap pr. tablet. */
@@ -417,11 +487,12 @@ function syncUI(){
     const inp=w.querySelector('input'); if(inp && inp.value!==String(n)) inp.value=n;
     const minus=w.querySelector('button'); if(minus) minus.disabled=(n===0);
   });
-  // rækkemarkering
+  // rækkemarkering — et størrelseskort har én nøgle pr. størrelse
   document.querySelectorAll('[data-rowkey]').forEach(r=>{
-    const k=r.dataset.rowkey;
-    r.classList.toggle('on', q(k)>0 || qEget(k)>0);
+    const ks=r.dataset.rowkey.split(' ');
+    r.classList.toggle('on', ks.some(k=>q(k)>0 || qEget(k)>0));
   });
+  STOERRELSER.forEach(visStr);
   // tilbehørslister foldes ud når produktet har antal
   CATALOG.forEach(p=>{
     const list=document.getElementById('acc_'+p.id);

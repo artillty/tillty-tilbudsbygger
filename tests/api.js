@@ -176,6 +176,7 @@ async function forbiOpstart(p) {
     await p.waitForTimeout(1200);
     await p.fill('#c_company', 'Anden Kunde ApS');
     await p.fill('#c_seller', 'Rask');
+    await p.click('[data-strknap="tab11"]');   // tablets deler kort; vælg størrelsen
     await p.click('[data-qwrap="m_tab11"] button:last-child');
     await p.waitForTimeout(80);
     await p.click('button[onclick="gemTilbud()"]');

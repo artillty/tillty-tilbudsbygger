@@ -29,6 +29,19 @@ const CATALOG = [
   {id:'wifi', name:'WiFi Printer', desc:'Bon- og kvitteringsprinter (kasse og køkken).', price:1795, acc:[]},
 ];
 
+/* Samme produkt i flere størrelser står som ét kort i byggeren med en
+   størrelsesvælger. Det er kun visning: hver størrelse er stadig sit eget
+   produkt ovenfor med egen pris, varenøgle og licens, så beregning, tilbud,
+   sammenligning og gemte tilbud er uændrede — og en kunde kan godt få flere
+   størrelser i samme tilbud. Nøglen er produkt-id, værdien teksten på knappen.
+   Kun rigtige størrelser: LAN- og WiFi-printeren er to forskellige printere og
+   har hver sit kort.
+   Kortet tager navnet herfra og beskrivelsen fra den første størrelse. */
+const STOERRELSER = [
+  {id:'tablet', navn:'POS Tablet', varianter:{tab87:'8.7"', tab11:'11"', tab14:'14"'}},
+  {id:'kds',    navn:'KDS – Køkkenskærm', varianter:{kds185:'18.5"', kds22:'22"'}},
+];
+
 const ACCESSORIES = {
   floor:      {name:'Floor stand',                 desc:'Gulvstander, der giver et professionelt look.', price:2495},
   term_holder:{name:'Holder til betalingsterminal (Beslag)', desc:'Beslag til montering af betalingsterminal på SOT.', price:495},
@@ -122,7 +135,7 @@ const PRODUKTFOTO = {
   tab87:'tablet', tab11:'tablet', tab14:'tablet',
   kds185:'kds', kds22:'kds',
   termstat:'termstat', termmobil:'termmobil',
-  lan:'printer', wifi:'printer',
+  lan:'printer', wifi:'wifi',
 };
 /* Alt tilbehør har nu et foto. Mangler et nyt tilbehør sit billede, viser
    byggeren en grå pladsholder, som aldrig kommer med i kundens PDF. */

@@ -43,7 +43,17 @@ async function newPage(browser, form = {}) {
   return p;
 }
 
+/* Et produkt i flere størrelser (tablets) viser kun én størrelse ad gangen.
+   Vælg den rigtige, før der klikkes — som sælgeren gør. `k` er en varenøgle
+   som 'm_tab11', 'eget_m_tab11' eller 'a_tab11_hand'. */
+const str = async (p, k) => {
+  const m = /^(?:eget_)?[ma]_([^_]+)/.exec(k);
+  const knap = m && await p.$(`[data-strknap="${m[1]}"]:not(.active)`);
+  if (knap) { await knap.click(); await p.waitForTimeout(20); }
+};
+
 const plus = async (p, k, n = 1) => {
+  await str(p, k);
   for (let i = 0; i < n; i++) {
     await p.click(`[data-qwrap="${k}"] button:last-child`);
     await p.waitForTimeout(35);
@@ -288,6 +298,7 @@ let STANDARD_START = null;
     await p.waitForTimeout(250);
     await p.fill('#l_name', 'Risskov');
     check('kopi arvede antal', (await p.inputValue('#qty_m_tab11')) === '4');
+    await str(p, 'm_tab11');
     for (let i = 0; i < 2; i++) { await p.click('[data-qwrap="m_tab11"] button:first-child'); await p.waitForTimeout(40); }
 
     await p.click('#loctabs .loctab:nth-child(1)');          // tilbage til lokation 1
@@ -422,6 +433,7 @@ let STANDARD_START = null;
     await p.waitForTimeout(250);
     check('en ny mulighed starter tom', (await p.inputValue('#qty_m_sot')) === '0');
     check('den nye mulighed hedder Mulighed B', (await p.inputValue('#o_navn')) === 'Mulighed B');
+    await str(p, 'm_tab11');
     await p.click('[data-qwrap="m_tab11"] button:last-child');
     await p.waitForTimeout(120);
     await p.click('#opttabs .loctab:nth-child(1)');
@@ -462,6 +474,7 @@ let STANDARD_START = null;
     await p.fill('#l_name', 'Aarhus C');
     await p.click('[data-qwrap="m_sot"] button:last-child'); await p.waitForTimeout(120);
     await p.click('#opttabs .loctab-add'); await p.waitForTimeout(250);
+    await str(p, 'm_tab11');
     await p.click('[data-qwrap="m_tab11"] button:last-child'); await p.waitForTimeout(120);
     check('lokationen har to muligheder', (await antalMuligheder()) === 2);
     check('man bliver stående i lokationen, når man laver muligheder',
@@ -610,7 +623,7 @@ let STANDARD_START = null;
     await p.fill('#c_company', 'Restaurant Havnen ApS');
     await p.fill('#c_contact', 'Line Mikkelsen');
     await p.fill('#c_seller', 'Rask');
-    const saet = async (k, n) => { await p.fill(`#qty_${k}`, String(n)); await p.waitForTimeout(40); };
+    const saet = async (k, n) => { await str(p, k); await p.fill(`#qty_${k}`, String(n)); await p.waitForTimeout(40); };
 
     // Buddets tre muligheder. Fælles for dem alle: SOT med gulvstander og
     // terminalbeslag, stationær terminal og Takeaway.
@@ -744,7 +757,7 @@ let STANDARD_START = null;
     const p = await newPage(browser, { muligheder: true, lokationer: true });
     await p.fill('#c_company', 'Kaffe & Co ApS');
     await p.fill('#c_seller', 'Rask');
-    const saet = async (k, n) => { await p.fill(`#qty_${k}`, String(n)); await p.waitForTimeout(40); };
+    const saet = async (k, n) => { await str(p, k); await p.fill(`#qty_${k}`, String(n)); await p.waitForTimeout(40); };
 
     // Aarhus C: Genbrug (SOT + 2 egne tablets) og Alt nyt (SOT + 2 nye 14").
     await p.fill('#l_name', 'Aarhus C');
@@ -794,6 +807,52 @@ let STANDARD_START = null;
     const pg = await paginate(p);
     check('sidetal på alle sider', pg.feet.every((f, i) => f === `Side ${i + 1} af ${pg.n}`), pg.feet.join(' / '));
     check('intet indhold i sidefoden', pg.bad.length === 0, pg.bad.join('; '));
+    await p.close();
+  }
+
+  /* ---------- 9: størrelsesvælger ---------- */
+  console.log('\n# Størrelsesvælger');
+  {
+    const p = await newPage(browser, { muligheder: true });
+    // Knapperne på det kort, der indeholder produktet.
+    const knapper = (pid) => p.$eval(`#catalog [data-strknap="${pid}"]`, (b) =>
+      [...b.closest('.group').querySelectorAll('.str-knap')].map((x) => x.textContent).join());
+    check('de tre tablets står i ét kort', (await knapper('tab87')) === '8.7",11",14"');
+    check('de to KDS-skærme står i ét kort', (await knapper('kds185')) === '18.5",22"');
+    // LAN og WiFi er to forskellige printere, ikke to størrelser.
+    check('printerne har hver sit kort', !(await p.$('#catalog [data-strknap="lan"], #catalog [data-strknap="wifi"]')));
+    check('ét kort pr. produkt i flere størrelser',
+      (await p.$$eval('#catalog > .group', (g) => g.filter((x) => x.querySelector('[data-strknap]')).length)) === 2);
+    check('kun én størrelse vises ad gangen', await p.$$eval('#catalog > .group', (g) => g.every((x) =>
+      !x.querySelector('[data-strknap]') || [...x.querySelectorAll('.prod-right[data-variant]')].filter((e) => !e.hidden).length === 1)));
+
+    // Hver størrelse har sine egne antal — og kan stå i samme tilbud.
+    await plus(p, 'm_tab11', 2);
+    await plus(p, 'a_tab11_hand', 1);
+    await plus(p, 'm_tab14', 1);
+    await p.waitForTimeout(300);
+    check('størrelserne har hver sit antal',
+      (await p.inputValue('#qty_m_tab11')) === '2' && (await p.inputValue('#qty_m_tab14')) === '1');
+    check('tilbehøret følger størrelsen', (await p.inputValue('#qty_a_tab11_hand')) === '1'
+      && (await p.inputValue('#qty_a_tab14_hand')) === '0');
+    check('knapperne viser antal pr. størrelse',
+      (await knapper('tab87')) === '8.7",11"2,14"1');
+    const row = await p.$$eval('#quote-doc table.loc-overview tfoot td', (td) => td.map((t) => t.textContent.trim()));
+    check('begge størrelser står i tilbuddet med hver sin pris', kr(row[1]) === 2 * 2995 + 195 + 4495, row[1]);
+    check('begge størrelser udløser licens', kr(row[2]) === 3 * 15, row[2]);
+
+    // Kortet tegnes forfra ved fane-skift. Har den valgte størrelse indhold, bliver den.
+    const aktiv = () => p.$eval('#catalog [data-strknap="tab87"]', (b) =>
+      b.closest('.group').querySelector('.str-knap.active').dataset.strknap);
+    await p.click('#opttabs .loctab:nth-child(1)'); await p.waitForTimeout(250);
+    check('den valgte størrelse bliver, når den har indhold', (await aktiv()) === 'tab14');
+    // En ny mulighed med kun 8.7": kortet springer selv til den størrelse, der har indhold.
+    await p.click('#opttabs .loctab-add'); await p.waitForTimeout(250);
+    await plus(p, 'm_tab87', 1);
+    await p.click('#opttabs .loctab:nth-child(1)'); await p.waitForTimeout(250);
+    check('kortet springer til første størrelse med indhold', (await aktiv()) === 'tab11');
+    await p.click('#opttabs .loctab:nth-child(2)'); await p.waitForTimeout(250);
+    check('... også i den anden mulighed', (await aktiv()) === 'tab87');
     await p.close();
   }
 

@@ -100,6 +100,20 @@ udledes af koden — og de fejl der allerede er begået én gang.
   knapperne brydes om. `@media print` sætter det hele tilbage til normalt flow,
   ellers klippes alt efter første side væk.
 
+## Størrelseskort i byggeren
+
+- **Tablets (8.7"/11"/14") og KDS (18.5"/22") står som ét kort med en
+  størrelsesvælger** (`STOERRELSER` i `js/data.js`). Det er kun visning: hver
+  størrelse er stadig sit eget produkt med egen pris, varenøgle og licens, så
+  beregning, tilbud, sammenligning og gemte tilbud er uændrede. Slå dem ikke
+  sammen til ét produkt med en størrelse i state.
+- **Kun rigtige størrelser.** LAN- og WiFi-printeren blev prøvet som ét kort og
+  skilt ad igen — det er to forskellige printere med hver sit foto.
+- Den valgte størrelse er UI-state. Kortet bliver på den, så længe den har
+  indhold, og springer ellers til første størrelse med indhold.
+- Testen vælger størrelsen før den klikker (`str()` i `tests/smoke.js`) —
+  skjulte størrelser kan ikke klikkes.
+
 ## Tilbudsdokumentet
 
 Samme opbygning uanset antal lokationer:
