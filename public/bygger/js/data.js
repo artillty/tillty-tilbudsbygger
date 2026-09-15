@@ -22,7 +22,7 @@ const CATALOG = [
   {id:'kds22', name:'22" KDS – Køkkenskærm', desc:'Digital skærm til ordrevisning i køkkenet.', price:6995,
    acc:['vesa']},
   {id:'termstat', name:'Stationær Betalingsterminal', desc:'Fast betalingsterminal – anbefales på SOT og kasse.', price:1995,
-   acc:['term_holder']},
+   acc:[]},
   {id:'termmobil', name:'Mobil Betalingsterminal', desc:'Håndholdt betalingsterminal for mobilbetaling.', price:2495,
    acc:['cradle']},
   {id:'lan', name:'LAN Printer', desc:'Bon- og kvitteringsprinter (kasse og køkken).', price:1495, acc:[]},

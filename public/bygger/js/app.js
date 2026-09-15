@@ -522,6 +522,7 @@ function syncUI(){
   renderOptTabs();
   renderLocTabs();
   refreshPanelSubs();
+  visNoteUddrag();
   update();
 }
 function renderAll(){ renderCatalog(); renderExtras(); renderSoftware(); syncUI(); }
@@ -612,7 +613,7 @@ function collectFor(opsaet){
     if(e){
       // Kundens eget udstyr: står i specifikationen, så kunden kan se at vi har
       // regnet med det — men uden pris. Kundens eget tilbehør står under det.
-      egetHw.push({name:p.name,desc:'Jeres nuværende udstyr — vi sætter det op i systemet.',
+      egetHw.push({name:p.name,desc:'Jeres nuværende udstyr, som vi sætter op i systemet.',
                    qty:e, price:0, img:pdfImg(keyMain(p.id)), accessories:egneAcc, eget:true});
     } else if(n){
       // Eget tilbehør til et nyt produkt (fx en ny tablet på kundens egen base)
@@ -721,12 +722,13 @@ const GYLDIG_DAGE = 30;
 function validUntil(){
   const dt=parseISODate(v('c_date')); if(!dt) return '';
   dt.setDate(dt.getDate()+GYLDIG_DAGE);
-  return dt.toLocaleDateString('da-DK');
+  // Datoen står i tilbuddet og skrives derfor på tilbuddets sprog.
+  return dt.toLocaleDateString(SPROG[sprog()].locale);
 }
-function daDate(iso){ const dt=parseISODate(iso); return dt?dt.toLocaleDateString('da-DK'):''; }
+/* Filnavnet følger også sproget — det er det, kunden ser i sin mail. */
 function quoteFilename(){
   const nr=v('c_number')||new Date().toISOString().slice(0,10);
   const who=(v('c_company')||v('c_contact')||'kunde')
-    .replace(/[^\wæøåÆØÅ ]+/g,'').trim().replace(/\s+/g,'-');
-  return 'Tilbud-'+nr+'-'+who;
+    .replace(/[^\p{L}\p{N}_ ]+/gu,'').trim().replace(/\s+/g,'-');
+  return t('Tilbud')+'-'+nr+'-'+who;
 }

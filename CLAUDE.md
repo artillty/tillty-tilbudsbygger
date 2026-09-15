@@ -42,6 +42,38 @@ udledes af koden — og de fejl der allerede er begået én gang.
   De korte aliaser (`--navy`, `--accent`, `--line`) findes kun af historiske
   grunde — skriv ikke nye.
 
+## Sprog i tilbuddet
+
+- **Kun kundens side skifter sprog.** Preview og PDF skrives på dansk,
+  engelsk, norsk, svensk eller tysk (`c_sprog`, gemmes med tilbuddet);
+  byggeren er altid dansk.
+  Priserne er de samme og står i DKK — de udenlandske sidefødder siger det.
+- Alle faste tekster i dokumentet går gennem `t('dansk tekst')`. Den danske
+  tekst er nøglen, og oversættelserne står som rækker i `js/sprog.js`. Retter
+  du en dansk tekst (også i `data.js`), skal rækken rettes med. Testen læser
+  `t('…')`-kaldene i kildekoden og fejler, hvis en mangler.
+- **Det sælgeren skriver, oversættes ikke** — indledning, afslutning,
+  indløsningssats, navne. Kun standardnavnene ("Mulighed A", "Lokation 2")
+  følger sproget.
+- Standardteksten i afslutningen skifter sprog med, så længe den står urørt.
+  Er den rettet, er det sælgerens tekst.
+- **Adresser følger ikke sproget.** tillty sælger fra Danmark: afsenderadressen
+  står uden land, og postnummerfeltet er dansk (fire cifre, dansk opslag).
+  Udenlandske adresser er fravalgt for nu — byg det som en særskilt opgave.
+- Sprogvælgeren står i preview-bjælken med flag, over det den ændrer.
+- Oversættelserne er udkast skrevet af Claude. Få dem læst igennem af én der
+  taler sproget, før de bruges over for kunder.
+
+## Kundefelter
+
+- **Obligatoriske felter** har `data-krav` i `index.html` og en blå * i
+  feltnavnet: firma, CVR, kontaktperson, e-mail, telefon, adresse, postnr., by
+  og sælger. Mangler ét, stopper eksporten (`kravOpfyldt()` i `print.js`) — den
+  spørger ikke. Feltet markeres med rødt, til der skrives i det.
+- **Kontaktpersonens rolle (`c_rolle`) står aldrig i tilbuddet.** Den gemmes til
+  den kommende CRM-kobling. Testen holder den ude af dokumentet.
+- Uden navn åbner brevet med "Hej," — ikke "Hej der,".
+
 ## Forretningsregler der ikke må brydes
 
 - **Kundens eget udstyr koster 0, men udløser licens.** En tablet kunden
@@ -115,6 +147,10 @@ udledes af koden — og de fejl der allerede er begået én gang.
   skjulte størrelser kan ikke klikkes.
 
 ## Tilbudsdokumentet
+
+- **Ingen lang tankestreg (—) i tilbuddet**, heller ikke i oversættelserne.
+  Skriv sætningen om. Tomme celler og manglende nummer/dato viser en kort
+  tankestreg (–). Testen tjekker dokumentet på alle sprog.
 
 Samme opbygning uanset antal lokationer:
 

@@ -248,8 +248,12 @@ async function forbiOpstart(p) {
     console.log('\n# Eksport gemmer først');
     await aabnNyt(p);
     await p.waitForTimeout(1200);
-    await p.fill('#c_company', 'Eksport Uden Gem ApS');
-    await p.fill('#c_seller', 'Rask');
+    // Alle obligatoriske felter skal udfyldes, ellers stopper eksporten.
+    for (const [id, val] of [['c_company', 'Eksport Uden Gem ApS'], ['c_cvr', '12345678'],
+      ['c_contact', 'Mette'], ['c_email', 'mette@eksport.dk'], ['c_phone', '12345678'],
+      ['c_addr', 'Vej 1'], ['c_zip', '8000'], ['c_city', 'Aarhus C'], ['c_seller', 'Rask']]) {
+      await p.fill('#' + id, val);
+    }
     await p.click('[data-qwrap="m_lan"] button:last-child');
     await p.waitForTimeout(80);
     // window.print() ville blokere i headless — vi neutraliserer den og tjekker

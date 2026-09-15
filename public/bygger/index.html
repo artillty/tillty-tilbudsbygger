@@ -69,6 +69,8 @@
   </div>
 </div>
 
+<!-- Felter med data-krav skal udfyldes, før tilbuddet kan eksporteres. Værdien
+     er feltets navn i beskeden. Den blå * står i feltnavnet. -->
 <div class="layout">
   <!-- LEFT: builder -->
   <div>
@@ -76,30 +78,46 @@
       <h2>Kunde &amp; tilbud</h2>
       <div class="body">
         <div class="cust-grid">
-          <label>Firma / kunde<input id="c_company" placeholder="Kundens firmanavn" oninput="updateSoon()"></label>
-          <label>CVR<input id="c_cvr" placeholder="12345678" oninput="updateSoon()"></label>
-          <label>Kontaktperson<input id="c_contact" placeholder="Navn" oninput="updateSoon()"></label>
-          <label>E-mail<input id="c_email" placeholder="mail@kunde.dk" oninput="updateSoon()"></label>
-          <label>Telefon<input id="c_phone" placeholder="+45 ..." oninput="updateSoon()"></label>
-          <label>Adresse<input id="c_addr" placeholder="Vej og nummer" oninput="updateSoon()"></label>
-          <label>Postnr. &amp; by
+          <label><span class="felt-navn">Firma / kunde<span class="krav" title="Skal udfyldes">*</span></span><input id="c_company" data-krav="Firma / kunde" placeholder="Kundens firmanavn" oninput="updateSoon()"></label>
+          <label><span class="felt-navn">CVR<span class="krav" title="Skal udfyldes">*</span></span><input id="c_cvr" data-krav="CVR" placeholder="12345678" oninput="updateSoon()"></label>
+          <label><span class="felt-navn">Kontaktperson<span class="krav" title="Skal udfyldes">*</span></span><input id="c_contact" data-krav="Kontaktperson" placeholder="Navn" oninput="updateSoon()"></label>
+          <!-- Rollen er til CRM-koblingen og står ALDRIG i tilbuddet. Den gemmes
+               med tilbuddet, men quote.js læser den ikke. -->
+          <label>Rolle<input id="c_rolle" placeholder="fx Indehaver, Driftschef"></label>
+          <label><span class="felt-navn">E-mail<span class="krav" title="Skal udfyldes">*</span></span><input id="c_email" data-krav="E-mail" placeholder="mail@kunde.dk" oninput="updateSoon()"></label>
+          <label><span class="felt-navn">Telefon<span class="krav" title="Skal udfyldes">*</span></span><input id="c_phone" data-krav="Telefon" placeholder="+45 ..." oninput="updateSoon()"></label>
+          <label><span class="felt-navn">Adresse<span class="krav" title="Skal udfyldes">*</span></span><input id="c_addr" data-krav="Adresse" placeholder="Vej og nummer" oninput="updateSoon()"></label>
+          <label><span class="felt-navn">Postnr. &amp; by<span class="krav" title="Skal udfyldes">*</span></span>
             <span class="felt-par">
-              <input id="c_zip" inputmode="numeric" maxlength="4"
+              <input id="c_zip" data-krav="Postnr." inputmode="numeric" maxlength="4"
                      oninput="postnrIndtastet(this.value)" aria-label="Postnummer">
-              <input id="c_city" oninput="updateSoon()" aria-label="By">
+              <input id="c_city" data-krav="By" oninput="updateSoon()" aria-label="By">
             </span>
           </label>
           <label class="ny-raekke">Tilbudsnr.<input id="c_number" placeholder="Tildeles ved gem" readonly
                  title="Tildeles automatisk, når tilbuddet gemmes"></label>
           <label>Dato sendt<input id="c_date" type="date" oninput="updateSoon()"></label>
-          <label>Sælger<input id="c_seller" placeholder="Dit navn" oninput="updateSoon()"></label>
+          <label><span class="felt-navn">Sælger<span class="krav" title="Skal udfyldes">*</span></span><input id="c_seller" data-krav="Sælger" placeholder="Dit navn" oninput="updateSoon()"></label>
           <label>Indløsning<input id="c_indloesning"
                  title="Skriv satsen i procent. Står feltet tomt, skriver tilbuddet “Indløsning: Aftales efter dialog.”"
                  oninput="updateSoon()"></label>
           <!-- Tekstfelterne har feltnavn som alle andre felter. Afslutningen er
                forudfyldt, så en pladsholder alene ville aldrig blive set. -->
           <label class="bred">Indledning<textarea id="c_intro" placeholder="Står øverst i tilbuddet. Tomt felt giver en standardindledning." oninput="updateSoon()"></textarea></label>
-          <label class="bred">Afslutning<textarea id="c_note" placeholder="Står nederst i tilbuddet, lige før hilsen." oninput="updateSoon()"></textarea></label>
+          <!-- Afslutningen er lang og rettes sjældent, så den står foldet sammen
+               med starten af teksten. "Rediger" folder tekstfeltet ud. -->
+          <div class="bred note-felt">
+            <span>Afslutning</span>
+            <div class="note-lukket" id="note_lukket">
+              <span class="note-uddrag" id="note_uddrag"></span>
+              <span class="note-std" id="note_std" hidden>Standardtekst</span>
+              <button type="button" class="note-knap" id="note_rediger" onclick="redigerNote(true)">✎ Rediger</button>
+            </div>
+            <div class="note-aaben" id="note_aaben" hidden>
+              <textarea id="c_note" aria-label="Afslutning" placeholder="Står nederst i tilbuddet, lige før hilsen." oninput="updateSoon()"></textarea>
+              <button type="button" class="note-knap" id="note_faerdig" onclick="redigerNote(false)">✓ Færdig</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -165,7 +183,12 @@
   <!-- RIGHT: preview -->
   <div>
     <div class="panel">
-      <h2>Tilbudspreview</h2>
+      <!-- Sproget står over det, det ændrer: kun preview og PDF skifter sprog,
+           byggeren er dansk. Mulighederne bygges af js/sprog.js. -->
+      <h2>Tilbudspreview
+        <select id="c_sprog" class="sprogvalg" onchange="skiftSprog()"
+                aria-label="Sprog i tilbuddet" title="Sprog i tilbuddet og PDF'en"></select>
+      </h2>
       <div class="body" id="preview"></div>
     </div>
   </div>
@@ -173,8 +196,9 @@
 
 <div id="print-root"></div>
 
-<!-- Rækkefølgen betyder noget: data først, derefter state/UI, dokument, print, opstart. -->
+<!-- Rækkefølgen betyder noget: data og sprog først, derefter state/UI, dokument, print, opstart. -->
 <script src="js/data.js"></script>
+<script src="js/sprog.js"></script>
 <script src="js/postnumre.js"></script>
 <script src="js/app.js"></script>
 <script src="js/quote.js"></script>

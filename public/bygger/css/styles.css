@@ -90,6 +90,12 @@
   .panel{background:#fff;border:1px solid var(--line);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);margin-bottom:20px}
   .panel h2{margin:0;padding:14px 18px;background:var(--navy);color:#fff;font-size:15px;letter-spacing:.3px;font-family:var(--font-heading);font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:10px}
   .panel .body{padding:16px 18px}
+  /* Sprogvælgeren i preview-bjælken — lys på den mørke bjælke. */
+  .sprogvalg{margin-left:auto;border:1px solid rgba(255,255,255,.35);border-radius:var(--radius-md);
+    background:rgba(255,255,255,.1);color:#fff;font-family:var(--font-heading);font-size:13px;
+    font-weight:700;padding:5px 8px;cursor:pointer}
+  .sprogvalg:hover{background:rgba(255,255,255,.18)}
+  .sprogvalg option{color:var(--color-primary);background:#fff}
   .panel h2 .h2-sub{font-weight:600;font-size:12px;opacity:.75;margin-left:auto;padding-right:10px}
 
   /* ---- foldbare paneler ---- */
@@ -159,6 +165,29 @@
   .cust-grid input,.cust-grid textarea{border:1px solid var(--line);border-radius:7px;padding:8px 10px;font-size:14px;font-family:inherit}
   .cust-grid textarea{resize:vertical;min-height:44px}
   .cust-grid .bred{grid-column:1/-1}
+  /* Obligatoriske felter: blå * i feltnavnet, rød kant når eksporten mangler dem. */
+  /* Feltnavn og * står i samme span, ellers lægger flex-kolonnen dem på hver sin linje. */
+  .krav{color:var(--color-accent);margin-left:3px}
+  .cust-grid input.mangler{border-color:var(--color-error);background:#fff5f5}
+  /* ---- afslutningen: foldet sammen til ét felt ---- */
+  .cust-grid .note-felt{display:flex;flex-direction:column;font-size:12px;font-weight:700;
+    color:var(--text-secondary);gap:4px;font-family:var(--font-heading)}
+  .note-felt [hidden]{display:none!important}
+  .note-lukket{display:flex;align-items:center;gap:8px;border:1px solid var(--border-subtle);
+    border-radius:7px;padding:4px 4px 4px 10px;background:#fff}
+  .note-uddrag{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    font-family:var(--font-body);font-size:14px;font-weight:400;color:var(--color-primary)}
+  .note-uddrag.tom{color:var(--text-secondary);font-style:italic}
+  .note-std{flex:none;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;
+    color:var(--text-secondary);background:var(--bg-sunken);border-radius:var(--radius-sm);padding:3px 6px}
+  .note-knap{flex:none;border:1px solid var(--border-subtle);background:var(--bg-elevated);
+    color:var(--color-primary);border-radius:var(--radius-sm);padding:6px 10px;font-size:12px;
+    font-weight:700;font-family:var(--font-heading);cursor:pointer;
+    transition:all var(--duration-fast) ease-out}
+  .note-knap:hover{border-color:var(--color-accent);color:var(--color-accent)}
+  .note-aaben{display:flex;flex-direction:column;gap:6px}
+  .cust-grid .note-aaben textarea{min-height:220px}
+  .note-aaben .note-knap{align-self:flex-end}
   /* Tilbuddets egne felter starter på en ny række, adskilt fra kundens — og
      står parvis: tilbudsnr. og dato, sælger og indløsning. */
   .cust-grid .ny-raekke{grid-column:1}

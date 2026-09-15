@@ -126,7 +126,7 @@ function buildPrintPages(){
         shell.className=blk.className+' split';
         const hd=head.cloneNode(true);
         if(cont){
-          const n=document.createElement('span'); n.className='lh-cont'; n.textContent='(fortsat)';
+          const n=document.createElement('span'); n.className='lh-cont'; n.textContent=t('(fortsat)');
           // Lige efter navnet — i en mulighedsbjælke følger underrubrik og anbefaling.
           const nm=hd.querySelector('.lh-name');
           if(nm) nm.after(n); else hd.appendChild(n);
@@ -188,19 +188,31 @@ function buildPrintPages(){
   });
 }
 
+/* ---------- obligatoriske felter ----------
+   Tomme felter markeres med rødt, det første får fokus, og beskeden siger
+   hvilke. Markeringen forsvinder, når der skrives i feltet (se init.js). */
+function kravOpfyldt(){
+  const felter=[...document.querySelectorAll('[data-krav]')];
+  const tomme=felter.filter(e=>!e.value.trim());
+  felter.forEach(e=>e.classList.toggle('mangler', tomme.includes(e)));
+  const navne=tomme.map(e=>e.dataset.krav);
+  if(!v('c_date')) navne.push('Dato sendt');
+  if(!navne.length) return true;
+  if(tomme.length) tomme[0].focus();
+  alert('Udfyld de obligatoriske felter, før du eksporterer:\n\n'+navne.join('\n'));
+  return false;
+}
+
 /* ---------- PDF-eksport: browserens print-til-PDF (ægte vektor-HTML→PDF) ---------- */
 async function exportPDF(){
   const node=document.getElementById('quote-doc');
   if(!node){ alert('Sæt antal på mindst ét produkt før du eksporterer.'); return; }
 
-  // Simpel validering — et tilbud uden kunde skal ikke ud af huset.
-  // Tilbudsnr. står ikke på listen: det tildeles af serveren nedenfor, og
-  // uden server er der ingen til at tildele et.
-  const missing=[];
-  if(!v('c_company') && !v('c_contact')) missing.push('kunde/kontaktperson');
-  if(!v('c_date'))   missing.push('dato');
-  if(!v('c_seller')) missing.push('sælger');
-  if(missing.length && !confirm('Følgende mangler: '+missing.join(', ')+'\n\nEksportér alligevel?')) return;
+  // Et tilbud med huller i kundeoplysningerne skal ikke ud af huset. De
+  // obligatoriske felter er markeret med data-krav i index.html, og eksporten
+  // stopper — den spørger ikke. Tilbudsnr. står ikke på listen: det tildeles af
+  // serveren nedenfor. Datoen er forudfyldt og har ingen *, men kan være ryddet.
+  if(!kravOpfyldt()) return;
 
   // Gem FØR print. Et tilbud må aldrig forlade huset uden at stå i kartoteket,
   // og det er her nummeret tildeles, hvis sælgeren ikke har gemt undervejs.

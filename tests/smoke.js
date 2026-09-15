@@ -52,6 +52,12 @@ const str = async (p, k) => {
   if (knap) { await knap.click(); await p.waitForTimeout(20); }
 };
 
+/* Afslutningen er foldet sammen; fold den ud før der skrives i den. */
+const skrivNote = async (p, tekst) => {
+  if (!(await p.isVisible('#c_note'))) { await p.click('#note_rediger'); await p.waitForTimeout(60); }
+  await p.fill('#c_note', tekst);
+};
+
 const plus = async (p, k, n = 1) => {
   await str(p, k);
   for (let i = 0; i < n; i++) {
@@ -159,6 +165,17 @@ let STANDARD_START = null;
       await p.inputValue('#c_city'));
     check('postnr. og by står i tilbuddet',
       await p.$eval('#quote-doc .qp-parties', e => /2100 København Ø/.test(e.textContent)));
+    // Sælgeren står i Fra-boksen under tillty, som kontaktpersonen hos kunden.
+    check('sælgeren står i Fra-boksen', await p.$eval('#quote-doc .qp-parties .qp-col:first-child',
+      e => e.innerHTML.split('<br>').slice(0, 2).join('|').endsWith('tillty|Rask')));
+    // Vej, postnr. og by på én linje, som afsenderens adresse.
+    await p.fill('#c_addr', 'Vesterbrogade 1'); await p.waitForTimeout(250);
+    check('adressen står på én linje', await p.$eval('#quote-doc .qp-parties .qp-col:last-child',
+      e => e.innerHTML.split('<br>').includes('Vesterbrogade 1, 2100 København Ø')));
+    await p.fill('#c_zip', ''); await p.fill('#c_city', ''); await p.waitForTimeout(250);
+    check('uden postnr. og by står vejen alene', await p.$eval('#quote-doc .qp-parties .qp-col:last-child',
+      e => e.innerHTML.split('<br>').includes('Vesterbrogade 1')));
+    await p.fill('#c_addr', ''); await p.fill('#c_zip', '2100'); await p.waitForTimeout(250);
 
     check('tilbudsnr. kan ikke tastes i', await p.getAttribute('#c_number', 'readonly') !== null);
     // Tilbuddet gælder altid 30 dage — det er ikke et felt, man kan stille på.
@@ -171,7 +188,26 @@ let STANDARD_START = null;
     // Alle felter har et feltnavn — også de to tekstfelter.
     check('indledning og afslutning har feltnavne', await p.evaluate(() =>
       /^Indledning/.test(document.getElementById('c_intro').closest('label')?.textContent.trim() || '')
-      && /^Afslutning/.test(document.getElementById('c_note').closest('label')?.textContent.trim() || '')));
+      && /^Afslutning/.test(document.getElementById('c_note').closest('.note-felt')?.textContent.trim() || '')));
+
+    // Afslutningen står foldet sammen: starten af teksten og en redigeringsknap.
+    check('afslutningen er foldet sammen', !(await p.isVisible('#c_note')) && (await p.isVisible('#note_rediger'))
+      && /^Som vi nævnte på mødet/.test(await p.textContent('#note_uddrag')) && (await p.isVisible('#note_std')));
+    check('det foldede felt fylder ikke mere end et almindeligt felt', await p.evaluate(() =>
+      document.getElementById('note_lukket').getBoundingClientRect().height
+        <= document.getElementById('c_company').getBoundingClientRect().height + 4));
+    await p.click('#note_rediger'); await p.waitForTimeout(80);
+    check('rediger folder tekstfeltet ud', (await p.isVisible('#c_note')) && !(await p.isVisible('#note_lukket')));
+    await skrivNote(p, 'Vi glæder os til samarbejdet.');
+    await p.click('#note_faerdig'); await p.waitForTimeout(150);
+    check('færdig folder det sammen med den nye tekst',
+      !(await p.isVisible('#c_note')) && (await p.textContent('#note_uddrag')) === 'Vi glæder os til samarbejdet.'
+      && !(await p.isVisible('#note_std')));
+    check('den rettede afslutning står i tilbuddet',
+      await p.$eval('#quote-doc .qp-note', (e) => e.textContent === 'Vi glæder os til samarbejdet.'));
+    await p.click('#note_rediger'); await p.waitForTimeout(80);
+    await p.fill('#c_note', STANDARD_START);
+    await p.click('#note_faerdig'); await p.waitForTimeout(150);
 
     // Standardteksten står i feltet fra start og går med i tilbuddet.
     check('standardteksten er forudfyldt', (await p.inputValue('#c_note')) === STANDARD_START);
@@ -325,6 +361,8 @@ let STANDARD_START = null;
     check('tre lokationsblokke', (await p.$$('#quote-doc .loc-block')).length === 3);
     const bar = await p.$eval('#quote-doc .loc-head', e => e.innerText.replace(/\s+/g, ' ').trim());
     check('bjælken viser kun nummer og navn', bar === '1 Aarhus C', JSON.stringify(bar));
+    check('ingen lang tankestreg i tilbuddet', await p.$eval('#quote-doc', e =>
+      !e.innerText.includes('—') && /tilpasset jer\. Den er sat op pr\. lokation/.test(e.innerText)));
 
     const pg = await paginate(p);
     check('sidetal på alle sider', pg.feet.every((f, i) => f === `Side ${i + 1} af ${pg.n}`), pg.feet.join(' / '));
@@ -338,7 +376,7 @@ let STANDARD_START = null;
     const p = await newPage(browser);
     await p.fill('#c_company', 'Bageriet Bro ApS');
     await p.fill('#c_seller', 'Rask');
-    await p.fill('#c_note', 'Installation og oplæring er inkluderet i prisen.');
+    await skrivNote(p, 'Installation og oplæring er inkluderet i prisen.');
     await p.fill('#c_indloesning', '0,45 %');
     await plus(p, 'm_sot', 1);
     await p.waitForTimeout(300);
@@ -368,7 +406,7 @@ let STANDARD_START = null;
     // Med lokationer til, så nulstillingen også kan tjekkes på dem.
     const p = await newPage(browser, { lokationer: true });
     await p.fill('#c_company', 'Skal Væk ApS');
-    await p.fill('#c_note', 'Gammel note');
+    await skrivNote(p, 'Gammel note');
     await p.fill('#l_name', 'Gammel lokation');
     await plus(p, 'm_sot', 2);
     await p.waitForTimeout(200);
@@ -685,15 +723,15 @@ let STANDARD_START = null;
     raekke('Selvbetjeningsterminal', ['1', '1', '1']);
     // Eget udstyr i rækken giver ny/jeres; forskellige størrelser giver størrelsen.
     raekke('Bemandede kassepladser', ['2 jeres 11"', '2 jeres + 1 ny 11"', '3 nye 14"']);
-    raekke('Holder eller base til kassetablet', ['—', '1', '3']);
+    raekke('Holder eller base til kassetablet', ['–', '1', '3']);
     // Ingen eget udstyr i rækken: kun størrelsen, og et ettal alene udelades.
     raekke('Køkkenskærm (KDS)', ['18.5"', '18.5"', '22"']);
     raekke('Bonprinter', ['Jeres LAN', 'Jeres LAN', 'Ny WiFi']);
     raekke('Stationær betalingsterminal', ['1', '1', '1']);
-    raekke('Mobil betalingsterminal', ['—', '—', '1']);
+    raekke('Mobil betalingsterminal', ['–', '–', '1']);
     // QR følger Takeaway i alle tre, så de deler række.
     raekke('Takeaway og QR bestilling', ['✓', '✓', '✓']);
-    raekke('BI', ['—', '—', '✓']);
+    raekke('BI', ['–', '–', '✓']);
     raekke('POS & SOT licens (inkl. jeres eget udstyr)', ['3', '4', '5']);
     raekke('KDS licens', ['1', '1', '1']);
     check('rækker uden indhold udelades', !('Pengeskuffe' in sml), Object.keys(sml).join(', '));
@@ -853,6 +891,167 @@ let STANDARD_START = null;
     check('kortet springer til første størrelse med indhold', (await aktiv()) === 'tab11');
     await p.click('#opttabs .loctab:nth-child(2)'); await p.waitForTimeout(250);
     check('... også i den anden mulighed', (await aktiv()) === 'tab87');
+    await p.close();
+  }
+
+  /* ---------- 10: sprog i tilbuddet ---------- */
+  console.log('\n# Sprog i tilbuddet');
+  {
+    const fs = require('fs');
+    const js = (f) => fs.readFileSync(path.resolve(__dirname, '..', 'public', 'bygger', 'js', f), 'utf8');
+    // Alle faste tekster i dokumentet går gennem t('…'). Nøglerne hentes fra
+    // kildekoden, så en ny tekst uden oversættelse fanges her.
+    const tKald = [...new Set(['quote.js', 'print.js', 'app.js']
+      .flatMap((f) => [...js(f).matchAll(/\bt\('((?:[^'\\]|\\.)*)'/g)].map((m) => m[1])))];
+
+    const p = await newPage(browser, { muligheder: true, lokationer: true });
+    const tjek = await p.evaluate((tKald) => {
+      const noegler = new Set(OVERSAETTELSER.map((r) => r[0]));
+      const data = [];
+      CATALOG.forEach((x) => data.push(x.name, x.desc));
+      Object.values(ACCESSORIES).forEach((x) => data.push(x.name, x.desc));
+      Object.values(LICENSE_TYPES).forEach((x) => data.push(x.name));
+      MODULES.forEach((x) => data.push(x.name, x.desc));
+      SAMMENLIGNING.forEach((k) => { data.push(k.kategori); k.raekker.forEach((r) => data.push(r.navn)); });
+      return {
+        mangler: [...new Set([...data, ...tKald])].filter((d) => !noegler.has(d)),
+        ufuldstaendige: OVERSAETTELSER.filter((r) => r.length !== 5 || r.some((x) => !x)).map((r) => r[0]),
+        dubletter: OVERSAETTELSER.map((r) => r[0]).filter((d, i, a) => a.indexOf(d) !== i),
+        noter: SPROG_RAEKKEFOELGE.filter((l) => !standardNote(l)),
+        valg: [...document.querySelectorAll('#c_sprog option')].map((o) => o.value).join(),
+      };
+    }, tKald);
+    check('alle tekster har en oversættelse', tjek.mangler.length === 0, tjek.mangler.join(' | '));
+    check('alle rækker har fem sprog', tjek.ufuldstaendige.length === 0, tjek.ufuldstaendige.join(' | '));
+    check('ingen tekst står to gange', tjek.dubletter.length === 0, tjek.dubletter.join(' | '));
+    check('standardteksten findes på alle sprog', tjek.noter.length === 0, tjek.noter.join());
+    check('sprogvalget har de fem sprog', tjek.valg === 'da,en,nb,sv,de', tjek.valg);
+    check('dansk er standard', (await p.inputValue('#c_sprog')) === 'da');
+
+    // Et tilbud der rammer de fleste tekster: to lokationer, muligheder med
+    // eget udstyr, licenser, moduler (QR inkluderet i Takeaway) og løst tilbehør.
+    const saet = async (k, n) => { await str(p, k); await p.fill(`#qty_${k}`, String(n)); await p.waitForTimeout(40); };
+    await p.fill('#c_company', 'Cafe Nord AS');
+    await p.fill('#c_contact', 'Ola Nordmann');
+    await p.fill('#c_seller', 'Rask');
+    await saet('m_sot', 1); await saet('a_sot_floor', 1); await saet('eget_m_tab11', 2);
+    await saet('m_kds185', 1); await saet('s_takeaway', 1); await saet('s_bi', 1);
+    if (await p.$('.panel.fold.closed > h2')) { await p.click('.panel.fold.closed > h2'); await p.waitForTimeout(150); }
+    await saet('x_drawer', 1);
+    await p.click('#opttabs .loctab-add'); await p.waitForTimeout(250);
+    await saet('m_sot', 1); await saet('m_tab14', 2); await saet('a_tab14_hand', 2); await saet('m_termstat', 1);
+    await p.check('#o_anbefalet'); await p.waitForTimeout(100);
+    await p.click('#loctabs .loctab-add'); await p.waitForTimeout(250);
+    await saet('m_lan', 1); await saet('eget_m_wifi', 1);
+    await p.waitForTimeout(300);
+
+    const note = () => p.inputValue('#c_note');
+    const tekst = () => p.$eval('#quote-doc', (e) => e.innerText);
+    const danskNote = await note();
+    for (const l of ['en', 'nb', 'sv', 'de']) {
+      await p.selectOption('#c_sprog', l); await p.waitForTimeout(200);
+      const r = await p.evaluate((l) => {
+        const doc = document.getElementById('quote-doc');
+        const txt = doc.innerText;
+        // Danske tekster, der er anderledes på sproget, må ikke stå i dokumentet.
+        // Korte ord ("ny", "og") springes over — de findes også inde i andre ord.
+        const rester = OVERSAETTELSER.filter((r) => r[0].length > 6 && r[0] !== TEKST[l][r[0]])
+          .map((r) => r[0].replace(/<\/?b>/g, '').split('{')[0].trim())
+          .filter((d) => d.length > 6 && txt.includes(d));
+        return { rester, lang: doc.lang, note: document.getElementById('c_note').value === standardNote(l) };
+      }, l);
+      check(`${l}: ingen dansk tekst i tilbuddet`, r.rester.length === 0, r.rester.join(' | '));
+      check(`${l}: dokumentet har sprogkoden`, r.lang === l, r.lang);
+    check(`${l}: ingen lang tankestreg i tilbuddet`, !(await tekst()).includes('—'));
+      check(`${l}: standardteksten skifter sprog`, r.note);
+      const pg = await paginate(p);
+      check(`${l}: sidetal og intet i sidefoden`, pg.bad.length === 0 && pg.n > 1, pg.feet.join(' / ') + ' ' + pg.bad.join('; '));
+    }
+    const de = await tekst();
+    check('de: sidehoved, datoer og forbehold', /ANGEBOT/.test(de) && /Gültig bis:/.test(de)
+      && /Kartenakzeptanz: Nach Absprache\./.test(de) && /zzgl\. MwSt\./.test(de), de.slice(0, 200));
+    check('adressen følger ikke sproget', de.includes('Åboulevarden 69, 8000 Aarhus C\n') && !/Dänemark|Denmark/.test(de));
+    check('de: sidetal på tysk', (await paginate(p)).feet[0].startsWith('Seite 1 von'));
+    check('de: navne sælgeren ikke har rettet, følger sproget', /Option A/.test(de) && /Standort 2/.test(de));
+    check('de: sælgerens egen tekst oversættes ikke', /Guten Tag Ola Nordmann,/.test(de) && /Rask/.test(de));
+    check('de: filnavnet følger sproget', (await p.evaluate(() => quoteFilename())).startsWith('Angebot-'));
+    await p.selectOption('#c_sprog', 'en'); await p.waitForTimeout(200);
+    // Vejnavnet i afsenderadressen er undtaget — det er et navn, ikke dansk tekst.
+    check('en: ingen æ, ø eller å', !/[æøåÆØÅ]/.test((await tekst()).replaceAll('Åboulevarden', '')));
+
+    // En rettet afslutning er sælgerens egen tekst og følger ikke sproget.
+    await skrivNote(p, 'Looking forward to hearing from you.');
+    await p.selectOption('#c_sprog', 'sv'); await p.waitForTimeout(200);
+    check('en rettet afslutning skifter ikke sprog', (await note()) === 'Looking forward to hearing from you.');
+    await skrivNote(p, await p.evaluate(() => standardNote('sv')));
+    await p.selectOption('#c_sprog', 'da'); await p.waitForTimeout(200);
+    check('da: ingen lang tankestreg i tilbuddet', !(await tekst()).includes('—'));
+    check('tilbage på dansk er alt som før', (await note()) === danskNote && /TILBUD/.test(await tekst())
+      && /Mulighed A/.test(await tekst()));
+
+    check('sprogvælgeren står i preview-bjælken med flag', await p.$eval('#c_sprog', (e) =>
+      !!e.closest('.panel h2') && /Tilbudspreview/.test(e.closest('h2').textContent)
+      && [...e.options].map((o) => o.textContent).join() === '🇩🇰 Dansk,🇬🇧 English,🇳🇴 Norsk,🇸🇪 Svenska,🇩🇪 Deutsch'));
+
+    // Nyt tilbud: sproget går tilbage til dansk, ligesom resten af kundeoplysningerne.
+    await p.click('button:has-text("+ Nyt tilbud")'); await p.waitForTimeout(300);
+    check('nyt tilbud starter på dansk', (await p.inputValue('#c_sprog')) === 'da' && (await note()) === danskNote);
+    await p.close();
+  }
+
+  /* ---------- 11: obligatoriske felter og åbningen ---------- */
+  console.log('\n# Obligatoriske felter');
+  {
+    const p = await newPage(browser);
+    await plus(p, 'm_sot', 1);
+    await p.waitForTimeout(150);
+    // Uden navn åbner brevet med "Hej," — ikke "Hej der,".
+    check('uden navn åbner brevet med "Hej,"', (await p.textContent('#quote-doc .qp-hej')) === 'Hej,');
+    await p.fill('#c_contact', 'Mette Sørensen'); await p.waitForTimeout(200);
+    check('med navn åbner brevet med navnet', (await p.textContent('#quote-doc .qp-hej')) === 'Hej Mette Sørensen,');
+
+    // Rollen er til CRM'et og må ikke stå i tilbuddet.
+    check('rollen står ved siden af kontaktpersonen', await p.evaluate(() => {
+      const k = document.getElementById('c_contact').getBoundingClientRect();
+      const r = document.getElementById('c_rolle').getBoundingClientRect();
+      return Math.abs(k.top - r.top) < 2 && r.left > k.left && QUOTE_FIELDS.includes('c_rolle');
+    }));
+    await p.fill('#c_rolle', 'Driftschef Unik'); await p.waitForTimeout(250);
+    check('rollen står ikke i tilbuddet', !/Driftschef Unik/.test(await p.textContent('#quote-doc')));
+
+    const KRAV = ['c_company', 'c_cvr', 'c_contact', 'c_email', 'c_phone', 'c_addr', 'c_zip', 'c_city', 'c_seller'];
+    check('de obligatoriske felter er markeret', await p.evaluate((krav) =>
+      [...document.querySelectorAll('[data-krav]')].map((e) => e.id).sort().join() === [...krav].sort().join()
+      && krav.every((id) => { const s = document.getElementById(id).closest('label').querySelector('.krav');
+        // Stjernen står på linje med feltnavnet, ikke på sin egen linje.
+        const navn = s && s.closest('.felt-navn');
+        return s && navn && s.textContent === '*' && getComputedStyle(s).color === 'rgb(25, 138, 255)'
+          && Math.abs(s.getBoundingClientRect().bottom - navn.getBoundingClientRect().bottom) < 4; }), KRAV));
+    check('øvrige felter har ingen *', await p.evaluate(() =>
+      ['c_date', 'c_indloesning', 'c_intro'].every((id) => !document.getElementById(id).closest('label').querySelector('.krav'))));
+
+    // Eksporten stopper, når et obligatorisk felt er tomt.
+    await p.evaluate(() => { window.print = () => { window.__printKaldt = true; }; });
+    let besked = '';
+    p.removeAllListeners('dialog');
+    p.on('dialog', (d) => { besked = d.message(); d.accept(); });
+    await p.click('button[onclick="exportPDF()"]'); await p.waitForTimeout(300);
+    check('eksporten stopper ved tomme felter', !(await p.evaluate(() => window.__printKaldt)));
+    check('beskeden siger hvilke felter der mangler', /Firma \/ kunde/.test(besked) && /Sælger/.test(besked)
+      && !/Kontaktperson/.test(besked), besked.replace(/\n/g, ' '));
+    check('de tomme felter markeres med rødt', await p.evaluate(() =>
+      document.getElementById('c_company').classList.contains('mangler')
+      && !document.getElementById('c_contact').classList.contains('mangler')));
+    await p.fill('#c_company', 'Café Mikkeller ApS');
+    check('markeringen forsvinder, når der skrives', !(await p.evaluate(() =>
+      document.getElementById('c_company').classList.contains('mangler'))));
+
+    for (const [id, val] of [['c_cvr', '12345678'], ['c_email', 'mette@mikkeller.dk'], ['c_phone', '12345678'],
+      ['c_addr', 'Vesterbrogade 1'], ['c_zip', '1620'], ['c_city', 'København V'], ['c_seller', 'Rask']]) {
+      await p.fill('#' + id, val);
+    }
+    await p.click('button[onclick="exportPDF()"]'); await p.waitForTimeout(800);
+    check('med alle felter udfyldt eksporteres der', await p.evaluate(() => window.__printKaldt === true));
     await p.close();
   }
 

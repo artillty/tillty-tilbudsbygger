@@ -99,6 +99,9 @@ async function hentTilbud(nr){
   Object.entries(d.felter || {}).forEach(([id,val])=>{
     const e = document.getElementById(id); if(e) e.value = val;
   });
+  // Tilbud fra før sprogvalget har intet sprog gemt og står derfor på dansk.
+  if(!SPROG[(d.felter||{}).c_sprog]) document.getElementById('c_sprog').value = 'da';
+  sidsteSprog = sprog();
   laesOpsaetning(d);
   activeIdx = 0;
   optIdx = 0;
