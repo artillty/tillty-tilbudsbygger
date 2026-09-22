@@ -45,9 +45,9 @@ async function newPage(browser, form = {}) {
 
 /* Et produkt i flere størrelser (tablets) viser kun én størrelse ad gangen.
    Vælg den rigtige, før der klikkes — som sælgeren gør. `k` er en varenøgle
-   som 'm_tab11', 'eget_m_tab11' eller 'a_tab11_hand'. */
+   som 'm_tab11', 'eget_m_tab11', 'brugt_m_tab11' eller 'a_tab11_hand'. */
 const str = async (p, k) => {
-  const m = /^(?:eget_)?[ma]_([^_]+)/.exec(k);
+  const m = /^(?:eget_|brugt_)?[ma]_([^_]+)/.exec(k);
   const knap = m && await p.$(`[data-strknap="${m[1]}"]:not(.active)`);
   if (knap) { await knap.click(); await p.waitForTimeout(20); }
 };
@@ -58,8 +58,20 @@ const skrivNote = async (p, tekst) => {
   await p.fill('#c_note', tekst);
 };
 
+/* Skriver et antal direkte i feltet. Er tælleren foldet sammen, foldes den ud først. */
+const saetAntal = async (p, k, n) => {
+  await str(p, k);
+  const chip = await p.$(`[data-chip="${k}"]:not([hidden])`);
+  if (chip) { await chip.click(); await p.waitForTimeout(35); }
+  await p.fill(`#qty_${k}`, String(n)); await p.waitForTimeout(40);
+};
+
+/* "Kundens egne" og "Brugte" er foldet sammen til en knap, til de har antal.
+   Knappen sætter selv antallet til 1, så der klikkes én gang mindre på +. */
 const plus = async (p, k, n = 1) => {
   await str(p, k);
+  const chip = await p.$(`[data-chip="${k}"]:not([hidden])`);
+  if (chip) { await chip.click(); await p.waitForTimeout(35); n--; }
   for (let i = 0; i < n; i++) {
     await p.click(`[data-qwrap="${k}"] button:last-child`);
     await p.waitForTimeout(35);
@@ -223,8 +235,9 @@ let STANDARD_START = null;
         e.textContent.replace(/\s+/g, ' '))));
 
     // Indløsning står altid i tilbuddet. Uden en sats står forbeholdet der.
+    // Tilbuddet her har Takeaway, så online betaling har sin egen linje.
     check('tomt indløsningsfelt giver "Aftales efter dialog"',
-      await p.$eval('#quote-doc', e => /Indløsning: Aftales efter dialog\./.test(
+      await p.$eval('#quote-doc', e => /Indløsning, fysisk betaling: Aftales efter dialog\. ?Indløsning, online betaling: Aftales efter dialog\./.test(
         e.textContent.replace(/\s+/g, ' '))));
 
     check('QR låst når Takeaway er valgt',
@@ -383,6 +396,33 @@ let STANDARD_START = null;
 
     const doktekst = await p.$eval('#quote-doc', e => e.textContent.replace(/\s+/g, ' '));
     check('satsen står ordret i tilbuddet', /Indløsning: 0,45 %/.test(doktekst));
+
+    // Online betaling har sin egen sats. Linjen står kun i tilbuddet, når det
+    // har Takeaway eller QR bestilling, eller når der er skrevet en sats.
+    {
+      const dok = async () => { await p.waitForTimeout(300);
+        return p.$eval('#quote-doc', e => e.textContent.replace(/\s+/g, ' ')); };
+      check('uden online står der ingen linje om online betaling', !/online betaling/.test(doktekst));
+      await p.fill('#c_indloesning_online', '1,25 %');
+      let d = await dok();
+      check('en skrevet online-sats kommer med, også uden online i tilbuddet',
+        /Indløsning, fysisk betaling: 0,45 %/.test(d) && /Indløsning, online betaling: 1,25 %/.test(d));
+      check('med to linjer står den korte "Indløsning:" der ikke', !/Indløsning: /.test(d));
+      await p.fill('#c_indloesning_online', '');
+      await plus(p, 's_qr', 1);
+      d = await dok();
+      check('online i tilbuddet uden sats giver "Aftales efter dialog."',
+        /Indløsning, fysisk betaling: 0,45 %/.test(d) && /Indløsning, online betaling: Aftales efter dialog\./.test(d));
+      await p.click('[data-qwrap="s_qr"] button:first-child');
+      await plus(p, 's_takeaway', 1);
+      check('Takeaway tæller også som online', /Indløsning, online betaling:/.test(await dok()));
+      await p.click('[data-qwrap="s_takeaway"] button:first-child');
+      d = await dok();
+      check('uden online er linjen væk igen', !/online betaling/.test(d) && /Indløsning: 0,45 %/.test(d));
+      check('BI er ikke online', await p.evaluate(() => MODULES.filter(m => m.online).map(m => m.id).join() === 'takeaway,qr'));
+      check('begge indløsningsfelter nulstilles med tilbuddet', await p.evaluate(() =>
+        QUOTE_FIELDS.includes('c_indloesning') && QUOTE_FIELDS.includes('c_indloesning_online')));
+    }
     check('forbeholdet er væk når satsen er skrevet',
       !/Aftales efter dialog/.test(doktekst));
 
@@ -661,7 +701,7 @@ let STANDARD_START = null;
     await p.fill('#c_company', 'Restaurant Havnen ApS');
     await p.fill('#c_contact', 'Line Mikkelsen');
     await p.fill('#c_seller', 'Rask');
-    const saet = async (k, n) => { await str(p, k); await p.fill(`#qty_${k}`, String(n)); await p.waitForTimeout(40); };
+    const saet = (k, n) => saetAntal(p, k, n);
 
     // Buddets tre muligheder. Fælles for dem alle: SOT med gulvstander og
     // terminalbeslag, stationær terminal og Takeaway.
@@ -758,7 +798,8 @@ let STANDARD_START = null;
     const dok = await p.$eval('#quote-doc', (e) => e.textContent.replace(/\s+/g, ' '));
     check('ingen "Sådan siger I ja"-boks', !/Sådan siger I ja/i.test(dok));
     check('licensforbeholdet står på forsiden', /I betaler kun for de dage, terminalen er slået til\./.test(dok));
-    check('indløsning står på forsiden', /Indløsning: Aftales efter dialog\./.test(dok));
+    check('indløsning står på forsiden', /Indløsning, fysisk betaling: Aftales efter dialog\./.test(dok)
+      && /Indløsning, online betaling: Aftales efter dialog\./.test(dok));
 
     const order = await p.$$eval('#quote-doc .qp-content > *',
       (els) => els.map((e) => e.className.split(' ')[0] || e.tagName.toLowerCase()));
@@ -795,7 +836,7 @@ let STANDARD_START = null;
     const p = await newPage(browser, { muligheder: true, lokationer: true });
     await p.fill('#c_company', 'Kaffe & Co ApS');
     await p.fill('#c_seller', 'Rask');
-    const saet = async (k, n) => { await str(p, k); await p.fill(`#qty_${k}`, String(n)); await p.waitForTimeout(40); };
+    const saet = (k, n) => saetAntal(p, k, n);
 
     // Aarhus C: Genbrug (SOT + 2 egne tablets) og Alt nyt (SOT + 2 nye 14").
     await p.fill('#l_name', 'Aarhus C');
@@ -930,7 +971,7 @@ let STANDARD_START = null;
 
     // Et tilbud der rammer de fleste tekster: to lokationer, muligheder med
     // eget udstyr, licenser, moduler (QR inkluderet i Takeaway) og løst tilbehør.
-    const saet = async (k, n) => { await str(p, k); await p.fill(`#qty_${k}`, String(n)); await p.waitForTimeout(40); };
+    const saet = (k, n) => saetAntal(p, k, n);
     await p.fill('#c_company', 'Cafe Nord AS');
     await p.fill('#c_contact', 'Ola Nordmann');
     await p.fill('#c_seller', 'Rask');
@@ -969,7 +1010,8 @@ let STANDARD_START = null;
     }
     const de = await tekst();
     check('de: sidehoved, datoer og forbehold', /ANGEBOT/.test(de) && /Gültig bis:/.test(de)
-      && /Kartenakzeptanz: Nach Absprache\./.test(de) && /zzgl\. MwSt\./.test(de), de.slice(0, 200));
+      && /Kartenakzeptanz, Zahlung vor Ort: Nach Absprache\./.test(de)
+      && /Kartenakzeptanz, Online-Zahlung: Nach Absprache\./.test(de) && /zzgl\. MwSt\./.test(de), de.slice(0, 200));
     check('adressen følger ikke sproget', de.includes('Åboulevarden 69, 8000 Aarhus C\n') && !/Dänemark|Denmark/.test(de));
     check('de: sidetal på tysk', (await paginate(p)).feet[0].startsWith('Seite 1 von'));
     check('de: navne sælgeren ikke har rettet, følger sproget', /Option A/.test(de) && /Standort 2/.test(de));
@@ -1052,6 +1094,145 @@ let STANDARD_START = null;
     }
     await p.click('button[onclick="exportPDF()"]'); await p.waitForTimeout(800);
     check('med alle felter udfyldt eksporteres der', await p.evaluate(() => window.__printKaldt === true));
+    await p.close();
+  }
+
+  /* ---------- brugt udstyr ---------- */
+  console.log('\n# Brugt udstyr');
+  {
+    const p = await newPage(browser);
+    for (const [id, val] of [['c_company', 'Café Brugt ApS'], ['c_cvr', '12345678'], ['c_contact', 'Mette'],
+      ['c_email', 'mette@brugt.dk'], ['c_phone', '12345678'], ['c_addr', 'Vestergade 1'], ['c_zip', '8000'],
+      ['c_city', 'Aarhus C'], ['c_seller', 'Rask']]) await p.fill('#' + id, val);
+
+    const total = async () => (await p.$$eval('#quote-doc table.loc-overview tfoot td',
+      (td) => td.map((t) => t.textContent.trim())));
+    const prisfelt = (k) => `[data-brugtpris="${k}"]`;
+
+    check('hvert produkt og tilbehør har en tæller til brugte', await p.evaluate(() =>
+      [...document.querySelectorAll('[data-qwrap]')].filter((w) => /^eget_/.test(w.dataset.qwrap))
+        .every((w) => !!document.querySelector(`[data-qwrap="brugt_${w.dataset.qwrap.slice(5)}"]`))));
+    check('prisfeltet er skjult, til der er sat antal', !(await p.isVisible(prisfelt('m_lan'))));
+
+    // Kun "Nye" står fremme. De to andre tællere er foldet sammen til knapper.
+    check('tomme tællere til egne og brugte er foldet sammen', await p.evaluate(() =>
+      [...document.querySelectorAll('[data-kortrow]')].every((r) => r.hidden)
+      && [...document.querySelectorAll('.kortchip')].every((c) => !c.hidden)));
+    await p.click('[data-chip="brugt_m_wifi"]'); await p.waitForTimeout(80);
+    check('knappen folder tælleren ud, sætter 1 og stiller markøren i prisfeltet', await p.evaluate(() =>
+      !document.querySelector('[data-kortrow="brugt_m_wifi"]').hidden
+      && document.querySelector('[data-chip="brugt_m_wifi"]').hidden
+      && qBrugt('m_wifi') === 1
+      && document.activeElement === document.querySelector('[data-brugtpris="m_wifi"]')));
+    await p.click('[data-qwrap="brugt_m_wifi"] button:first-child'); await p.waitForTimeout(80);
+    check('tælleren bliver stående på 0, til kortene tegnes forfra', await p.evaluate(() => {
+      const foer = !document.querySelector('[data-kortrow="brugt_m_wifi"]').hidden;
+      renderAll();
+      return foer && document.querySelector('[data-kortrow="brugt_m_wifi"]').hidden;
+    }));
+
+    // Én ny og to brugte 11" tablets plus en brugt LAN-printer.
+    await plus(p, 'm_tab11', 1);
+    await plus(p, 'brugt_m_tab11', 2);
+    await plus(p, 'brugt_m_lan', 1);
+    await p.waitForTimeout(400);
+    check('prisfeltet kommer frem med antallet', await p.isVisible(prisfelt('m_lan')));
+    check('uden pris er feltet markeret', await p.evaluate(() =>
+      document.querySelector('[data-brugtpris="m_lan"]').classList.contains('mangler')));
+
+    // Eksporten stopper, til prisen er sat.
+    await p.evaluate(() => { window.print = () => { window.__printKaldt = true; }; });
+    let besked = '';
+    p.removeAllListeners('dialog');
+    p.on('dialog', (d) => { besked = d.message(); d.accept(); });
+    await p.click('button[onclick="exportPDF()"]'); await p.waitForTimeout(300);
+    check('eksporten stopper uden pris på brugt udstyr', !(await p.evaluate(() => window.__printKaldt))
+      && /Pris på brugt: LAN Printer/.test(besked) && /Pris på brugt: 11" POS Tablet/.test(besked),
+      besked.replace(/\n/g, ' '));
+
+    await p.fill(prisfelt('m_tab11'), '1500');
+    await p.fill(prisfelt('m_lan'), '700');
+    await p.waitForTimeout(400);
+    // Håndregnet: 1 ny tablet 2995 + 2 brugte à 1500 + brugt printer 700.
+    const HW = 2995 + 2 * 1500 + 700;
+    let row = await total();
+    check('brugt udstyr koster den pris, sælgeren har skrevet', kr(row[1]) === HW, `${row[1]} vs ${HW}`);
+    // Tre tablets à 15,- pr. dag. Printeren udløser ingen licens.
+    check('brugt udstyr udløser licens', kr(row[2]) === 3 * 15, row[2]);
+    check('markeringen forsvinder, når prisen er sat', !(await p.evaluate(() =>
+      document.querySelector('[data-brugtpris="m_lan"]').classList.contains('mangler'))));
+
+    const linjer = await p.$$eval('#quote-doc table.pv:not(.loc-overview) tbody tr', (rows) =>
+      rows.map((r) => [...r.cells].map((c) => c.textContent.replace(/\s+/g, ' ').trim())));
+    const tab = linjer.filter((r) => /^11" POS Tablet/.test(r[0]));
+    check('brugt står lige efter det nye, mærket "Brugt"', tab.length === 2
+      && /Ny/.test(tab[0][0]) && /Brugt/.test(tab[1][0]), tab.map((r) => r[0]).join(' | '));
+    check('den brugte linje viser stykpris og i alt', tab[1] && tab[1][1] === '2'
+      && kr(tab[1][2]) === 1500 && kr(tab[1][3]) === 3000, (tab[1] || []).join(' | '));
+    check('brugt udstyr er ikke dæmpet som kundens eget',
+      (await p.$$('#quote-doc tr.eget')).length === 0);
+
+    // Kundens eget tilbehør valgt under et købt produkt står som tilbehørslinje
+    // under produktet — aldrig som sin egen hovedlinje. Her har kunden ingen egen
+    // 11" tablet, så holderen står under den nye.
+    await plus(p, 'eget_a_tab11_hand', 1);
+    await p.waitForTimeout(400);
+    check('eget tilbehør til et købt produkt står under produktet', await p.$eval('#quote-doc', (e) => {
+      const r = [...e.querySelectorAll('table.pv:not(.loc-overview) tbody tr')];
+      const i = r.findIndex((x) => /Hand Strap/.test(x.textContent));
+      const foer = r.slice(0, i).reverse().find((x) => !x.classList.contains('acc'));
+      return i > -1 && r[i].classList.contains('acc') && r[i].classList.contains('eget')
+        && /Jeres eget/.test(r[i].textContent) && /^\s*11" POS Tablet/.test(foer.cells[0].textContent)
+        && /Ny/.test(foer.cells[0].textContent);
+    }));
+    check('eget tilbehør under et produkt koster stadig ingenting', kr((await total())[1]) === HW);
+    // Går produktet til 0, følger tilbehøret ikke med i tilbuddet som løs linje.
+    check('tilbehør uden sit produkt står ikke i tilbuddet', await p.evaluate(() => {
+      const d = collectFor({ qty: { a_tab11_hand: 1 }, eget: { a_tab11_desktop: 1 }, brugt: {} });
+      return d.hw.length === 0 && d.oneOff === 0;
+    }));
+
+    // Brugt tilbehør og brugt løst tilbehør.
+    await plus(p, 'brugt_a_tab11_desktop', 1);
+    await p.fill(prisfelt('a_tab11_desktop'), '300');
+    if (await p.$('.panel.fold.closed > h2')) { await p.click('.panel.fold.closed > h2'); await p.waitForTimeout(150); }
+    await plus(p, 'brugt_x_hand', 2);
+    await p.fill(prisfelt('x_hand'), '50');
+    await p.waitForTimeout(400);
+    row = await total();
+    check('brugt tilbehør regnes med', kr(row[1]) === HW + 300 + 2 * 50, `${row[1]} vs ${HW + 400}`);
+
+    // En kopieret mulighed tager de brugte og deres priser med.
+    check('kopi af muligheden beholder brugt og pris', await p.evaluate(() => {
+      const o = newOpt(2, M());
+      return o.brugt.m_tab11 === 2 && o.brugtPris.m_tab11 === 1500 && o.brugt !== M().brugt;
+    }));
+
+    // På engelsk hedder mærkatet "Used".
+    await p.evaluate(() => { document.getElementById('c_sprog').value = 'en'; skiftSprog(); });
+    await p.waitForTimeout(300);
+    check('mærkatet følger sproget', /Used/.test(await p.textContent('#quote-doc')));
+    await p.evaluate(() => { document.getElementById('c_sprog').value = 'da'; skiftSprog(); });
+
+    await p.click('button[onclick="exportPDF()"]'); await p.waitForTimeout(800);
+    check('med pris på det brugte eksporteres der', await p.evaluate(() => window.__printKaldt === true));
+    const pg = await paginate(p);
+    check('brugt udstyr: intet løber ud over sidefoden', pg.bad.length === 0, pg.bad.join(', '));
+    await p.close();
+  }
+
+  /* ---------- brugt udstyr i sammenligningen ---------- */
+  {
+    const p = await newPage(browser, { muligheder: true });
+    await plus(p, 'm_tab11', 2);
+    await p.evaluate(() => addOpt()); await p.waitForTimeout(150);
+    await plus(p, 'brugt_m_tab11', 2);
+    await p.fill('[data-brugtpris="m_tab11"]', '1500');
+    await p.waitForTimeout(400);
+    const celler = await p.$$eval('#quote-doc table.sml tbody tr', (rows) =>
+      (rows.find((r) => /Bemandede kassepladser/.test(r.cells[0].textContent)) || { cells: [] }).cells
+        ? [...rows.find((r) => /Bemandede kassepladser/.test(r.cells[0].textContent)).cells].map((c) => c.textContent.trim()) : []);
+    check('sammenligningen skelner mellem nye og brugte', celler[1] === '2 nye' && celler[2] === '2 brugte', celler.join(' | '));
     await p.close();
   }
 

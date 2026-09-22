@@ -22,23 +22,30 @@ function dokDato(iso){
 }
 
 /* ---------- render tilbudsdokument ---------- */
+/* Mærkatet efter varenavnet: kundens eget, brugt, eller "Ny" når samme vare
+   også står som noget andet. */
+function linjeMrk(x){
+  return x.eget  ? '<span class="pv-mrk eget">'+t('Jeres eget')+'</span>'
+       : x.brugt ? '<span class="pv-mrk brugt">'+t('Brugt')+'</span>'
+       : x.nyt   ? '<span class="pv-mrk ny">'+t('Ny')+'</span>' : '';
+}
+/* Kundens eget har ingen stykpris, og brugt udstyr har ingen, før sælgeren har sat den. */
+function linjeStk(x){ return x.eget||x.prisMangler ? '–' : fmt(x.price); }
 function tableHW(d){
   let b='',total=0;
   b+='<table class="pv"><thead><tr><th>'+t('Hardware')+'</th><th class="num">'+t('Antal')+'</th><th class="num">'+t('Stk. pris')+'</th><th class="num">'+t('I alt')+'</th></tr></thead><tbody>';
   d.hw.forEach(p=>{ const line=p.qty*p.price; total+=line;
     const pimg=p.img?`<img class="pv-img" src="${p.img}">`:'';
     // Kundens eget udstyr: ingen stykpris at vise, og linjen er 0.
-    const mrk = p.eget ? '<span class="pv-mrk eget">'+t('Jeres eget')+'</span>'
-              : p.nyt ? '<span class="pv-mrk ny">'+t('Ny')+'</span>' : '';
-    const stk = p.eget ? '–' : fmt(p.price);
+    const mrk = linjeMrk(p), stk = linjeStk(p);
     // Fotoet står til venstre for navn og beskrivelse (.pv-prod), så rækken
     // ikke bliver højere end fotoet.
     b+=`<tr${p.eget?' class="eget"':''}><td><div class="pv-prod">${pimg}<div>${esc(t(p.name))}${mrk}<span class="pv-d">${esc(t(p.desc))}</span></div></div></td><td class="num">${p.qty}</td><td class="num">${stk}</td><td class="num">${fmt(line)}</td></tr>`;
     p.accessories.forEach(a=>{ const al=a.qty*a.price; total+=al;
       const aimg=a.img?`<img class="pv-img" style="width:26px;height:26px" src="${a.img}">`:'';
       // Kundens eget tilbehør: samme behandling som eget udstyr — mærket, dæmpet, 0.
-      const amrk=a.eget?'<span class="pv-mrk eget">'+t('Jeres eget')+'</span>':'';
-      b+=`<tr class="acc${a.eget?' eget':''}"><td><div class="pv-prod"><span>↳</span>${aimg}<div>${esc(t(a.name))}${amrk}<span class="pv-d">${esc(t(a.desc))}</span></div></div></td><td class="num">${a.qty}</td><td class="num">${a.eget?'–':fmt(a.price)}</td><td class="num">${fmt(al)}</td></tr>`;
+      const amrk=linjeMrk(a);
+      b+=`<tr class="acc${a.eget?' eget':''}"><td><div class="pv-prod"><span>↳</span>${aimg}<div>${esc(t(a.name))}${amrk}<span class="pv-d">${esc(t(a.desc))}</span></div></div></td><td class="num">${a.qty}</td><td class="num">${linjeStk(a)}</td><td class="num">${fmt(al)}</td></tr>`;
     });
   });
   b+='</tbody></table>';
@@ -50,8 +57,8 @@ function tableExtras(d){
   d.extras.forEach(a=>{ const line=a.qty*a.price;
     const aimg=a.img?`<img class="pv-img" src="${a.img}">`:'';
     // Kundens eget løse tilbehør: mærket, dæmpet og 0 — som eget udstyr.
-    const mrk=a.eget?'<span class="pv-mrk eget">'+t('Jeres eget')+'</span>':'';
-    b+=`<tr${a.eget?' class="eget"':''}><td><div class="pv-prod">${aimg}<div>${esc(t(a.name))}${mrk}<span class="pv-d">${esc(t(a.desc))}</span></div></div></td><td class="num">${a.qty}</td><td class="num">${a.eget?'–':fmt(a.price)}</td><td class="num">${fmt(line)}</td></tr>`;
+    const mrk=linjeMrk(a);
+    b+=`<tr${a.eget?' class="eget"':''}><td><div class="pv-prod">${aimg}<div>${esc(t(a.name))}${mrk}<span class="pv-d">${esc(t(a.desc))}</span></div></div></td><td class="num">${a.qty}</td><td class="num">${linjeStk(a)}</td><td class="num">${fmt(line)}</td></tr>`;
   });
   b+='</tbody></table>';
   return b;
@@ -167,10 +174,24 @@ function prisNoter(harLic,dagspris,harEget,days){
   /* Indløsning står altid i tilbuddet. Er der skrevet en sats, står præcis
      det der — ikke omskrevet. Ellers står forbeholdet. Et tilbud må ikke være
      tavst om indløsning, bare fordi sælgeren sprang feltet over. */
-  const indl=v('c_indloesning');
-  b+='<div class="qp-assump"><b>'+t('Indløsning:')+'</b> '
-    +(indl ? esc(indl) : t('Aftales efter dialog.'))+'</div>';
+  const linje=(navn,sats)=>'<div class="qp-assump"><b>'+navn+'</b> '
+    +(sats ? esc(sats) : t('Aftales efter dialog.'))+'</div>';
+  // Online betaling har sin egen sats. Den står kun i tilbuddet, når det har
+  // noget, der tager imod betaling online, eller når sælgeren har skrevet en
+  // sats. Uden online hedder linjen bare "Indløsning", som den altid har gjort.
+  const indl=v('c_indloesning'), online=v('c_indloesning_online');
+  if(online || harOnline()){
+    b+=linje(t('Indløsning, fysisk betaling:'),indl);
+    b+=linje(t('Indløsning, online betaling:'),online);
+  } else b+=linje(t('Indløsning:'),indl);
   return b;
+}
+
+/* Har tilbuddet noget, der tager imod betaling online? Modulerne er mærket
+   `online` i js/data.js. Et modul der er inkluderet i et andet, følger med sit
+   forældremodul, og alle muligheder tæller — kunden kan vælge enhver af dem. */
+function harOnline(){
+  return LOCS.some(l=>l.muligheder.some(o=>MODULES.some(m=>m.online && qOf(o.qty||{},keyMod(m.id))>0)));
 }
 
 function priceOverview(live,days,sum){
@@ -193,13 +214,13 @@ function lokationerMedIndhold(){
     .filter(x=>x.ml.length);
 }
 
-/* Tæl op for én mulighed. `fn` får mulighedens to antalskort: Q (det vi
-   sælger) og E (kundens eget). */
-function smlTael(m,fn){ return fn(m.o.qty||{}, m.o.eget||{}); }
+/* Tæl op for én mulighed. `fn` får mulighedens tre antalskort: Q (nyt),
+   E (kundens eget) og B (brugt). */
+function smlTael(m,fn){ return fn(m.o.qty||{}, m.o.eget||{}, m.o.brugt||{}); }
 
 /* En hardwarerække samler produkter der løser samme opgave, fx de fire
-   kasseskærme. Cellen skelner kun mellem ny og jeres, når kunden har eget
-   udstyr i rækken, og viser kun varianten (11", LAN …), når mulighederne
+   kasseskærme. Cellen skelner kun mellem ny, brugt og jeres, når rækken har
+   eget eller brugt udstyr, og viser kun varianten (11", LAN …), når mulighederne
    bruger forskellige. Ellers er det bare støj. */
 function smlProdukter(r,ml){
   const ids=Object.keys(r.produkter);
@@ -207,10 +228,11 @@ function smlProdukter(r,ml){
       variant:r.produkter[id],
       nye:smlTael(m,Q=>qOf(Q,keyMain(id))),
       egne:smlTael(m,(Q,E)=>qOf(E,keyMain(id))),
-    })).filter(t=>t.nye||t.egne));
+      brugte:smlTael(m,(Q,E,B)=>qOf(B,keyMain(id))),
+    })).filter(t=>t.nye||t.egne||t.brugte));
   const alle=[].concat(...tal);
   if(!alle.length) return null;
-  const visOrd=alle.some(t=>t.egne);
+  const visOrd=alle.some(t=>t.egne||t.brugte);
   const visVariant=new Set(alle.map(t=>t.variant)).size>1;
   return tal.map(ts=>smlCelle(ts,visOrd,visVariant));
 }
@@ -219,7 +241,8 @@ function smlCelle(ts,visOrd,visVariant){
   if(!ts.length) return null;
   // Kundens eget først — "2 jeres + 1 ny", som man siger det.
   const dele=ts.filter(x=>x.egne).map(x=>({n:x.egne, ord:t('jeres'), variant:x.variant, eget:true}))
-    .concat(ts.filter(x=>x.nye).map(x=>({n:x.nye, ord:x.nye===1?t('ny'):t('nye'), variant:x.variant})));
+    .concat(ts.filter(x=>x.nye).map(x=>({n:x.nye, ord:x.nye===1?t('ny'):t('nye'), variant:x.variant})))
+    .concat(ts.filter(x=>x.brugte).map(x=>({n:x.brugte, ord:x.brugte===1?t('brugt'):t('brugte'), variant:x.variant})));
   // Deler alle dele samme variant, står den én gang til sidst.
   const faelles=visVariant && new Set(dele.map(d=>d.variant)).size===1 ? dele[0].variant : '';
   const html=dele.map((d,i)=>{
@@ -246,11 +269,12 @@ function smlTilbehoer(r,ml){
   const tal=ml.map(m=>{
     const nye=smlTael(m,Q=>noegler.reduce((s,k)=>s+qOf(Q,k),0));
     const egne=smlTael(m,(Q,E)=>noegler.reduce((s,k)=>s+qOf(E,k),0));
-    return nye||egne ? [{variant:'',nye,egne}] : [];
+    const brugte=smlTael(m,(Q,E,B)=>noegler.reduce((s,k)=>s+qOf(B,k),0));
+    return nye||egne||brugte ? [{variant:'',nye,egne,brugte}] : [];
   });
   const alle=[].concat(...tal);
   if(!alle.length) return null;
-  return tal.map(ts=>smlCelle(ts, alle.some(t=>t.egne), false));
+  return tal.map(ts=>smlCelle(ts, alle.some(t=>t.egne||t.brugte), false));
 }
 
 /* Software og licens bygges af modulerne og licenstyperne selv, så et nyt

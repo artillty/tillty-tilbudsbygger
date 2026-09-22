@@ -53,7 +53,7 @@ async function gemTilbud(status){
           id:l.id, name:l.name,
           muligheder: l.muligheder.map(o=>({
             id:o.id, navn:o.navn, tagline:o.tagline, anbefalet:o.anbefalet,
-            qty:o.qty, eget:o.eget,
+            qty:o.qty, eget:o.eget, brugt:o.brugt, brugtPris:o.brugtPris,
           })),
         })),
       },

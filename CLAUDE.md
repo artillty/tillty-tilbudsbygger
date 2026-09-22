@@ -82,11 +82,31 @@ udledes af koden — og de fejl der allerede er begået én gang.
   tilbud let kommer til at love for lidt.
 - Eget udstyr står **nederst** i hardwaretabellen, ikke blandet ind mellem de
   nye linjer — ellers er det svært at se, hvad der rent faktisk købes.
-- **Kundens eget tilbehør koster også 0**, men udløser ingen licens. Det står
-  under det egne udstyr, eller — hører det til et nyt produkt — som sin egen
-  linje nederst. Eget løst tilbehør står nederst i tilbehørstabellen.
-- Mærkatet **"Ny"** sættes kun, når samme produkt også står som kundens eget.
-  Uden den tvivl er mærkatet bare støj.
+- **Kundens eget tilbehør koster også 0**, men udløser ingen licens. Eget løst
+  tilbehør står nederst i tilbehørstabellen.
+- **Tilbehør valgt under et produkt står altid som tilbehørslinje under
+  produktet** — nyt, brugt og kundens eget. Aldrig som sin egen hovedlinje; det
+  gør kun løst tilbehør. Hver slags står under det eksemplar, den ligner (eget
+  under eget, brugt under brugt), og ellers under det første der findes. Eget
+  tilbehør til et nyt produkt stod før som hovedlinje nederst; det er fravalgt
+  af tillty. Uden produktet kommer tilbehøret slet ikke med.
+- Mærkatet **"Ny"** sættes kun, når samme produkt også står som kundens eget
+  eller som brugt. Uden den tvivl er mærkatet bare støj.
+- **Brugt udstyr har ingen listepris.** Hvert produkt og tilbehør har en tredje
+  tæller, "Brugte", med et prisfelt: antallet ligger i `brugt`, stykprisen i
+  `brugtPris`, begge pr. varenøgle på muligheden. Priserne i `js/data.js` gælder
+  kun nyt. Brugt udstyr **udløser licens** og tæller med i engangsprisen.
+- **Kun "Nye" står fremme på et kort.** "Kundens egne" og "Brugte" er små
+  knapper (`taellere()` og `aabnKort()` i `js/app.js`), der folder tælleren ud
+  og sætter antallet til 1. Med tre tællere fremme på hvert kort og tilbehør
+  blev listen for lang. En tæller med antal står altid fremme; en tom, udfoldet
+  tæller foldes først sammen, når kortene tegnes forfra (`aabneKort`).
+- **Uden pris stopper eksporten** (`kravOpfyldt()` læser `udenPris` fra
+  `collectFor`). Tomt felt er "ikke sat"; 0 er en pris, sælgeren har valgt.
+- Brugt står **lige efter det nye** i tabellen med mærkatet "Brugt", ikke nede
+  ved kundens eget: det er noget kunden køber. Tilbehør står under det
+  eksemplar, det ligner. Købt tilbehør til et produkt, kunden kun har som sit
+  eget, står under det egne produkt med sin pris — før blev det tabt.
 
 - **Stationær betalingsterminal (`termstat`) udløser ingen licens.** Den tager
   kun imod betalinger og har intet særligt datatræk. Den mobile terminal
@@ -96,9 +116,16 @@ udledes af koden — og de fejl der allerede er begået én gang.
   og vises i tilbuddet som en gratis underlinje. Reglen ligger i data
   (`MODULES[].includes`), ikke i logikken — nye bundles tilføjes samme sted.
 - **Indløsning står altid i tilbuddet.** Enten satsen fra feltet, ordret, eller
-  `Indløsning: Aftales efter dialog.` Gør den ikke betinget af, at feltet er
-  udfyldt. Omskriv ikke det indtastede — tillty arbejder kun med procentsatser,
-  og sælgeren skriver dem selv.
+  `Aftales efter dialog.` Gør den ikke betinget af, at feltet er udfyldt.
+  Omskriv ikke det indtastede — tillty arbejder kun med procentsatser, og
+  sælgeren skriver dem selv.
+- **Online betaling har sin egen sats** (`c_indloesning_online`). Linjen står
+  kun i tilbuddet, når det har et modul mærket `online:true` i `js/data.js`
+  (Takeaway, QR bestilling) i en af mulighederne, eller når feltet er udfyldt.
+  Så hedder de to linjer "Indløsning, fysisk betaling" og "Indløsning, online
+  betaling", og en tom online-sats giver også `Aftales efter dialog.` Uden
+  online står der bare `Indløsning:` som før. Feltet til fysisk betaling
+  beholder id'et `c_indloesning`, så gamle tilbud åbner med deres sats.
 - **En måned er altid 30 dage** ved omregning fra dagslicens til månedspris.
   Ingen indstilling, ingen "ca."-forbehold.
 - **Et tilbud gælder altid 30 dage** fra det er sendt (`GYLDIG_DAGE`). Der er

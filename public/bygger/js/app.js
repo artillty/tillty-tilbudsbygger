@@ -35,7 +35,7 @@ const images = {};        // varenøgle -> dataURL. Delt på tværs af lokatione
    skal vælge en løsning til. Et almindeligt tilbud er 1×1 og renderer som før. */
 let FORM = { muligheder:false, lokationer:false };
 
-let LOCS = [];            // [{id, name, muligheder:[{id, navn, tagline, anbefalet, qty, eget}]}]
+let LOCS = [];            // [{id, name, muligheder:[{id, navn, tagline, anbefalet, qty, eget, brugt, brugtPris}]}]
 let activeIdx = 0;        // aktiv lokation
 let optIdx = 0;           // aktiv mulighed inden for den aktive lokation
 let locSeq = 0;
@@ -44,6 +44,9 @@ let optSeq = 0;
 /* En mulighed bærer selve opsætningen: `qty` er det vi sælger, `eget` er det
    kunden allerede har. Eget udstyr koster 0, men tæller med i licenserne — det
    er stadig terminaler, der kører på systemet.
+   `brugt` er brugt udstyr, vi sælger. Det har ingen listepris: sælgeren skriver
+   stykprisen selv i `brugtPris`, pr. varenøgle. Brugt udstyr udløser licens
+   som alt andet, der kører på systemet.
    Nye muligheder navngives "Mulighed A", "Mulighed B" …, og der er ingen
    foruddefinerede. `kilde` gives kun med, når der kopieres. */
 /* Muligheder har bogstaver, lokationer tal. Med tal på begge dele blev
@@ -59,6 +62,8 @@ function newOpt(nr,kilde){
     anbefalet: false,
     qty: Object.assign({}, k.qty||{}),
     eget: Object.assign({}, k.eget||{}),
+    brugt: Object.assign({}, k.brugt||{}),
+    brugtPris: Object.assign({}, k.brugtPris||{}),
   };
 }
 
@@ -90,8 +95,25 @@ function setEget(key,n){
   n=reneAntal(n);
   if(n===0) delete M().eget[key]; else M().eget[key]=n;
 }
+function qBrugt(key){ return (M().brugt[key])||0; }
+function setBrugt(key,n){
+  n=reneAntal(n);
+  if(n===0) delete M().brugt[key]; else M().brugt[key]=n;
+}
+/* Prisen på brugt udstyr. Tomt felt er "ikke sat" og stopper eksporten; 0 er
+   en pris, sælgeren har valgt. */
+function brugtPrisOf(o,key){ const p=(o.brugtPris||{})[key]; return typeof p==='number' ? p : null; }
+function setBrugtPris(key,val){
+  const p=parseFloat(String(val).replace(',','.'));
+  if(isNaN(p)||p<0) delete M().brugtPris[key]; else M().brugtPris[key]=Math.round(p*100)/100;
+  const felt=document.querySelector('[data-brugtpris="'+key+'"]');
+  if(felt) felt.classList.toggle('mangler', brugtPrisOf(M(),key)===null);
+  updateSoon();
+}
+/* Alt i en mulighed, uanset kort: nyt, kundens eget og brugt. */
+function qAlle(key){ return q(key)+qEget(key)+qBrugt(key); }
 function antalIKort(K){ return Object.keys(K||{}).reduce((s,k)=>s+(K[k]||0),0); }
-function optItemCount(o){ return antalIKort(o.qty)+antalIKort(o.eget); }
+function optItemCount(o){ return antalIKort(o.qty)+antalIKort(o.eget)+antalIKort(o.brugt); }
 function locItemCount(l){ return l.muligheder.reduce((s,o)=>s+optItemCount(o),0); }
 function locHasContent(l){ return locItemCount(l)>0; }
 /* Sælgerens egen upload vinder; ellers tilltys officielle foto; ellers en
@@ -110,22 +132,64 @@ const fmt = n => (Number.isInteger(n)
   : n.toLocaleString('da-DK',{minimumFractionDigits:2,maximumFractionDigits:2})) + ',-';
 
 /* ---------- stepper ----------
-   `kort` er 'ny' (det vi sælger) eller 'eget' (det kunden allerede har).
-   De to har hver sit antal på samme varenøgle, så et produkt kan optræde
+   `kort` er 'ny' (det vi sælger), 'eget' (det kunden allerede har) eller
+   'brugt' (brugt udstyr, vi sælger til en pris sælgeren selv skriver).
+   De har hver sit antal på samme varenøgle, så et produkt kan optræde
    som fx "1 ny + 2 jeres" — præcis den situation genbrugstilbud handler om. */
 function stepper(key,kort){
-  const eget = kort==='eget';
-  const n = eget ? qEget(key) : q(key);
-  const pre = eget ? 'eget_' : '';
-  return `<div class="qty${n?' on':''}${eget?' qty-eget':''}" data-qwrap="${pre}${key}">
+  const eget = kort==='eget', brugt = kort==='brugt';
+  const n = laesKort(key,kort);
+  const pre = eget ? 'eget_' : brugt ? 'brugt_' : '';
+  return `<div class="qty${n?' on':''}${eget?' qty-eget':''}${brugt?' qty-brugt':''}" data-qwrap="${pre}${key}">
     <button type="button" class="qbtn" ${n?'':'disabled'} onclick="bump('${key}',-1,'${kort||'ny'}')" aria-label="Færre">−</button>
     <input type="number" min="0" value="${n}" id="qty_${pre}${key}" data-qinput="${pre}${key}"
            oninput="typeQty('${key}',this.value,'${kort||'ny'}')" aria-label="Antal">
     <button type="button" class="qbtn" onclick="bump('${key}',1,'${kort||'ny'}')" aria-label="Flere">+</button>
   </div>`;
 }
-function laesKort(key,kort){ return kort==='eget' ? qEget(key) : q(key); }
-function skrivKort(key,n,kort){ if(kort==='eget') setEget(key,n); else setQ(key,n); }
+function laesKort(key,kort){ return kort==='eget' ? qEget(key) : kort==='brugt' ? qBrugt(key) : q(key); }
+function skrivKort(key,n,kort){
+  if(kort==='eget') setEget(key,n); else if(kort==='brugt') setBrugt(key,n); else setQ(key,n);
+}
+/* ---------- tællerne på et kort ----------
+   Kun "Nye" står fremme. "Kundens egne" og "Brugte" er to små knapper, der
+   folder deres tæller ud med ét klik og sætter antallet til 1 — med tre
+   tællere fremme på hvert eneste kort og tilbehør blev listen alt for lang.
+   En tæller med antal står altid fremme. Hvilke tomme tællere der er foldet ud,
+   er ren UI-state (`aabneKort`) og nulstilles, når kortene tegnes forfra. */
+let aabneKort = {};
+function kortSynligt(key,kort){ return laesKort(key,kort)>0 || !!aabneKort[kort+'_'+key]; }
+function aabnKort(key,kort){
+  aabneKort[kort+'_'+key]=true;
+  if(!laesKort(key,kort)) skrivKort(key,1,kort);
+  syncUI();
+  // Brugt udstyr har ingen pris, før sælgeren skriver den — så stil markøren der.
+  const felt = kort==='brugt'
+    ? document.querySelector('[data-brugtpris="'+key+'"]')
+    : document.getElementById('qty_eget_'+key);
+  if(felt){ felt.focus(); if(felt.select) felt.select(); }
+}
+/* `foer` er ekstra indhold foran "Nye"-tælleren (tilbehørets "= N"-knap). */
+function taellere(key,egetTitel,foer){
+  const p=brugtPrisOf(M(),key);
+  return `<div class="ctrl-row">${foer||''}<span class="qty-mrk">Nye</span>${stepper(key,'ny')}</div>
+    <div class="ctrl-row row-kort" data-kortrow="eget_${key}" title="${egetTitel}">
+      <span class="qty-mrk mrk-eget">Kundens egne</span>${stepper(key,'eget')}
+    </div>
+    <div class="ctrl-row row-kort row-brugt" data-kortrow="brugt_${key}" data-brugtrow="${key}"
+         title="Brugt udstyr, vi sælger. Skriv stykprisen selv.">
+      <input type="number" min="0" step="1" class="brugt-pris" data-brugtpris="${key}" placeholder="Stk. pris"
+             value="${p===null?'':p}" oninput="setBrugtPris('${key}',this.value)" aria-label="Stykpris, brugt">
+      <span class="qty-mrk mrk-brugt">Brugte</span>${stepper(key,'brugt')}
+    </div>
+    <div class="kortchips" data-chips="${key}">
+      <button type="button" class="kortchip" data-chip="eget_${key}" title="${egetTitel}"
+              onclick="aabnKort('${key}','eget')">+ Kundens egne</button>
+      <button type="button" class="kortchip chip-brugt" data-chip="brugt_${key}"
+              title="Brugt udstyr, vi sælger. Skriv stykprisen selv."
+              onclick="aabnKort('${key}','brugt')">+ Brugte</button>
+    </div>`;
+}
 function bump(key,d,kort){ skrivKort(key, laesKort(key,kort)+d, kort); syncUI(); }
 function typeQty(key,val,kort){ skrivKort(key,val,kort); syncUI(); }
 
@@ -226,7 +290,7 @@ function dupOpt(){
   // ekstra mulighed: samme grundopsætning med én ting lavet om. Kopien lægges
   // sidst, så de andre muligheder beholder deres bogstav.
   ms.push(newOpt(ms.length+1,{navn:src.navn+' (kopi)', tagline:src.tagline,
-                              qty:src.qty, eget:src.eget}));
+                              qty:src.qty, eget:src.eget, brugt:src.brugt, brugtPris:src.brugtPris}));
   optIdx=ms.length-1; renderAll();
 }
 function delOpt(){
@@ -262,10 +326,7 @@ function kortAntal(p,vis){
   const mk=keyMain(p.id);
   return `<div class="prod-right"${vis||''}>
           <div class="price">${fmt(p.price)}</div>
-          <div class="ctrl-row"><span class="qty-mrk">Nye</span>${stepper(mk,'ny')}</div>
-          <div class="ctrl-row" title="Udstyr kunden allerede har. Koster 0, men tæller med i licenserne.">
-            <span class="qty-mrk mrk-eget">Kundens egne</span>${stepper(mk,'eget')}
-          </div>
+          ${taellere(mk,'Udstyr kunden allerede har. Koster 0, men tæller med i licenserne.')}
         </div>`;
 }
 
@@ -273,7 +334,7 @@ function kortAntal(p,vis){
    Hvilken størrelse et kort viser, er ren UI-state og gemmes ikke. Antallene
    ligger stadig på hver størrelses egen varenøgle. */
 const valgtStr = {};
-function strAntal(pid){ const k=keyMain(pid); return q(k)+qEget(k); }
+function strAntal(pid){ return qAlle(keyMain(pid)); }
 /* Kortet bliver på den valgte størrelse, så længe den har indhold. Ellers
    springer det til en størrelse der har — fx når man skifter til en mulighed
    med 14" — og står ellers på den første. */
@@ -357,14 +418,9 @@ function kortTilbehoer(p,vis){
             </div>
             <div class="acc-right">
               <div class="price" style="font-size:13px">${fmt(a.price)}</div>
-              <div class="ctrl-row">
-                <button type="button" class="matchbtn" data-match="${ak}" data-main="${mk}"
-                        onclick="matchQty('${ak}','${mk}')" style="display:none"></button>
-                <span class="qty-mrk">Nye</span>${stepper(ak,'ny')}
-              </div>
-              <div class="ctrl-row" title="Tilbehør kunden allerede har. Koster 0.">
-                <span class="qty-mrk mrk-eget">Kundens egne</span>${stepper(ak,'eget')}
-              </div>
+              ${taellere(ak,'Tilbehør kunden allerede har. Koster 0.',
+                `<button type="button" class="matchbtn" data-match="${ak}" data-main="${mk}"
+                        onclick="matchQty('${ak}','${mk}')" style="display:none"></button>`)}
             </div>
           </div>`;
         }).join('')}
@@ -392,10 +448,7 @@ function renderExtras(){
       </div>
       <div class="prod-right">
         <div class="price">${fmt(a.price)}</div>
-        <div class="ctrl-row"><span class="qty-mrk">Nye</span>${stepper(xk,'ny')}</div>
-        <div class="ctrl-row" title="Tilbehør kunden allerede har. Koster 0.">
-          <span class="qty-mrk mrk-eget">Kundens egne</span>${stepper(xk,'eget')}
-        </div>
+        ${taellere(xk,'Tilbehør kunden allerede har. Koster 0.')}
       </div>
     </div>`;
     wrap.appendChild(g);
@@ -480,17 +533,37 @@ function syncUI(){
   syncIncludedModules();
   // steppere
   document.querySelectorAll('[data-qwrap]').forEach(w=>{
-    const raa=w.dataset.qwrap, eget=raa.indexOf('eget_')===0;
-    const key=eget?raa.slice(5):raa;
-    const n=eget?qEget(key):q(key);
+    const raa=w.dataset.qwrap;
+    const kort=raa.indexOf('eget_')===0?'eget':raa.indexOf('brugt_')===0?'brugt':'ny';
+    const key=kort==='ny'?raa:raa.slice(kort.length+1);
+    const n=laesKort(key,kort);
     w.classList.toggle('on', n>0);
     const inp=w.querySelector('input'); if(inp && inp.value!==String(n)) inp.value=n;
     const minus=w.querySelector('button'); if(minus) minus.disabled=(n===0);
   });
+  // Tomme tællere til kundens egne og brugte er foldet sammen til en knap.
+  document.querySelectorAll('[data-kortrow]').forEach(r=>{
+    const raa=r.dataset.kortrow, kort=raa.indexOf('eget_')===0?'eget':'brugt';
+    const key=raa.slice(kort.length+1), vis=kortSynligt(key,kort);
+    r.hidden=!vis;
+    const chip=document.querySelector('[data-chip="'+raa+'"]'); if(chip) chip.hidden=vis;
+  });
+  document.querySelectorAll('[data-chips]').forEach(c=>{
+    c.hidden=[...c.querySelectorAll('.kortchip')].every(k=>k.hidden);
+  });
+  // Prisfeltet til brugt udstyr følger tælleren. Feltet skrives kun, når det
+  // ikke har fokus — ellers flytter vi markøren, mens sælgeren taster.
+  document.querySelectorAll('[data-brugtrow]').forEach(r=>{
+    const key=r.dataset.brugtrow, on=qBrugt(key)>0, p=brugtPrisOf(M(),key);
+    r.classList.toggle('on', on);
+    const felt=r.querySelector('.brugt-pris');
+    if(felt!==document.activeElement){ const tx=p===null?'':String(p); if(felt.value!==tx) felt.value=tx; }
+    felt.classList.toggle('mangler', on && p===null);
+  });
   // rækkemarkering — et størrelseskort har én nøgle pr. størrelse
   document.querySelectorAll('[data-rowkey]').forEach(r=>{
     const ks=r.dataset.rowkey.split(' ');
-    r.classList.toggle('on', ks.some(k=>q(k)>0 || qEget(k)>0));
+    r.classList.toggle('on', ks.some(k=>qAlle(k)>0));
   });
   STOERRELSER.forEach(visStr);
   // tilbehørslister foldes ud når produktet har antal
@@ -498,7 +571,7 @@ function syncUI(){
     const list=document.getElementById('acc_'+p.id);
     // Foldes også ud ved eget udstyr: kunden kan sagtens mangle en holder til
     // en tablet, de allerede ejer.
-    if(list) list.classList.toggle('show', q(keyMain(p.id))>0 || qEget(keyMain(p.id))>0);
+    if(list) list.classList.toggle('show', qAlle(keyMain(p.id))>0);
     // "= N"-knappen vises kun når den gør en forskel
     p.acc.forEach(aid=>{
       const ak=keyAcc(p.id,aid), mk=keyMain(p.id);
@@ -525,14 +598,14 @@ function syncUI(){
   visNoteUddrag();
   update();
 }
-function renderAll(){ renderCatalog(); renderExtras(); renderSoftware(); syncUI(); }
+function renderAll(){ aabneKort={}; renderCatalog(); renderExtras(); renderSoftware(); syncUI(); }
 
 /* små tællere i panel-headerne, så man kan se hvad der ligger i et foldet panel */
 function refreshPanelSubs(){
-  const Q=M().qty, E=M().eget;
-  // Nye og kundens egne tælles begge med — tælleren viser, hvad der er i panelet.
-  const cnt=pref=>[Q,E].reduce((t,K)=>t+Object.keys(K).filter(k=>k.indexOf(pref)===0).reduce((s,k)=>s+K[k],0),0);
-  const hw=CATALOG.reduce((s,p)=>s+qOf(Q,keyMain(p.id))+qOf(E,keyMain(p.id)),0);
+  const Q=M().qty, E=M().eget, B=M().brugt;
+  // Nye, brugte og kundens egne tælles alle med — tælleren viser, hvad der er i panelet.
+  const cnt=pref=>[Q,E,B].reduce((t,K)=>t+Object.keys(K).filter(k=>k.indexOf(pref)===0).reduce((s,k)=>s+K[k],0),0);
+  const hw=CATALOG.reduce((s,p)=>s+qOf(Q,keyMain(p.id))+qOf(E,keyMain(p.id))+qOf(B,keyMain(p.id)),0);
   const accUnder=cnt('a_');
   const ex=cnt('x_');
   const mod=MODULES.reduce((s,m)=>s+qOf(Q,keyMod(m.id)),0), ds=qOf(Q,KEY_DS);
@@ -558,16 +631,16 @@ function onFile(e){
 }
 
 /* ---------- opsamling pr. mulighed ---------- */
-/* Licenser regnes af BÅDE det vi sælger og kundens eget udstyr. En tablet
+/* Licenser regnes af ALT udstyr: nyt, brugt og kundens eget. En tablet
    kunden allerede ejer, kører stadig på systemet og kræver stadig licens —
    den er bare gratis at anskaffe. Det er et af de steder, et tilbud let
    kommer til at love for lidt. */
-function computeLicensesFor(Q,E){
-  E = E || {};
+function computeLicensesFor(Q,E,B){
+  E = E || {}; B = B || {};
   const counts={};
   CATALOG.forEach(p=>{
     const lt=PRODUCT_LICENSE[p.id]; if(!lt) return;
-    const n=qOf(Q,keyMain(p.id)) + qOf(E,keyMain(p.id));
+    const n=qOf(Q,keyMain(p.id)) + qOf(E,keyMain(p.id)) + qOf(B,keyMain(p.id));
     if(n) counts[lt]=(counts[lt]||0)+n;
   });
   const dsN=qOf(Q,KEY_DS); if(dsN) counts['ds']=(counts['ds']||0)+dsN;
@@ -580,47 +653,66 @@ function computeLicensesFor(Q,E){
   return out;
 }
 
-/* Tager én opsætning — en mulighed med `qty` (det vi sælger) og `eget`. */
+/* Tager én opsætning — en mulighed med `qty` (nyt), `eget` og `brugt`. */
 function collectFor(opsaet){
-  const Q = opsaet.qty || {}, E = opsaet.eget || {};
+  const Q = opsaet.qty || {}, E = opsaet.eget || {}, B = opsaet.brugt || {};
+  // Brugt udstyr har ingen listepris. Er prisen ikke sat endnu, regnes linjen
+  // til 0 og mærkes `prisMangler` — eksporten stopper på den (print.js).
+  const brugtLinje=(v,key,n)=>{
+    const pris=brugtPrisOf(opsaet,key);
+    return {name:v.name,desc:v.desc,qty:n,price:pris===null?0:pris,img:pdfImg(key),
+            brugt:true,prisMangler:pris===null,accessories:[]};
+  };
   const hw=[];
   // Kundens eget udstyr samles for sig og lægges nederst i tabellen. Blandet
   // ind mellem de nye linjer bliver det svært at se, hvad der rent faktisk
   // købes — og det er det tal, kunden leder efter.
   const egetHw=[];
   CATALOG.forEach(p=>{
-    const n=qOf(Q,keyMain(p.id)), e=qOf(E,keyMain(p.id));
+    const mk=keyMain(p.id);
+    const n=qOf(Q,mk), e=qOf(E,mk), br=qOf(B,mk);
     // Kundens eget tilbehør koster 0 ligesom eget udstyr, men udløser ingen licens.
-    const egneAcc=[];
+    const egneAcc=[], nyeAcc=[], brugteAcc=[];
     p.acc.forEach(aid=>{
-      const en=qOf(E,keyAcc(p.id,aid)); if(!en) return;
-      const a=ACCESSORIES[aid];
-      egneAcc.push({name:a.name,desc:a.desc,qty:en,price:0,img:pdfImg(keyAcc(p.id,aid)),eget:true});
+      const a=ACCESSORIES[aid], ak=keyAcc(p.id,aid);
+      const an=qOf(Q,ak), en=qOf(E,ak), bn=qOf(B,ak);
+      // Kun rigtige, uploadede billeder må med i kundedokumentet — aldrig pladsholdere.
+      if(an) nyeAcc.push({name:a.name,desc:a.desc,qty:an,price:a.price,img:pdfImg(ak)});
+      if(bn) brugteAcc.push(brugtLinje(a,ak,bn));
+      if(en) egneAcc.push({name:a.name,desc:a.desc,qty:en,price:0,img:pdfImg(ak),eget:true});
     });
+    // Tilbehør valgt under et produkt står ALTID som tilbehørslinje under
+    // produktet, aldrig som sin egen hovedlinje — det er kun løst tilbehør, der
+    // står for sig selv. Hver slags står under det eksemplar, den ligner: nyt
+    // under nyt, brugt under brugt, kundens eget under kundens eget. Findes det
+    // eksemplar ikke, står tilbehøret under det første der gør.
+    const linjer={};
     if(n){
-      const accs=[];
-      p.acc.forEach(aid=>{
-        const an=qOf(Q,keyAcc(p.id,aid)); if(!an) return;
-        const a=ACCESSORIES[aid];
-        // Kun rigtige, uploadede billeder må med i kundedokumentet — aldrig pladsholdere.
-        accs.push({name:a.name,desc:a.desc,qty:an,price:a.price,img:pdfImg(keyAcc(p.id,aid))});
-      });
-      // "NY" kun når samme produkt også står som kundens eget — ellers er der
-      // ingen tvivl at rydde af vejen, og mærkatet er bare støj.
-      hw.push({name:p.name,desc:p.desc,qty:n,price:p.price,img:pdfImg(keyMain(p.id)),
-               accessories:accs, nyt:e>0});
+      // "NY" kun når samme produkt også står som kundens eget eller som brugt —
+      // ellers er der ingen tvivl at rydde af vejen, og mærkatet er bare støj.
+      linjer.ny={name:p.name,desc:p.desc,qty:n,price:p.price,img:pdfImg(mk),accessories:[],nyt:e>0||br>0};
+      hw.push(linjer.ny);
+    }
+    if(br){
+      // Brugt udstyr købes, så det står lige efter det nye — ikke nede ved
+      // kundens eget.
+      linjer.brugt=brugtLinje(p,mk,br);
+      hw.push(linjer.brugt);
     }
     if(e){
       // Kundens eget udstyr: står i specifikationen, så kunden kan se at vi har
-      // regnet med det — men uden pris. Kundens eget tilbehør står under det.
-      egetHw.push({name:p.name,desc:'Jeres nuværende udstyr, som vi sætter op i systemet.',
-                   qty:e, price:0, img:pdfImg(keyMain(p.id)), accessories:egneAcc, eget:true});
-    } else if(n){
-      // Eget tilbehør til et nyt produkt (fx en ny tablet på kundens egen base)
-      // står også nederst — alt det kunden selv har, skal stå samlet.
-      egneAcc.forEach(a=>egetHw.push({name:a.name,desc:a.desc,qty:a.qty,price:0,img:a.img,
-                                     accessories:[],eget:true}));
+      // regnet med det — men uden pris.
+      linjer.eget={name:p.name,desc:'Jeres nuværende udstyr, som vi sætter op i systemet.',
+                   qty:e, price:0, img:pdfImg(mk), accessories:[], eget:true};
+      egetHw.push(linjer.eget);
     }
+    // Uden produktet er tilbehørslisten foldet sammen, og et gammelt antal i
+    // state skal ikke snige sig med i tilbuddet.
+    const under=(...r)=>r.map(k=>linjer[k]).find(Boolean);
+    const laeg=(accs,linje)=>{ if(linje) accs.forEach(a=>linje.accessories.push(a)); };
+    laeg(nyeAcc,    under('ny','brugt','eget'));
+    laeg(brugteAcc, under('brugt','ny','eget'));
+    laeg(egneAcc,   under('eget','ny','brugt'));
   });
   egetHw.forEach(x=>hw.push(x));
 
@@ -628,10 +720,11 @@ function collectFor(opsaet){
   // Kundens eget løse tilbehør koster 0 og står nederst, som eget udstyr.
   const egneExtras=[];
   ACC_IDS.forEach(aid=>{
-    const a=ACCESSORIES[aid];
-    const n=qOf(Q,keyExtra(aid)), e=qOf(E,keyExtra(aid));
-    if(n) extras.push({name:a.name,desc:a.desc,qty:n,price:a.price,img:pdfImg(keyExtra(aid))});
-    if(e) egneExtras.push({name:a.name,desc:a.desc,qty:e,price:0,img:pdfImg(keyExtra(aid)),eget:true});
+    const a=ACCESSORIES[aid], xk=keyExtra(aid);
+    const n=qOf(Q,xk), e=qOf(E,xk), br=qOf(B,xk);
+    if(n) extras.push({name:a.name,desc:a.desc,qty:n,price:a.price,img:pdfImg(xk),nyt:br>0});
+    if(br) extras.push(brugtLinje(a,xk,br));
+    if(e) egneExtras.push({name:a.name,desc:a.desc,qty:e,price:0,img:pdfImg(xk),eget:true});
   });
   egneExtras.forEach(x=>extras.push(x));
 
@@ -645,7 +738,7 @@ function collectFor(opsaet){
     modules.push({name:s.name,desc:s.desc,qty:n,price:s.price,included:inc});
   });
 
-  const licenses=computeLicensesFor(Q,E);
+  const licenses=computeLicensesFor(Q,E,B);
   // Kundens eget udstyr har prisen 0 og trækker derfor ingenting med i totalen.
   const oneOff = hw.reduce((s,p)=>s+p.qty*p.price+p.accessories.reduce((t,a)=>t+a.qty*a.price,0),0)
                + extras.reduce((s,a)=>s+a.qty*a.price,0);
@@ -655,7 +748,12 @@ function collectFor(opsaet){
   // Kun eget udstyr der udløser licens — det er dét, licensforbeholdet handler om.
   // Eget tilbehør alene skal ikke få tilbuddet til at tale om licens.
   const harEget = CATALOG.some(p=>PRODUCT_LICENSE[p.id] && qOf(E,keyMain(p.id))>0);
-  return {hw,extras,modules,licenses,oneOff,licDaily,modMonthly,has,harEget};
+  // Brugt udstyr uden pris: navnene bruges, når eksporten stopper.
+  const udenPris=[];
+  hw.forEach(p=>{ if(p.prisMangler) udenPris.push(p.name);
+                  p.accessories.forEach(a=>{ if(a.prisMangler) udenPris.push(a.name); }); });
+  extras.forEach(a=>{ if(a.prisMangler) udenPris.push(a.name); });
+  return {hw,extras,modules,licenses,oneOff,licDaily,modMonthly,has,harEget,udenPris};
 }
 
 /* live licens-visning for den valgte mulighed */

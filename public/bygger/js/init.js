@@ -8,7 +8,7 @@
    men står ingen steder i tilbuddet. */
 const QUOTE_FIELDS = ['c_company','c_cvr','c_contact','c_rolle','c_email','c_phone',
                       'c_addr','c_zip','c_city','c_number','c_date',
-                      'c_seller','c_indloesning','c_sprog','c_intro','c_note'];
+                      'c_seller','c_indloesning','c_indloesning_online','c_sprog','c_intro','c_note'];
 
 /* Standardteksten i afslutningen. Den står i feltet fra start,
    så sælgeren kan rette i den — ikke som en usynlig fallback i dokumentet.

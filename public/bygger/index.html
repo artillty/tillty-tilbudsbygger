@@ -97,9 +97,14 @@
           <label class="ny-raekke">Tilbudsnr.<input id="c_number" placeholder="Tildeles ved gem" readonly
                  title="Tildeles automatisk, når tilbuddet gemmes"></label>
           <label>Dato sendt<input id="c_date" type="date" oninput="updateSoon()"></label>
-          <label><span class="felt-navn">Sælger<span class="krav" title="Skal udfyldes">*</span></span><input id="c_seller" data-krav="Sælger" placeholder="Dit navn" oninput="updateSoon()"></label>
-          <label>Indløsning<input id="c_indloesning"
-                 title="Skriv satsen i procent. Står feltet tomt, skriver tilbuddet “Indløsning: Aftales efter dialog.”"
+          <label class="bred"><span class="felt-navn">Sælger<span class="krav" title="Skal udfyldes">*</span></span><input id="c_seller" data-krav="Sælger" placeholder="Dit navn" oninput="updateSoon()"></label>
+          <!-- Online betaling har sin egen sats. Feltet til fysisk betaling
+               beholder id'et c_indloesning, så gamle tilbud åbner med deres sats. -->
+          <label>Indløsning, fysisk betaling<input id="c_indloesning"
+                 title="Skriv satsen i procent. Står feltet tomt, skriver tilbuddet “Aftales efter dialog.”"
+                 oninput="updateSoon()"></label>
+          <label>Indløsning, online betaling<input id="c_indloesning_online"
+                 title="Står kun i tilbuddet, når det har Takeaway eller QR bestilling, eller når der er skrevet en sats her. Tomt felt giver “Aftales efter dialog.”"
                  oninput="updateSoon()"></label>
           <!-- Tekstfelterne har feltnavn som alle andre felter. Afslutningen er
                forudfyldt, så en pladsholder alene ville aldrig blive set. -->

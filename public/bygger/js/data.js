@@ -7,7 +7,7 @@
 
 /* ---------- katalog ---------- */
 const CATALOG = [
-  {id:'sot', name:'Selvbetjeningsterminal (SOT)', desc:'Til hurtig og effektiv ordreafgivelse (inkl. vægbeslag).', price:13995,
+  {id:'sot', name:'Selvbetjeningsterminal', desc:'Til hurtig og effektiv ordreafgivelse (inkl. vægbeslag).', price:13995,
    acc:['floor','term_holder']},
   {id:'pos154', name:'15.4" POS Kasseskærm', desc:'Stationær skærm til kassesystemet.', price:4995,
    acc:['drawer']},
@@ -86,8 +86,8 @@ const PRODUCT_LICENSE = {
 
 /* Moduler – vælges manuelt, faktureres pr. måned. */
 const MODULES = [
-  {id:'takeaway',name:'Takeaway',      desc:'Online takeaway-modul. Pr. forretning / md.', price:495, includes:['qr']},
-  {id:'qr',      name:'QR bestilling', desc:'Bestilling via QR-koder. Inkluderet i Takeaway.', price:495},
+  {id:'takeaway',name:'Takeaway',      desc:'Online takeaway-modul. Pr. forretning / md.', price:495, includes:['qr'], online:true},
+  {id:'qr',      name:'QR bestilling', desc:'Bestilling via QR-koder. Inkluderet i Takeaway.', price:495, online:true},
   {id:'bi',      name:'BI',            desc:'Business Intelligence. Pr. md.', price:299},
 ];
 /* Opslag: modul-id -> id på det modul der inkluderer det (undgår dobbeltfakturering). */

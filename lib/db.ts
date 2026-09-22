@@ -70,8 +70,14 @@ export function ensureTables() {
   return ready;
 }
 
-/** Opsætningen: `qty` er det vi sælger, `eget` det kunden allerede har — pr. varenøgle. */
-type Opsaetning = { qty?: Record<string, number>; eget?: Record<string, number> };
+/** Opsætningen pr. varenøgle: `qty` er nyt udstyr, `eget` det kunden allerede har,
+ *  `brugt` er brugt udstyr vi sælger, og `brugtPris` er den stykpris sælgeren har sat på det. */
+type Opsaetning = {
+  qty?: Record<string, number>;
+  eget?: Record<string, number>;
+  brugt?: Record<string, number>;
+  brugtPris?: Record<string, number>;
+};
 type MulighedInfo = { id: string; navn: string; tagline: string; anbefalet: boolean };
 
 /** Det byggeren sender op og får tilbage. */

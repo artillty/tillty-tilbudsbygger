@@ -155,6 +155,10 @@ async function forbiOpstart(p) {
       await p.click('[data-qwrap="m_sot"] button:last-child');
       await p.waitForTimeout(60);
     }
+    // Et brugt produkt med sælgerens egen pris skal overleve gem og genåbning.
+    await p.click('[data-chip="brugt_m_lan"]');   // knappen folder tælleren ud og sætter 1
+    await p.fill('[data-brugtpris="m_lan"]', '700');
+    await p.waitForTimeout(200);
     await p.click('button[onclick="gemTilbud()"]');
     await p.waitForTimeout(1500);
     const nr1 = husk(await p.inputValue('#c_number'));
@@ -203,7 +207,10 @@ async function forbiOpstart(p) {
       (await p.$$('#quote-doc img')).length > 0);
     const total = await p.$eval('#quote-doc table.loc-overview tfoot td:nth-child(2)',
       (e) => e.textContent.trim());
-    check('totalen er den samme som før', total === '27.990,-', total);
+    check('brugt udstyr og prisen er gendannet', (await p.inputValue('#qty_brugt_m_lan')) === '1'
+      && (await p.inputValue('[data-brugtpris="m_lan"]')) === '700');
+    // Håndregnet: 2 SOT à 13.995 + brugt LAN-printer til 700.
+    check('totalen er den samme som før', total === '28.690,-', total);
 
     /* ---------- 5b: Nulstil slipper tilbuddet ---------- */
     await p.click('button[onclick="resetAll()"]');

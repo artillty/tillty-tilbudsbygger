@@ -197,6 +197,13 @@ function kravOpfyldt(){
   felter.forEach(e=>e.classList.toggle('mangler', tomme.includes(e)));
   const navne=tomme.map(e=>e.dataset.krav);
   if(!v('c_date')) navne.push('Dato sendt');
+  // Brugt udstyr har ingen listepris. Uden en pris ville linjen stå til 0 i
+  // kundens tilbud, så den tæller som et manglende felt.
+  const udenPris=[];
+  LOCS.forEach(l=>l.muligheder.forEach(o=>collectFor(o).udenPris.forEach(n=>{
+    if(udenPris.indexOf(n)<0) udenPris.push(n);
+  })));
+  udenPris.forEach(n=>navne.push('Pris på brugt: '+n));
   if(!navne.length) return true;
   if(tomme.length) tomme[0].focus();
   alert('Udfyld de obligatoriske felter, før du eksporterer:\n\n'+navne.join('\n'));
