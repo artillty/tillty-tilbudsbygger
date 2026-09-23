@@ -42,30 +42,49 @@
 <div id="opstart" class="opstart">
   <div class="opstart-kort">
     <h1>Nyt tilbud</h1>
-    <p class="opstart-sub">Hvad skal tilbuddet indeholde?</p>
+    <p class="opstart-sub">Hvad skal tilbuddet handle om?</p>
 
-    <label class="opstart-valg">
-      <input type="checkbox" id="f_muligheder" onchange="opdaterStartknap()">
-      <span>
-        <b>Flere muligheder</b>
-        <em>Kunden vælger mellem flere opsætninger — fx genbrug af eget udstyr
-        eller alt nyt. Du starter med én og tilføjer selv flere, og tilbuddet
-        stiller dem op side om side.</em>
-      </span>
-    </label>
+    <!-- Tilbudstypen vælges først, som to knapper. Udstyr og PAY er to
+         forskellige tilbud og blandes ikke. PAY starter med det samme; udstyr
+         folder de ekstra valg (muligheder, lokationer) ud nedenunder. -->
+    <div class="opstart-typer">
+      <button type="button" class="opstart-type" data-type="udstyr" onclick="vaelgType('udstyr')">
+        <b>Udstyr og software</b>
+        <em>Hardware, tilbehør, licenser og moduler. Kan sættes op med flere
+        muligheder og lokationer.</em>
+      </button>
+      <button type="button" class="opstart-type" data-type="pay" onclick="vaelgType('pay')">
+        <b>tillty PAY</b>
+        <em>Betalingsløsning med IC++: én gennemsigtig sats pr. korttype, regnet
+        ud fra kundens omsætning og kortmix.</em>
+      </button>
+    </div>
 
-    <label class="opstart-valg">
-      <input type="checkbox" id="f_lokationer" onchange="opdaterStartknap()">
-      <span>
-        <b>Flere lokationer</b>
-        <em>Kæder med flere forretninger. Hver lokation får sit eget setup,
-        og tilbuddet viser prisen for hver af dem.</em>
-      </span>
-    </label>
+    <div id="opstart_udstyr" hidden>
+      <p class="opstart-sub opstart-trin">Hvad skal tilbuddet indeholde?</p>
+      <label class="opstart-valg">
+        <input type="checkbox" id="f_muligheder" onchange="opdaterStartknap()">
+        <span>
+          <b>Flere muligheder</b>
+          <em>Kunden vælger mellem flere opsætninger — fx genbrug af eget udstyr
+          eller alt nyt. Du starter med én og tilføjer selv flere, og tilbuddet
+          stiller dem op side om side.</em>
+        </span>
+      </label>
 
-    <button class="btn-pdf opstart-start" onclick="startTilbud()">Simpelt tilbud</button>
-    <p class="opstart-note">Vælger du ingen af delene, får du et simpelt
-    tilbud til én forretning.</p>
+      <label class="opstart-valg">
+        <input type="checkbox" id="f_lokationer" onchange="opdaterStartknap()">
+        <span>
+          <b>Flere lokationer</b>
+          <em>Kæder med flere forretninger. Hver lokation får sit eget setup,
+          og tilbuddet viser prisen for hver af dem.</em>
+        </span>
+      </label>
+
+      <button class="btn-pdf opstart-start" onclick="startTilbud('udstyr')">Simpelt tilbud</button>
+      <p class="opstart-note">Vælger du ingen af delene, får du et simpelt
+      tilbud til én forretning.</p>
+    </div>
   </div>
 </div>
 
@@ -100,10 +119,10 @@
           <label class="bred"><span class="felt-navn">Sælger<span class="krav" title="Skal udfyldes">*</span></span><input id="c_seller" data-krav="Sælger" placeholder="Dit navn" oninput="updateSoon()"></label>
           <!-- Online betaling har sin egen sats. Feltet til fysisk betaling
                beholder id'et c_indloesning, så gamle tilbud åbner med deres sats. -->
-          <label>Indløsning, fysisk betaling<input id="c_indloesning"
+          <label class="kun-udstyr">Indløsning, fysisk betaling<input id="c_indloesning"
                  title="Skriv satsen i procent. Står feltet tomt, skriver tilbuddet “Aftales efter dialog.”"
                  oninput="updateSoon()"></label>
-          <label>Indløsning, online betaling<input id="c_indloesning_online"
+          <label class="kun-udstyr">Indløsning, online betaling<input id="c_indloesning_online"
                  title="Står kun i tilbuddet, når det har Takeaway eller QR bestilling, eller når der er skrevet en sats her. Tomt felt giver “Aftales efter dialog.”"
                  oninput="updateSoon()"></label>
           <!-- Tekstfelterne har feltnavn som alle andre felter. Afslutningen er
@@ -124,6 +143,31 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- tillty PAY: egen tilbudstype (FORM.type==='pay'). Felterne er regnearkets
+         gule felter; js/pay.js tegner listerne og regner. Ingen data-krav her:
+         de ville stoppe eksporten af et udstyrstilbud. PAY's egne krav kommer
+         fra payBeregn().mangler. -->
+    <div class="panel" id="panel_pay" hidden>
+      <h2>tillty PAY<span class="h2-sub" id="pay_sub"></span></h2>
+      <div class="body">
+        <p class="hint">Regnearkets gule felter. Resten regnes automatisk, og satserne bag (interchange og scheme fee fra Worldline) står i tilbuddet, men kan ikke ændres her. Procenter skrives som fx <b>0,6</b> for 0,60 %.</p>
+        <div class="cust-grid">
+          <label><span class="felt-navn">Månedlig kortomsætning (kr)<span class="krav" title="Skal udfyldes">*</span></span><input id="pay_omsaetning" inputmode="decimal" placeholder="fx 833.333" oninput="setPayBeloeb('omsaetning',this)"></label>
+          <label><span class="felt-navn">Gns. transaktionsbeløb (kr)<span class="krav" title="Skal udfyldes">*</span></span><input id="pay_gns" inputmode="decimal" placeholder="fx 250" oninput="setPayBeloeb('gnsBeloeb',this)"></label>
+          <label>tilltys margin (IC++ %)<input id="pay_margin" inputmode="decimal" title="tilltys margin oven i interchange og scheme fee" oninput="setPayMargin(this)"></label>
+          <label>Transaktioner pr. måned<input id="pay_tx" readonly title="Omsætning delt med gns. transaktionsbeløb"></label>
+        </div>
+        <div class="sect-title">Kortfordeling<span class="pay-sum" id="pay_andel_sum"></span></div>
+        <p class="hint">Andelen af transaktionerne pr. korttype. Summen skal være 100 %.</p>
+        <div id="pay_andele"></div>
+        <!-- Surcharge er slået fra som standard og slås til med kontakten. -->
+        <div class="sect-title"><label class="pay-toggle"><input type="checkbox" id="pay_surcharge_til" onchange="setPaySurchargeTil(this.checked)"><span>Surcharge</span></label></div>
+        <p class="hint">Tillæg kunden selv opkræver af betaleren på firmakort og internationale kort, som EU-loftet ikke gælder for. Slå det til, hvis det skal med i tilbuddet.</p>
+        <div id="pay_surcharge" hidden></div>
+        <div class="pay-resultat" id="pay_resultat"></div>
       </div>
     </div>
 
@@ -160,7 +204,7 @@
       </div>
     </div>
 
-    <div class="panel fold">
+    <div class="panel fold kun-udstyr">
       <h2>Hardware<span class="h2-sub" id="hw_sub"></span></h2>
       <div class="body">
         <p class="hint">Sæt antal med − og + — antal 0 betyder “ikke med i tilbuddet”. Tilbehør folder sig ud, så snart et produkt har antal 1 eller mere. Klik på et billede for at uploade dit eget.</p>
@@ -168,7 +212,7 @@
       </div>
     </div>
 
-    <div class="panel fold closed">
+    <div class="panel fold closed kun-udstyr">
       <h2>Tilkøb af løst tilbehør<span class="h2-sub" id="ex_sub"></span></h2>
       <div class="body">
         <p class="hint">Til kunder der <b>allerede har udstyret</b> og bare mangler lidt ekstra. Her vælges tilbehør frit, uden at der skal købes hardware til. Skal tilbehøret følge med et <i>nyt</i> produkt, sættes antallet under produktet ovenfor i stedet.</p>
@@ -176,7 +220,7 @@
       </div>
     </div>
 
-    <div class="panel fold">
+    <div class="panel fold kun-udstyr">
       <h2>Licenser &amp; software<span class="h2-sub" id="sw_sub"></span></h2>
       <div class="body">
         <p class="hint">Licenser beregnes <b>automatisk</b> ud fra de terminaler, der er valgt ovenfor, og vises som en samlet pris <b>pr. dag</b>. Modulerne nedenfor sættes manuelt og afregnes <b>pr. måned</b>.</p>
@@ -207,6 +251,7 @@
 <script src="js/postnumre.js"></script>
 <script src="js/app.js"></script>
 <script src="js/quote.js"></script>
+<script src="js/pay.js"></script>
 <script src="js/print.js"></script>
 <script src="js/init.js"></script>
 <script src="js/store.js"></script>

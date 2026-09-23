@@ -18,6 +18,12 @@ const synkedeBilleder = {};   // varenøgle -> dataURL, som allerede ligger på 
    kan ikke lægges sammen — kunden vælger én. For hver lokation tæller den
    anbefalede, ellers den første, så listen har ét tal at sortere og scanne på. */
 function samlTotaler(){
+  // Et PAY-tilbud har ingen engangspris og ingen licenser. Netto
+  // betalingsomkostningen pr. måned står som det løbende beløb, så listen kan
+  // sortere og scanne på ét tal, ligesom for udstyrstilbud.
+  if(FORM.type==='pay' && typeof payBeregn==='function'){
+    return {engangs:0, licDag:0, modMd: payBeregn(PAY).nettoKr || 0};
+  }
   const s = {engangs:0, licDag:0, modMd:0};
   LOCS.forEach(l=>{
     const o = l.muligheder.find(x=>x.anbefalet) || l.muligheder[0];
@@ -49,6 +55,9 @@ async function gemTilbud(status){
       data: {
         felter,
         form: FORM,
+        // PAY-tilbuddets felter (js/pay.js). Sendes altid med, så et
+        // udstyrstilbud også bærer standardværdierne — de fylder ingenting.
+        pay: typeof PAY!=='undefined' ? PAY : undefined,
         lokationer: LOCS.map(l=>({
           id:l.id, name:l.name,
           muligheder: l.muligheder.map(o=>({
@@ -121,7 +130,11 @@ async function hentTilbud(nr){
      under: vendes om, så lokation nr. i samler mulighedernes lokation nr. i.
    Id'erne er kun interne og laves forfra. */
 function laesOpsaetning(d){
-  FORM = Object.assign({muligheder:false, lokationer:false}, d.form || {});
+  // Tilbud fra før PAY fandtes har ingen `type` og er udstyrstilbud.
+  FORM = Object.assign({type:'udstyr', muligheder:false, lokationer:false}, d.form || {});
+  // PAY-felterne flettes med standardværdierne, så et tilbud gemt før et nyt
+  // felt kom til stadig åbner med noget fornuftigt i det.
+  if(typeof payLaes==='function') PAY = payLaes(d.pay);
   let raa;
   if(Array.isArray(d.muligheder) && d.muligheder.length){
     const n = Math.max(1, ...d.muligheder.map(o=>(o.lokationer||[]).length));

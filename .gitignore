@@ -10,3 +10,6 @@ next-env.d.ts
 # lokale eksporter og skrammel
 *.pdf
 /tmp/
+
+# Agenternes worktrees ligger i repoet, men hører ikke til det.
+.claude/worktrees/

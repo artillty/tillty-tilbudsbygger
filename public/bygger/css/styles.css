@@ -104,6 +104,36 @@
   .panel.fold.closed>h2::after{transform:rotate(-90deg)}
   .panel.fold.closed>.body{display:none}
 
+  /* ---- tilbudstype ----
+     Et PAY-tilbud viser kun sit eget panel; udstyrspanelerne og
+     indløsningsfelterne er mærket kun-udstyr i index.html. */
+  .form-pay .kun-udstyr{display:none!important}
+  #panel_pay[hidden]{display:none}
+
+  /* ---- PAY-panelet (regnearkets gule felter) ---- */
+  .pay-row{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px dashed var(--line)}
+  .pay-row:last-child{border-bottom:none}
+  .pay-info{flex:1;min-width:0}
+  .pay-felt{display:inline-flex;align-items:center;gap:6px;flex-shrink:0;font-size:13px;font-weight:700;
+    color:var(--muted);font-family:var(--font-heading)}
+  .pay-felt input{width:74px;height:34px;border:1.5px solid var(--line);border-radius:8px;padding:0 8px;text-align:right;
+    font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--navy);background:#fff}
+  .pay-felt input:focus{outline:none;border-color:var(--accent)}
+  .pay-felt input.mangler{border-color:var(--color-error);background:#fff5f5}
+  .pay-sum{margin-left:8px;font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+  /* Kontakten der slår surcharge til. Samme form som "Vi anbefaler denne". */
+  .pay-toggle{display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+  .pay-toggle input{width:16px;height:16px;margin:0;accent-color:var(--accent)}
+  #pay_surcharge[hidden]{display:none}
+  .pay-sum.fejl{color:var(--color-error)}
+  /* Resultatet i panelet, samme form som blokkenes opsummering i tilbuddet. */
+  .pay-resultat{margin-top:14px;background:var(--bg-sunken);border:1px solid var(--line);border-radius:var(--radius-md);
+    padding:10px 13px;font-size:12.5px}
+  .pay-resultat div{display:flex;justify-content:space-between;gap:12px;padding:2px 0;color:var(--navy-light);font-weight:700}
+  .pay-resultat div span:last-child{font-family:var(--font-mono);white-space:nowrap}
+  .pay-resultat .ls-strong{border-top:1px solid var(--line);margin-top:4px;padding-top:5px;color:var(--navy);font-size:13.5px}
+  .pay-resultat .pay-tom{display:block;color:var(--muted);font-weight:600;font-size:12px}
+
   /* ---- opstartslag ---- */
   .opstart{position:fixed;inset:0;z-index:50;background:var(--navy);
     display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto}
@@ -112,6 +142,17 @@
   /* Almindelig overskrift — Fugaz One er forbeholdt ordet "tillty". */
   .opstart-kort h1{font-family:var(--font-heading);font-weight:800;font-size:24px;margin:0;color:var(--color-primary)}
   .opstart-sub{margin:2px 0 20px;font-size:13.5px;color:var(--muted);font-family:var(--font-heading)}
+  /* Tilbudstypen: to knapper side om side. Den valgte står markeret, mens
+     de ekstra valg folder sig ud under den. */
+  .opstart-typer{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .opstart-type{text-align:left;border:1.5px solid var(--line);border-radius:var(--radius-md);padding:14px;
+    background:#fff;cursor:pointer;font-family:inherit;color:inherit;transition:all var(--duration-fast) ease-out}
+  .opstart-type:hover{border-color:var(--accent)}
+  .opstart-type.active{border-color:var(--accent);background:#f2f8ff;box-shadow:0 0 0 1px var(--accent)}
+  .opstart-type b{display:block;font-family:var(--font-heading);font-size:14.5px;color:var(--navy)}
+  .opstart-type em{display:block;font-style:normal;font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.5}
+  .opstart-trin{margin:18px 0 12px;padding-top:14px;border-top:1px solid var(--line)}
+  #opstart_udstyr[hidden]{display:none}
   .opstart-valg{display:flex;gap:12px;align-items:flex-start;border:1.5px solid var(--line);
     border-radius:var(--radius-md);padding:14px;margin-bottom:12px;cursor:pointer;
     transition:border-color var(--duration-fast) ease-out}
@@ -333,6 +374,57 @@
         margin-right:7px;vertical-align:1px}
 
   .qp-assump{font-size:11px;color:var(--text-secondary);margin-top:6px;line-height:1.5}
+
+  /* ---- tillty PAY i tilbuddet ---- */
+  /* Prisen som fritstående kort lige efter indledningen, uden nummer. */
+  .pay-pris{margin-top:14px;border:1px solid var(--border-subtle);border-left:4px solid var(--color-accent);
+    border-radius:var(--radius-md);padding:12px 16px;background:#fff}
+  .pay-pris-lbl{font-family:var(--font-heading);font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--color-accent)}
+  .pay-pris-tal{font-family:var(--font-heading);font-size:26px;font-weight:800;color:var(--color-primary);line-height:1.15;margin:2px 0 4px}
+  /* Nøgletallene i prisboksen: netto pr. måned fremhævet som regnearkets blå celle. */
+  .pay-noegletal{display:flex;gap:8px;margin-top:12px}
+  .pay-nt{flex:1;min-width:0;border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:8px 11px;background:var(--bg-elevated)}
+  .pay-nt-lbl{font-family:var(--font-heading);font-size:10.5px;font-weight:700;color:var(--text-secondary);line-height:1.3}
+  .pay-nt-tal{font-family:var(--font-mono);font-size:15px;font-weight:700;color:var(--color-primary);margin-top:3px;white-space:nowrap}
+  .pay-nt-hoved{flex:1.3;background:var(--color-accent);border-color:var(--color-accent)}
+  .pay-nt-hoved .pay-nt-lbl{color:rgba(255,255,255,.85)}
+  .pay-nt-hoved .pay-nt-tal{color:#fff;font-size:18px}
+  .pay-nt-note{font-size:11px;color:var(--text-secondary);margin-top:6px}
+  .pay-mangler{margin:6px 0 10px;font-size:12px}
+  /* Forklaringen (Hvad er IC++? og Hvorfor IC++?) står uden kort og nummer:
+     overskrift og indhold som ét element. */
+  .pay-sek{margin-top:22px}
+  .pay-sek-titel{font-family:var(--font-heading);font-weight:800;font-size:16px;color:var(--color-primary);
+    padding-bottom:5px;border-bottom:2px solid var(--color-primary)}
+  .pay-ic-intro{font-size:12px;line-height:1.55;margin:10px 0 12px}
+  /* Regnestykket: tre kort med blåt plus, et lyseblåt lig med og summen i en mørkeblå boks. */
+  .pay-dele{display:flex;align-items:stretch;gap:8px}
+  .pay-del{flex:1;border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:9px 11px;background:#fff;min-width:0}
+  .pay-del-navn{font-family:var(--font-heading);font-weight:800;font-size:12.5px;color:var(--color-primary)}
+  .pay-del-hvem{font-family:var(--font-heading);font-size:11px;font-weight:700;color:var(--color-accent);margin:1px 0 4px}
+  .pay-del-tekst{font-size:11px;line-height:1.5;color:var(--text-secondary)}
+  .pay-del-pkt{margin:6px 0 0;padding-left:15px;font-size:11px;line-height:1.5;color:var(--color-primary)}
+  .pay-plus{align-self:center;font-family:var(--font-heading);font-weight:800;font-size:20px;color:var(--color-accent);flex-shrink:0}
+  .pay-lig{text-align:center;font-family:var(--font-heading);font-weight:800;font-size:30px;line-height:.8;
+    color:#8cc4ff;margin:6px 0}
+  .pay-summen{background:var(--color-primary);color:#fff;border-radius:var(--radius-md);padding:10px 14px;
+    text-align:center;font-family:var(--font-heading);font-weight:800;font-size:13px}
+  /* Hvorfor IC++: tre kort med hvert sit ikon. */
+  .pay-hvorfor{display:flex;align-items:stretch;gap:8px;margin-top:12px}
+  .pay-hvorfor-k{flex:1;min-width:0;border:1px solid var(--border-subtle);border-radius:var(--radius-md);
+    padding:12px;background:#fff}
+  .pay-ikon{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:var(--radius-md);
+    background:var(--bg-elevated);color:var(--color-accent);margin-bottom:8px}
+  .pay-hvorfor-n{font-family:var(--font-heading);font-weight:800;font-size:13px;color:var(--color-primary);margin-bottom:4px}
+  .pay-hvorfor-t{font-size:11px;line-height:1.5;color:var(--text-secondary)}
+  table.pv.pay-tal td:first-child{font-family:var(--font-heading);font-weight:700}
+  table.pv.pay-tal tbody tr:last-child td{border-bottom:none}
+  /* Satstabellen har seks kolonner; lidt mindre skrift, så den holder sig på siden. */
+  table.pv.pay-omk th,table.pv.pay-omk td{font-size:11px}
+  table.pv.pay-omk td.num{font-size:11.5px}
+  table.pv.pay-omk td.num,table.pv.pay-sur td.num{white-space:nowrap}
+  /* Netto er totallinjen; effektiv rate og gns. pr. transaktion står under den uden ny streg. */
+  table.pv.pay-res tfoot tr + tr td{border-top:none;padding-top:2px;font-size:12.5px;color:var(--color-primary-light)}
   /* Totalrækken i prisoverblikket er dokumentets opsummering — den skal kunne ses. */
   table.loc-overview tfoot td{font-size:13.5px;padding-top:9px;padding-bottom:9px}
   .qp-missing{color:var(--color-error);font-style:italic}

@@ -19,13 +19,19 @@ const STANDARD_NOTE =
 Opsamling
 Jeg håber, at dette forslag matcher dine forventninger og strategiske mål for fremtiden. Jeg står naturligvis til rådighed for at gennemgå tilbuddet og besvare eventuelle spørgsmål, du måtte have.`;
 
+/* Standardafslutningen til et PAY-tilbud. Den til udstyr handler om genbrug
+   af udstyr og hører ikke hjemme i et tilbud på betalingsløsningen. */
+const STANDARD_NOTE_PAY =
+`Opsamling
+Jeg håber, at dette forslag matcher jeres forventninger. Jeg står naturligvis til rådighed for at gennemgå beregningen med jer, også med jeres faktiske kortmix, og besvare eventuelle spørgsmål.`;
+
 /* Tomt udgangspunkt: dagens dato og standardteksten er defaults, ikke
    kundedata. Gyldigheden er ikke et felt — et tilbud gælder altid 30 dage. */
 function applyDefaults(){
-  document.getElementById('c_date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('c_date').value=idag();
   document.getElementById('c_sprog').value='da';
   sidsteSprog='da';
-  document.getElementById('c_note').value=STANDARD_NOTE;
+  document.getElementById('c_note').value=standardNote('da');
 }
 
 /* ---------- sprog i tilbuddet ----------
@@ -69,6 +75,9 @@ function visNoteUddrag(){
 function nulstilOpsaetning(){
   locSeq=0; optSeq=0;
   LOCS=[newLoc()]; activeIdx=0; optIdx=0;
+  // Størrelsesvælgerne tilbage på første størrelse — de er UI-state og gemmes ikke.
+  Object.keys(valgtStr).forEach(k=>delete valgtStr[k]);
+  if(typeof payStandard==='function') PAY=payStandard();
 }
 
 /* ---------- nulstil ---------- */
@@ -90,12 +99,23 @@ function resetAll(){
 }
 
 /* ---------- opstartslaget ---------- */
+/* Opstarten er to trin: først tilbudstypen som to knapper, og har man valgt
+   udstyr, folder de ekstra valg (muligheder, lokationer) sig ud nedenunder.
+   PAY har ingen ekstra valg og starter med det samme. Man starter altid på
+   første trin, også efter "+ Nyt tilbud" — afkrydsningerne husker dog det
+   forrige valg. */
 function visOpstart(){
   const e=document.getElementById('opstart'); if(!e) return;
   document.getElementById('f_muligheder').checked=FORM.muligheder;
   document.getElementById('f_lokationer').checked=FORM.lokationer;
-  opdaterStartknap();
+  vaelgType(null);
   e.style.display='flex';
+}
+function vaelgType(type){
+  if(type==='pay'){ startTilbud('pay'); return; }
+  document.querySelectorAll('#opstart .opstart-type').forEach(b=>b.classList.toggle('active', b.dataset.type===type));
+  const udstyr=document.getElementById('opstart_udstyr'); if(udstyr) udstyr.hidden = type!=='udstyr';
+  opdaterStartknap();
 }
 /* Knappen siger, hvad man får: uden lokationer og muligheder er det et
    simpelt tilbud. Er én af dem slået til, står der "Kom i gang". */
@@ -105,12 +125,23 @@ function opdaterStartknap(){
            || document.getElementById('f_lokationer').checked;
   k.textContent = valgt ? 'Kom i gang' : 'Simpelt tilbud';
 }
+/* Står afslutningen som en af standardteksterne (eller tom), følger den med
+   over på den valgte tilbudstype. Har sælgeren skrevet sin egen, røres den ikke. */
+function noteErStandard(){
+  const note=v('c_note'); if(!note) return true;
+  const l=sprog();
+  return ['udstyr','pay'].some(ty=>standardNote(l,ty).trim()===note);
+}
 function skjulOpstart(){
   const e=document.getElementById('opstart'); if(e) e.style.display='none';
 }
-function startTilbud(){
-  FORM.muligheder=document.getElementById('f_muligheder').checked;
-  FORM.lokationer=document.getElementById('f_lokationer').checked;
+function startTilbud(type){
+  const std=noteErStandard();
+  FORM.type = type==='pay' ? 'pay' : 'udstyr';
+  const pay=FORM.type==='pay';
+  FORM.muligheder=!pay && document.getElementById('f_muligheder').checked;
+  FORM.lokationer=!pay && document.getElementById('f_lokationer').checked;
+  if(std){ document.getElementById('c_note').value=standardNote(sprog()); visNoteUddrag(); }
   // Man starter med én lokation og én mulighed og tilføjer selv flere, som
   // med lokationer. Ingen foruddefinerede muligheder.
   activeIdx=0; optIdx=0;

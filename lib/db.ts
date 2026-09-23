@@ -80,10 +80,26 @@ type Opsaetning = {
 };
 type MulighedInfo = { id: string; navn: string; tagline: string; anbefalet: boolean };
 
+/** Sælgerens felter i et PAY-tilbud — regnearkets gule felter. Procenter er
+ *  brøker (0.006 = 0,60 %), null er "ikke sat". Formlerne står i js/pay.js
+ *  (payBeregn) og følger regnearket "tillty - Prisudregner", fanen PAY. */
+type PayFelter = {
+  margin: number | null;
+  omsaetning: number | null;
+  gnsBeloeb: number | null;
+  andele: Record<string, number | null>;
+  surcharge: Record<string, number | null>;
+  /** Kontakten i panelet. Uden den (tilbud fra før) regnes surcharge ikke med. */
+  surchargeTil?: boolean;
+};
+
 /** Det byggeren sender op og får tilbage. */
 export type TilbudData = {
   felter: Record<string, string>;
-  form?: { muligheder: boolean; lokationer: boolean };
+  /** `type` mangler på tilbud fra før PAY fandtes — de er udstyrstilbud. */
+  form?: { type?: "udstyr" | "pay"; muligheder: boolean; lokationer: boolean };
+  /** Kun brugt når `form.type` er "pay"; sendes altid med. */
+  pay?: PayFelter;
   /** Et tilbud er en liste af lokationer, der hver har sine muligheder.
    *  Tilbud fra før muligheder fandtes har opsætningen direkte på lokationen. */
   lokationer?: (Opsaetning & { id: string; name: string; muligheder?: (MulighedInfo & Opsaetning)[] })[];
@@ -102,4 +118,6 @@ export type TilbudRow = {
   engangs: number;
   lic_dag: number;
   mod_md: number;
+  /** Læses ud af data-jsonb i listen: "pay" eller "udstyr" (null på gamle tilbud = udstyr). */
+  type: string | null;
 };

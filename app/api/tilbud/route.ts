@@ -9,9 +9,12 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     await ensureTables();
+    // Tilbudstypen ligger i data-jsonb. Kun den hentes derfra — resten af
+    // data kan være stor og bruges ikke i listen.
     const tilbud = await db()`
       select nr, created, updated, status, firma, kontakt, saelger,
-             engangs, lic_dag, mod_md
+             engangs, lic_dag, mod_md,
+             data->'form'->>'type' as type
       from tilbud
       order by updated desc
     `;

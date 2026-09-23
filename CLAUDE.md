@@ -115,6 +115,10 @@ udledes af koden — og de fejl der allerede er begået én gang.
 - **QR bestilling er inkluderet i Takeaway.** Vælges Takeaway, låses QR til 0
   og vises i tilbuddet som en gratis underlinje. Reglen ligger i data
   (`MODULES[].includes`), ikke i logikken — nye bundles tilføjes samme sted.
+- **Valutaen står én gang, øverst:** "Alle beløb er i danske kroner (DKK)."
+  som første forbehold under prisoverblikket eller sammenligningen
+  (`prisNoter()`), og i PAY-tilbuddet nederst i prisboksen. Ikke i
+  tabellernes kolonneoverskrifter.
 - **Indløsning står altid i tilbuddet.** Enten satsen fra feltet, ordret, eller
   `Aftales efter dialog.` Gør den ikke betinget af, at feltet er udfyldt.
   Omskriv ikke det indtastede — tillty arbejder kun med procentsatser, og
@@ -256,6 +260,93 @@ flere lokationer: parter → Hej X → indledning → Samlet prisoverblik (lokat
   **varianten** (11", LAN), når mulighederne bruger forskellige. Et ettal alene
   udelades ved siden af et ord: "Ny WiFi", ikke "1 ny WiFi". Det er bevidst —
   alt andet er støj i en oversigt, kunden skal læse i ét blik.
+
+## tillty PAY (egen tilbudstype)
+
+- **PAY er sin egen tilbudstype** (`FORM.type === 'pay'`, vælges ved opstart) og
+  har intet med udstyrstilbuddet at gøre: ingen hardware, licenser, moduler,
+  lokationer eller muligheder. `LOCS` findes stadig (tom) og sendes med, så
+  API'ets validering holder. Tilbud uden `type` er udstyrstilbud.
+- **Satserne står kun i `js/data.js`** (`PAY_KORT`, `PAY_KURS_EUR`, `PAY_MARGIN`,
+  `PAY_KILDE`): interchange, scheme fee og fast scheme-gebyr pr. korttype fra
+  Worldline, Danmark, april 2026. De kan ikke ændres i byggeren. Ændrer
+  Worldline dem, rettes de her — med kilde og dato.
+- **Formlerne er regnearkets** ("tillty - Prisudregner", fanen PAY), én til én i
+  `payBeregn()` i `js/pay.js`: effektiv rate = interchange + scheme fee +
+  margin; pr. transaktion = gns. beløb × rate + fast gebyr × kurs; pr. måned =
+  transaktioner × andel × pr. transaktion. Lav dem ikke om uden at rette
+  regnearket med — de skal give samme tal.
+- **Brøker i state, procent i felterne.** `PAY.margin` er 0.006, feltet viser
+  0,6. Tomt felt er `null` ("ikke sat"), ikke 0.
+- **Ingen fast fee pr. transaktion.** tillty har ingen og får ingen. Regnearkets
+  felt er bevidst udeladt — tilføj det ikke.
+- **Ingen `data-krav` på PAY-felterne.** De ville stoppe eksporten af
+  udstyrstilbud, hvor felterne er skjulte og tomme. PAY's manglende felter
+  kommer fra `payBeregn(PAY).mangler` og lægges ind i `kravOpfyldt()`.
+- **"Hvad er IC++?" er regnearkets forklaring**, i I-form: indledning, de tre
+  dele med punkter og summelinjen. Summen står i en mørkeblå boks under de tre dele. Satserne i punkterne
+  hentes fra `PAY_KORT` og marginen. Tredje del er "Acquirer markup" hos
+  Worldline (inkl. tillty) uden regnearkets "Fast fee pr. transaktion": tillty
+  har ingen. Linjen "Worldline (inkl. tillty)" må ikke stå med versaler. Talsatserne pr. korttype står ikke i tilbuddet; kortfordelingen
+  viser kun den effektive rate, som i regnearket.
+- **Surcharge kun på firmakort og internationale kort** (`surcharge:null` i
+  `PAY_KORT` betyder "må ikke"). Netto-effekten er højst korttypens egen
+  omkostning — surcharge kan aldrig gøre et kort til en indtægt.
+- **Surcharge er slået fra som standard** (`PAY.surchargeTil`, kontakten i
+  panelet). Satserne står klar med regnearkets 2,5 %, men regnes først med, og
+  vises først i tilbuddet, når kontakten er slået til. tillty vil selv vælge
+  det pr. tilbud.
+- **I kartoteket** er Engangs "—", og Løbende/md. er netto betalingsomkostningen
+  pr. måned (`samlTotaler()` lægger den i `mod_md`). Listen læser typen ud af
+  `data->'form'->>'type'` og viser mærkatet "PAY".
+- **Opstarten er to trin.** Først tilbudstypen som to knapper
+  (`.opstart-type`, `vaelgType()`); PAY starter med det samme, udstyr folder
+  muligheder og lokationer ud under knapperne og bekræftes med startknappen.
+  Man starter altid på typevalget, også efter "+ Nyt tilbud".
+- **Kartoteket er delt i udstyr og PAY** med hver sin tabel (`UdstyrTabel`,
+  `PayTabel` i `app/kartotek.tsx`): PAY har ingen engangspris, kun "Netto
+  betaling/md.". Typeknapperne deler listen op, statusknapperne snævrer ind,
+  og tællerne følger søgningen.
+- **Panelerne styres af typen**, ikke af koden i hvert panel: `anvendForm()`
+  sætter `body.form-pay`, og alt der kun hører til udstyr (hardware, tilbehør,
+  software, indløsningsfelterne) er mærket `kun-udstyr` i `index.html`.
+  Et nyt udstyrspanel skal have klassen med, ellers står det i PAY-tilbuddet.
+- **Afslutningen har én standardtekst pr. type** (`STANDARD_NOTE` og
+  `STANDARD_NOTE_PAY` i `init.js`, oversat i `sprog.js`). `standardNote(l, type)`
+  vælger; ved opstart følger teksten med over på den valgte type, men kun så
+  længe den er en af standardteksterne. Sælgerens egen tekst røres ikke.
+- **PAY-tilbuddet har to dele.** Først forklaringen, fritstående og uden
+  nummer: prisen som kort lige efter indledningen (`.pay-pris`), med IC++-satsen
+  først og størst og resultatets nøgletal under (netto pr. måned fremhævet i
+  blåt, effektiv rate, gns. pr. transaktion, og før/surcharge som note), så "Hvad er
+  IC++?" og "Hvorfor IC++?" som overskrift og indhold uden ramme (`.pay-sek`,
+  ét element hver, så pagineringen flytter dem samlet). Derefter selve
+  tilbuddet som nummererede blokke med blå bjælke (`blok()`, `pay-blok`): Jeres
+  tal, Kortfordeling, Surcharge (kun når den er slået til) og Jeres resultat.
+  Numrene følger med, når surcharge er væk. Tabellernes header-række må ikke
+  gentage bjælkens navn, derfor hedder de `Omsætning`, `Korttype` og
+  `Betalingsomkostning` inde i blokkene.
+- Regnestykket i "Hvad er IC++?": tre kort med blåt plus imellem, et lyseblåt
+  lig med under og summen i en mørkeblå boks. "Hvorfor IC++?" er tre kort med
+  hvert sit ikon som inline-SVG (øje, vægt, graf), ikke ikonfiler eller en
+  ikonfont, af samme grund som fontene.
+- **"Jeres resultat" er en almindelig tabel** med alle regnearkets rækker:
+  før surcharge, surcharge, netto pr. måned som totallinje, og effektiv rate
+  og gns. pr. transaktion under den. Regnearkets farvede bokse er prøvet og
+  fravalgt af tillty; tabellen skal se ud som resten af tilbuddet.
+- **Kortfordelingen har præcis regnearkets kolonner**: Korttype, Andel,
+  Effektiv rate, Pr. transaktion, Pr. md. Ingen interchange, scheme fee,
+  margin, fast gebyr eller beskrivelser i tabellen; tillty har valgt det ud som
+  for omfattende. Interchange og scheme fee forklares i "Hvad er IC++?".
+- **Store beløb står i hele kroner, små med ører.** Månedsbeløb, omsætning,
+  grundlag og tillæg rundes af (det er et estimat); beløb pr. transaktion
+  beholder ørerne ("2,29,-"). Alt skrives med `fmt()`. Afrundingen sker i
+  `payBeregn()` (`perMdKr`, `foerKr`, `nettoKr` …), ikke i visningen, og
+  linjerne fordeles med `fordelKr()`, så en kolonne altid summer til sin
+  total. Netto er før minus surcharge i hele kroner. Panelet og kartoteket
+  bruger de samme afrundede tal.
+- Prisboksen har ingen forklarende sætning under IC++-satsen; forklaringen står
+  i "Hvad er IC++?".
 
 ## Paginering (`js/print.js`) — læs før du retter
 

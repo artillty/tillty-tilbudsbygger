@@ -33,7 +33,9 @@ const images = {};        // varenøgle -> dataURL. Delt på tværs af lokatione
    Modellen er den samme uanset: et tilbud er en liste af lokationer, der hver
    har sine muligheder. Lokationen er øverst — det er forretningen, kunden
    skal vælge en løsning til. Et almindeligt tilbud er 1×1 og renderer som før. */
-let FORM = { muligheder:false, lokationer:false };
+/* `type` er tilbudstypen: 'udstyr' (hardware, licenser, moduler) eller 'pay'
+   (tillty PAY, js/pay.js). De to blandes ikke. */
+let FORM = { muligheder:false, lokationer:false, type:'udstyr' };
 
 let LOCS = [];            // [{id, name, muligheder:[{id, navn, tagline, anbefalet, qty, eget, brugt, brugtPris}]}]
 let activeIdx = 0;        // aktiv lokation
@@ -522,9 +524,11 @@ function syncIncludedModules(){
   });
 }
 
-/* Er samme tilbehør både købt løst og lagt på et nyt produkt? Så advarer vi. */
+/* Er samme tilbehør både købt løst og lagt på et købt produkt (nyt eller
+   brugt)? Så advarer vi. Kundens eget tæller ikke — det købes ikke. */
 function accAlsoUnderProduct(aid){
-  return CATALOG.some(p=>p.acc.indexOf(aid)>=0 && q(keyMain(p.id))>0 && q(keyAcc(p.id,aid))>0);
+  const koebt=k=>q(k)+qBrugt(k)>0;
+  return CATALOG.some(p=>p.acc.indexOf(aid)>=0 && koebt(keyMain(p.id)) && koebt(keyAcc(p.id,aid)));
 }
 
 /* ---------- tegn DOM ud fra state ---------- */
@@ -588,9 +592,9 @@ function syncUI(){
   ACC_IDS.forEach(aid=>{
     const xk=keyExtra(aid), hint=document.getElementById('dup_'+xk);
     if(!hint) return;
-    const dup=q(xk)>0 && accAlsoUnderProduct(aid);
+    const dup=(q(xk)+qBrugt(xk))>0 && accAlsoUnderProduct(aid);
     hint.style.display=dup?'block':'none';
-    hint.textContent=dup?'⚠ Også lagt på et nyt produkt ovenfor — tjek at antallet er rigtigt.':'';
+    hint.textContent=dup?'⚠ Også lagt på et produkt ovenfor — tjek at antallet er rigtigt.':'';
   });
   renderOptTabs();
   renderLocTabs();
@@ -598,7 +602,20 @@ function syncUI(){
   visNoteUddrag();
   update();
 }
-function renderAll(){ aabneKort={}; renderCatalog(); renderExtras(); renderSoftware(); syncUI(); }
+function renderAll(){
+  aabneKort={};
+  anvendForm();
+  renderCatalog(); renderExtras(); renderSoftware();
+  if(typeof renderPay==='function') renderPay();
+  syncUI();
+}
+/* Tilbudstypen bestemmer panelerne: et PAY-tilbud viser sit eget panel og
+   ingen af udstyrspanelerne (mærket kun-udstyr i index.html). */
+function anvendForm(){
+  const pay = FORM.type==='pay';
+  document.body.classList.toggle('form-pay', pay);
+  const p=document.getElementById('panel_pay'); if(p) p.hidden=!pay;
+}
 
 /* små tællere i panel-headerne, så man kan se hvad der ligger i et foldet panel */
 function refreshPanelSubs(){
@@ -722,7 +739,8 @@ function collectFor(opsaet){
   ACC_IDS.forEach(aid=>{
     const a=ACCESSORIES[aid], xk=keyExtra(aid);
     const n=qOf(Q,xk), e=qOf(E,xk), br=qOf(B,xk);
-    if(n) extras.push({name:a.name,desc:a.desc,qty:n,price:a.price,img:pdfImg(xk),nyt:br>0});
+    // "Ny" som i hardwaretabellen: kun når samme tilbehør også står som kundens eget eller brugt.
+    if(n) extras.push({name:a.name,desc:a.desc,qty:n,price:a.price,img:pdfImg(xk),nyt:e>0||br>0});
     if(br) extras.push(brugtLinje(a,xk,br));
     if(e) egneExtras.push({name:a.name,desc:a.desc,qty:e,price:0,img:pdfImg(xk),eget:true});
   });
@@ -795,6 +813,12 @@ function esc(s){return String(s==null?'':s)
 /* Licenser regnes altid om til månedspris med en fast måned på 30 dage. */
 const LICENSE_DAYS = 30;
 function licenseDays(){ return LICENSE_DAYS; }
+/* Dagens dato som "ÅÅÅÅ-MM-DD" i lokal tid. toISOString() er UTC og giver
+   gårsdagen mellem midnat og kl. 1-2 dansk tid. */
+function idag(){
+  const d=new Date(), to=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+to(d.getMonth()+1)+'-'+to(d.getDate());
+}
 /* new Date("2026-09-04") tolkes som UTC-midnat og kan derfor vise dagen før,
    når browseren står vest for UTC. Vi bygger datoen af komponenterne i stedet. */
 function parseISODate(iso){
@@ -825,7 +849,7 @@ function validUntil(){
 }
 /* Filnavnet følger også sproget — det er det, kunden ser i sin mail. */
 function quoteFilename(){
-  const nr=v('c_number')||new Date().toISOString().slice(0,10);
+  const nr=v('c_number')||idag();
   const who=(v('c_company')||v('c_contact')||'kunde')
     .replace(/[^\p{L}\p{N}_ ]+/gu,'').trim().replace(/\s+/g,'-');
   return t('Tilbud')+'-'+nr+'-'+who;

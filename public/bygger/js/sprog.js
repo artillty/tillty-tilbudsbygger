@@ -209,6 +209,121 @@ const OVERSAETTELSER = [
   ['Betaling', 'Payment', 'Betaling', 'Betalning', 'Zahlung'],
   ['Stationær betalingsterminal', 'Stationary payment terminal', 'Stasjonær betalingsterminal', 'Stationär betalterminal', 'Stationäres Zahlungsterminal'],
   ['Mobil betalingsterminal', 'Mobile payment terminal', 'Mobil betalingsterminal', 'Mobil betalterminal', 'Mobiles Zahlungsterminal'],
+  /* ---------- tillty PAY ----------
+     Betalingsløsningen har sit eget tilbud (FORM.type==='pay'). Fagtermerne
+     IC++, Interchange, Scheme fee og Surcharge bevares på alle sprog. */
+  ['Tak for en god dialog. Herunder finder I vores tilbud på tillty PAY: én gennemsigtig pris pr. korttype, regnet ud fra jeres egne tal.',
+   'Thank you for a good conversation. Below you will find our quote for tillty PAY: one transparent price per card type, calculated from your own figures.',
+   'Takk for en god dialog. Nedenfor finner dere vårt tilbud på tillty PAY: én transparent pris per korttype, beregnet ut fra deres egne tall.',
+   'Tack för en bra dialog. Nedan hittar ni vår offert på tillty PAY: ett transparent pris per korttyp, beräknat utifrån era egna siffror.',
+   'Vielen Dank für das gute Gespräch. Nachfolgend finden Sie unser Angebot für tillty PAY: ein transparenter Preis je Kartentyp, berechnet aus Ihren eigenen Zahlen.'],
+  ['Jeres pris', 'Your price', 'Deres pris', 'Ert pris', 'Ihr Preis'],
+  ['Effektiv rate (% af omsætning)', 'Effective rate (% of turnover)', 'Effektiv sats (% av omsetning)', 'Effektiv sats (% av omsättning)', 'Effektiver Satz (% vom Umsatz)'],
+  ['Gns. omkostning pr. transaktion', 'Avg. cost per transaction', 'Gj.snittlig kostnad per transaksjon', 'Genomsnittlig kostnad per transaktion', 'Ø Kosten pro Transaktion'],
+  ['{foer} før surcharge, {sur} i surcharge opkrævet af betaleren.',
+   '{foer} before surcharge, {sur} in surcharge collected from the payer.',
+   '{foer} før surcharge, {sur} i surcharge innkrevd fra betaleren.',
+   '{foer} före surcharge, {sur} i surcharge som tas ut av betalaren.',
+   '{foer} vor Surcharge, {sur} Surcharge, die vom Zahler erhoben wird.'],
+  ['Alle beløb er i danske kroner (DKK).', 'All amounts are in Danish kroner (DKK).', 'Alle beløp er i danske kroner (DKK).', 'Alla belopp är i danska kronor (DKK).', 'Alle Beträge in Dänischen Kronen (DKK).'],
+  ['Hvad er IC++?', 'What is IC++?', 'Hva er IC++?', 'Vad är IC++?', 'Was ist IC++?'],
+  ['IC++ (Interchange++) er den mest gennemsigtige prismodel for kortbetalinger. I stedet for ét samlet gebyr (fx 0,99 % "blended") er prisen delt i tre dele, så I kan se præcist, hvor pengene går hen. Det giver jer bedre kontrol over omkostningerne og en fair pris ud fra jeres faktiske kortmix.',
+   'IC++ (Interchange++) is the most transparent pricing model for card payments. Instead of one combined fee (e.g. 0.99% "blended"), the price is split into three parts, so you can see exactly where the money goes. It gives you better control of your costs and a fair price based on your actual card mix.',
+   'IC++ (Interchange++) er den mest transparente prismodellen for kortbetalinger. I stedet for ett samlet gebyr (f.eks. 0,99 % "blended") er prisen delt i tre deler, slik at dere kan se nøyaktig hvor pengene går. Det gir dere bedre kontroll over kostnadene og en rettferdig pris ut fra deres faktiske kortmiks.',
+   'IC++ (Interchange++) är den mest transparenta prismodellen för kortbetalningar. I stället för en samlad avgift (t.ex. 0,99 % "blended") är priset uppdelat i tre delar, så att ni kan se exakt vart pengarna går. Det ger er bättre kontroll över kostnaderna och ett rättvist pris utifrån er faktiska kortmix.',
+   'IC++ (Interchange++) ist das transparenteste Preismodell für Kartenzahlungen. Statt einer Pauschalgebühr (z. B. 0,99 % "blended") ist der Preis in drei Teile gegliedert, sodass Sie genau sehen, wohin das Geld geht. Das gibt Ihnen mehr Kontrolle über die Kosten und einen fairen Preis auf Basis Ihres tatsächlichen Kartenmix.'],
+  ['Interchange', 'Interchange', 'Interchange', 'Interchange', 'Interchange'],
+  ['Kortudstedende bank', 'Card-issuing bank', 'Kortutstedende bank', 'Kortutgivande bank', 'Kartenausgebende Bank'],
+  ['Gebyr som kortholders bank beholder for at udstede kortet og håndtere risikoen.',
+   'Fee kept by the cardholder\'s bank for issuing the card and handling the risk.',
+   'Gebyr som kortholderens bank beholder for å utstede kortet og håndtere risikoen.',
+   'Avgift som kortinnehavarens bank behåller för att ge ut kortet och hantera risken.',
+   'Gebühr, die die Bank des Karteninhabers für die Ausgabe der Karte und das Risiko einbehält.'],
+  ['EU debit: {sats} (loft)', 'EU debit: {sats} (cap)', 'EU debet: {sats} (tak)', 'EU debit: {sats} (tak)', 'EU-Debit: {sats} (Obergrenze)'],
+  ['EU credit: {sats} (loft)', 'EU credit: {sats} (cap)', 'EU kreditt: {sats} (tak)', 'EU kredit: {sats} (tak)', 'EU-Kredit: {sats} (Obergrenze)'],
+  ['Firmakort og kort uden for EØS: typisk 1,2–1,8 %', 'Commercial and non-EEA cards: typically 1.2–1.8%', 'Firmakort og kort utenfor EØS: typisk 1,2–1,8 %', 'Företagskort och kort utanför EES: vanligtvis 1,2–1,8 %', 'Firmenkarten und Karten außerhalb des EWR: typisch 1,2–1,8 %'],
+  ['Scheme fee', 'Scheme fee', 'Scheme fee', 'Scheme fee', 'Scheme fee'],
+  ['Visa og Mastercard', 'Visa and Mastercard', 'Visa og Mastercard', 'Visa och Mastercard', 'Visa und Mastercard'],
+  ['Gebyr til kortnetværket for brug af infrastrukturen: clearing, afregning og autorisation.',
+   'Fee to the card scheme for use of its infrastructure: clearing, settlement and authorisation.',
+   'Gebyr til kortnettverket for bruk av infrastrukturen: clearing, oppgjør og autorisasjon.',
+   'Avgift till kortnätverket för användning av infrastrukturen: clearing, avräkning och auktorisation.',
+   'Gebühr an das Kartennetzwerk für die Nutzung der Infrastruktur: Clearing, Abrechnung und Autorisierung.'],
+  ['EU-kort ved disken: typisk {sats}', 'EU cards in store: typically {sats}', 'EU-kort i butikk: typisk {sats}', 'EU-kort i butik: vanligtvis {sats}', 'EU-Karten vor Ort: typisch {sats}'],
+  ['Plus små faste gebyrer pr. transaktion', 'Plus small fixed fees per transaction', 'Pluss små faste gebyrer per transaksjon', 'Plus små fasta avgifter per transaktion', 'Zuzüglich kleiner Festgebühren pro Transaktion'],
+  ['Acquirer markup', 'Acquirer markup', 'Acquirer markup', 'Acquirer markup', 'Acquirer-Aufschlag'],
+  ['Worldline (inkl. tillty)', 'Worldline (incl. tillty)', 'Worldline (inkl. tillty)', 'Worldline (inkl. tillty)', 'Worldline (inkl. tillty)'],
+  ['Margin som dækker indløsning, gateway, support og tilltys tjeneste.',
+   'Margin covering acquiring, gateway, support and tillty\'s service.',
+   'Margin som dekker innløsning, gateway, support og tilltys tjeneste.',
+   'Marginal som täcker inlösen, gateway, support och tilltys tjänst.',
+   'Marge für Acquiring, Gateway, Support und die Leistung von tillty.'],
+  ['Fast procent pr. transaktion: {sats}', 'Fixed percentage per transaction: {sats}', 'Fast prosent per transaksjon: {sats}', 'Fast procent per transaktion: {sats}', 'Fester Prozentsatz pro Transaktion: {sats}'],
+  ['Samme sats på alle korttyper', 'Same rate on all card types', 'Samme sats på alle korttyper', 'Samma sats på alla korttyper', 'Gleicher Satz für alle Kartentypen'],
+  ['Summen er den samlede transaktionspris, I betaler. Fuldt gennemsigtigt.',
+   'The sum is the total transaction price you pay. Fully transparent.',
+   'Summen er den samlede transaksjonsprisen dere betaler. Helt transparent.',
+   'Summan är det totala transaktionspriset ni betalar. Helt transparent.',
+   'Die Summe ist der gesamte Transaktionspreis, den Sie zahlen. Vollständig transparent.'],
+  ['Hvorfor IC++?', 'Why IC++?', 'Hvorfor IC++?', 'Varför IC++?', 'Warum IC++?'],
+  ['Gennemsigtighed', 'Transparency', 'Transparens', 'Transparens', 'Transparenz'],
+  ['I ser præcist, hvad hvert gebyr dækker. Ingen skjulte marginer.',
+   'You see exactly what each fee covers. No hidden margins.',
+   'Dere ser nøyaktig hva hvert gebyr dekker. Ingen skjulte marginer.',
+   'Ni ser exakt vad varje avgift täcker. Inga dolda marginaler.',
+   'Sie sehen genau, was jede Gebühr abdeckt. Keine versteckten Margen.'],
+  ['Fair pris', 'Fair price', 'Rettferdig pris', 'Rättvist pris', 'Fairer Preis'],
+  ['I betaler kun den faktiske omkostning plus markup. Billige kort som EU debit koster mindre end dyre kort som firmakort og udenlandske kort.',
+   'You only pay the actual cost plus markup. Low-cost cards such as EU debit cost less than expensive cards such as commercial and foreign cards.',
+   'Dere betaler bare den faktiske kostnaden pluss markup. Billige kort som EU debet koster mindre enn dyre kort som firmakort og utenlandske kort.',
+   'Ni betalar bara den faktiska kostnaden plus påslag. Billiga kort som EU debit kostar mindre än dyra kort som företagskort och utländska kort.',
+   'Sie zahlen nur die tatsächlichen Kosten plus Aufschlag. Günstige Karten wie EU-Debit kosten weniger als teure Karten wie Firmen- und ausländische Karten.'],
+  ['Kontrol', 'Control', 'Kontroll', 'Kontroll', 'Kontrolle'],
+  ['Når I kender jeres kortmix, kan I forudsige jeres betalingsomkostninger præcist og planlægge derefter.',
+   'When you know your card mix, you can predict your payment costs precisely and plan accordingly.',
+   'Når dere kjenner kortmiksen deres, kan dere forutsi betalingskostnadene nøyaktig og planlegge deretter.',
+   'När ni känner till er kortmix kan ni förutse era betalningskostnader exakt och planera därefter.',
+   'Wenn Sie Ihren Kartenmix kennen, können Sie Ihre Zahlungskosten genau vorhersagen und entsprechend planen.'],
+  ['Jeres tal', 'Your figures', 'Deres tall', 'Era siffror', 'Ihre Zahlen'],
+  ['Månedlig kortomsætning', 'Monthly card turnover', 'Månedlig kortomsetning', 'Månatlig kortomsättning', 'Monatlicher Kartenumsatz'],
+  ['Gns. transaktionsbeløb', 'Avg. transaction amount', 'Gj.sn. transaksjonsbeløp', 'Genomsn. transaktionsbelopp', 'Durchschn. Transaktionsbetrag'],
+  ['Transaktioner pr. måned', 'Transactions per month', 'Transaksjoner per måned', 'Transaktioner per månad', 'Transaktionen pro Monat'],
+  ['Effektiv rate', 'Effective rate', 'Effektiv sats', 'Effektiv sats', 'Effektiver Satz'],
+  ['Andel', 'Share', 'Andel', 'Andel', 'Anteil'],
+  ['Pr. transaktion', 'Per transaction', 'Per transaksjon', 'Per transaktion', 'Pro Transaktion'],
+  ['Surcharge', 'Surcharge', 'Surcharge', 'Surcharge', 'Surcharge'],
+  ['Sats', 'Rate', 'Sats', 'Sats', 'Satz'],
+  ['Grundlag pr. md.', 'Basis/month', 'Grunnlag per mnd.', 'Underlag per mån.', 'Grundlage/Monat'],
+  ['Tillæg pr. md.', 'Surcharge amount/month', 'Tillegg per mnd.', 'Tillägg per mån.', 'Aufschlag/Monat'],
+  ['Netto-effekt pr. md.', 'Net effect/month', 'Nettoeffekt per mnd.', 'Nettoeffekt per mån.', 'Nettoeffekt/Monat'],
+  ['Samlet surcharge-effekt', 'Total surcharge effect', 'Samlet surcharge-effekt', 'Total surcharge-effekt', 'Gesamter Surcharge-Effekt'],
+  ['Surcharge er et tillæg, I selv opkræver af betaleren på firmakort og internationale kort. Det må ikke lægges på EU-forbrugerkort, og netto-effekten kan højst udligne korttypens egen omkostning.',
+   'Surcharge is an extra charge you collect from the payer yourself on commercial and international cards. It may not be applied to EU consumer cards, and the net effect can at most offset the cost of that card type.',
+   'Surcharge er et tillegg dere selv krever inn fra betaleren på firmakort og internasjonale kort. Det kan ikke legges på EU-forbrukerkort, og nettoeffekten kan høyst utligne korttypens egen kostnad.',
+   'Surcharge är ett tillägg som ni själva tar ut av betalaren på företagskort och internationella kort. Det får inte läggas på EU-konsumentkort, och nettoeffekten kan högst kvitta korttypens egen kostnad.',
+   'Surcharge ist ein Aufschlag, den Sie selbst vom Zahler auf Firmenkarten und internationale Karten erheben. Er darf nicht auf EU-Verbraucherkarten erhoben werden, und der Nettoeffekt kann höchstens die Kosten des jeweiligen Kartentyps ausgleichen.'],
+  ['Jeres resultat', 'Your result', 'Deres resultat', 'Ert resultat', 'Ihr Ergebnis'],
+  ['Omsætning', 'Turnover', 'Omsetning', 'Omsättning', 'Umsatz'],
+  ['Kortfordeling', 'Card mix', 'Kortfordeling', 'Kortfördelning', 'Kartenmix'],
+  ['Korttype', 'Card type', 'Korttype', 'Korttyp', 'Kartentyp'],
+  ['Betalingsomkostning', 'Payment cost', 'Betalingskostnad', 'Betalningskostnad', 'Zahlungskosten'],
+  ['Omkostning før surcharge', 'Cost before surcharge', 'Kostnad før surcharge', 'Kostnad före surcharge', 'Kosten vor Surcharge'],
+  ['Surcharge, opkræves af betaleren', 'Surcharge, collected from the payer', 'Surcharge, kreves inn fra betaleren', 'Surcharge, tas ut av betalaren', 'Surcharge, vom Zahler erhoben'],
+  ['Netto betalingsomkostning pr. måned', 'Net payment cost per month', 'Netto betalingskostnad per måned', 'Netto betalningskostnad per månad', 'Netto-Zahlungskosten pro Monat'],
+  ['Beregningen bygger på den omsætning, det transaktionsbeløb og den kortfordeling, I har oplyst. Den faktiske omkostning følger jeres faktiske kortmix og afregnes pr. transaktion. Interchange og scheme fee er kortnetværkenes vejledende satser for Danmark ({kilde}) og kan ændre sig.',
+   'The calculation is based on the turnover, transaction amount and card mix you have provided. The actual cost follows your actual card mix and is settled per transaction. Interchange and scheme fee are the card schemes\' indicative rates for Denmark ({kilde}) and may change.',
+   'Beregningen bygger på omsetningen, transaksjonsbeløpet og kortfordelingen dere har oppgitt. Den faktiske kostnaden følger deres faktiske kortmiks og avregnes per transaksjon. Interchange og scheme fee er kortnettverkenes veiledende satser for Danmark ({kilde}) og kan endre seg.',
+   'Beräkningen bygger på den omsättning, det transaktionsbelopp och den kortfördelning ni har uppgett. Den faktiska kostnaden följer er faktiska kortmix och avräknas per transaktion. Interchange och scheme fee är kortnätverkens vägledande satser för Danmark ({kilde}) och kan ändras.',
+   'Die Berechnung beruht auf dem Umsatz, dem Transaktionsbetrag und der Kartenverteilung, die Sie angegeben haben. Die tatsächlichen Kosten folgen Ihrem tatsächlichen Kartenmix und werden pro Transaktion abgerechnet. Interchange und Scheme fee sind die Richtsätze der Kartennetzwerke für Dänemark ({kilde}) und können sich ändern.'],
+  /* korttyperne fra PAY_KORT i data.js */
+  ['EU forbruger debit', 'EU consumer debit', 'EU forbruker debet', 'EU konsument debet', 'EU-Verbraucher Debit'],
+  ['Dankort, Visa Debit og andre debetkort udstedt i EU.', 'Dankort, Visa Debit and other debit cards issued in the EU.', 'Dankort, Visa Debit og andre debetkort utstedt i EU.', 'Dankort, Visa Debit och andra betalkort utgivna i EU.', 'Dankort, Visa Debit und andere in der EU ausgegebene Debitkarten.'],
+  ['EU forbruger credit', 'EU consumer credit', 'EU forbruker kreditt', 'EU konsument kredit', 'EU-Verbraucher Kredit'],
+  ['Kreditkort fra Visa og Mastercard udstedt i EU.', 'Visa and Mastercard credit cards issued in the EU.', 'Kredittkort fra Visa og Mastercard utstedt i EU.', 'Kreditkort från Visa och Mastercard utgivna i EU.', 'In der EU ausgegebene Kreditkarten von Visa und Mastercard.'],
+  ['Firmakort', 'Commercial cards', 'Firmakort', 'Företagskort', 'Firmenkarten'],
+  ['Firma- og erhvervskort. Ikke omfattet af EU-loftet.', 'Business and corporate cards. Not covered by the EU cap.', 'Firma- og bedriftskort. Ikke omfattet av EU-taket.', 'Företags- och tjänstekort. Omfattas inte av EU-taket.', 'Firmen- und Geschäftskarten. Nicht von der EU-Obergrenze erfasst.'],
+  ['Internationale kort', 'International cards', 'Internasjonale kort', 'Internationella kort', 'Internationale Karten'],
+  ['Kort udstedt uden for EEA, fx USA, UK og Asien.', 'Cards issued outside the EEA, e.g. the US, UK and Asia.', 'Kort utstedt utenfor EØS, f.eks. USA, Storbritannia og Asia.', 'Kort utgivna utanför EES, t.ex. USA, Storbritannien och Asien.', 'Außerhalb des EWR ausgegebene Karten, z. B. USA, Großbritannien und Asien.'],
 ];
 
 /* Standardteksten i afslutningen. Den danske står i init.js (STANDARD_NOTE). */
@@ -235,6 +350,22 @@ Zusammenfassung
 Ich hoffe, dass dieser Vorschlag Ihren Erwartungen und strategischen Zielen für die Zukunft entspricht. Selbstverständlich stehe ich Ihnen gerne zur Verfügung, um das Angebot mit Ihnen durchzugehen und Ihre Fragen zu beantworten.`,
 };
 
+/* Standardafslutningen til et PAY-tilbud. Den danske står i init.js (STANDARD_NOTE_PAY). */
+const STANDARD_NOTE_PAY_SPROG = {
+  en:
+`Summary
+I hope this proposal matches your expectations. I am of course available to go through the calculation with you, also with your actual card mix, and to answer any questions you may have.`,
+  nb:
+`Oppsummering
+Jeg håper at dette forslaget samsvarer med deres forventninger. Jeg står selvfølgelig til disposisjon for å gå gjennom beregningen med dere, også med deres faktiske kortmiks, og svare på eventuelle spørsmål.`,
+  sv:
+`Sammanfattning
+Jag hoppas att detta förslag motsvarar era förväntningar. Jag finns naturligtvis tillgänglig för att gå igenom beräkningen med er, även med er faktiska kortmix, och svara på eventuella frågor.`,
+  de:
+`Zusammenfassung
+Ich hoffe, dass dieser Vorschlag Ihren Erwartungen entspricht. Selbstverständlich stehe ich Ihnen gerne zur Verfügung, um die Berechnung mit Ihnen durchzugehen, auch mit Ihrem tatsächlichen Kartenmix, und Ihre Fragen zu beantworten.`,
+};
+
 /* Opslag: sprog -> dansk tekst -> oversættelse. */
 const TEKST = {};
 SPROG_RAEKKEFOELGE.slice(1).forEach((l,i)=>{
@@ -257,4 +388,12 @@ function t(da, vaerdier){
   if(vaerdier) s = s.replace(/\{(\w+)\}/g, (m,k)=>k in vaerdier ? vaerdier[k] : m);
   return s;
 }
-function standardNote(l){ return l==='da' ? STANDARD_NOTE : STANDARD_NOTE_SPROG[l]; }
+/* Afslutningens standardtekst følger tilbudstypen: 'udstyr' eller 'pay'. Uden
+   `type` bruges FORM.type (app.js); findes FORM ikke (fx et script der kun
+   læser tabellen), er det udstyr. Med `type` er FORM ligegyldig. */
+function standardNote(l, type){
+  const t = type || (typeof FORM!=='undefined' && FORM && FORM.type) || 'udstyr';
+  const pay = t==='pay';
+  if(l==='da') return pay ? STANDARD_NOTE_PAY : STANDARD_NOTE;
+  return pay ? STANDARD_NOTE_PAY_SPROG[l] : STANDARD_NOTE_SPROG[l];
+}

@@ -79,6 +79,7 @@ async function aabnNyt(p) {
 }
 async function forbiOpstart(p) {
   if (await p.isVisible('#opstart')) {
+    await p.click('#opstart [data-type="udstyr"]');
     await p.click('#opstart .opstart-start');
     await p.waitForTimeout(250);
   }
@@ -130,6 +131,10 @@ async function forbiOpstart(p) {
     await p.click('button[type=submit]');
     await p.waitForTimeout(1500);
     check('rigtigt kodeord lukker op', /\/$|kartotek/.test(new URL(p.url()).pathname));
+    // Tabellerne blev droppet ved start og oprettes først, når serveren rammer
+    // ensureTables(). Efter en kold start kan det tage længere end kartotekets
+    // indlæsning — så vent på listen, før testen selv skriver i tælleren.
+    await p.evaluate(async () => { await (await fetch('/api/tilbud')).json(); });
 
     /* ---------- 3: nummertildeling ---------- */
     // Lav en tæller der står lavt, som produktionen gjorde efter de første
@@ -306,6 +311,60 @@ async function forbiOpstart(p) {
     const alleSpring = tildelte.slice(1).map((n, i) => seqAf(n) - seqAf(tildelte[i]));
     check('alle spring er 2-9', alleSpring.every((d) => d >= 2 && d <= 9),
       alleSpring.join(', '));
+
+    /* ---------- 9: PAY-tilbud gemmes, genåbnes og står i kartoteket ---------- */
+    console.log('\n# tillty PAY');
+    await p.goto(`${BASE}/bygger/index.html`);
+    await p.waitForTimeout(1200);
+    check('PAY vælges i opstarten', await p.isVisible('#opstart'));
+    // PAY starter med det samme, uden ekstra valg.
+    await p.click('#opstart [data-type="pay"]');
+    await p.waitForTimeout(300);
+    await p.fill('#c_company', 'PAY Kunden ApS');
+    await p.fill('#c_seller', 'Rask');
+    await p.fill('#pay_omsaetning', '833.333');
+    await p.fill('#pay_gns', '250');
+    // En fordeling der ikke er standarden, så vi ved at det er de gemte tal der kommer tilbage.
+    await p.fill('#pay_andel_debit', '55');
+    await p.fill('#pay_andel_credit', '30');
+    // Surcharge slået til, så kontakten også skal overleve gem og genåbning.
+    await p.check('#pay_surcharge_til');
+    await p.waitForTimeout(300);
+    const nettoFoer = await p.evaluate(() => payBeregn(PAY).netto);
+    await p.click('button[onclick="gemTilbud()"]');
+    await p.waitForTimeout(1500);
+    const nrPay = husk(await p.inputValue('#c_number'));
+    check('PAY-tilbuddet får et nummer', erNummer(nrPay), nrPay);
+
+    await p.goto(BASE + '/bygger/index.html?nr=' + nrPay);
+    await p.waitForTimeout(1500);
+    check('PAY-panelet er fremme ved genåbning',
+      (await p.isVisible('#panel_pay')) && !(await p.isVisible('#catalog')));
+    const felter = [await p.inputValue('#pay_omsaetning'), await p.inputValue('#pay_gns'),
+      await p.inputValue('#pay_andel_debit'), await p.inputValue('#pay_andel_credit')];
+    check('PAY-felterne er gendannet', felter.join('|') === '833.333|250|55|30', felter.join('|'));
+    check('surcharge-kontakten er gendannet', (await p.isChecked('#pay_surcharge_til'))
+      && (await p.isVisible('#pay_surcharge_commercial')));
+    const nettoEfter = await p.evaluate(() => payBeregn(PAY).netto);
+    check('netto er den samme efter genåbning', Math.abs(nettoEfter - nettoFoer) < 0.005,
+      `${nettoFoer} vs ${nettoEfter}`);
+
+    // Kartoteket kender typen og viser netto som det løbende beløb.
+    const liste = await p.evaluate(async () => (await fetch('/api/tilbud')).json());
+    const rk = (liste.tilbud || []).find((t) => t.nr === nrPay) || {};
+    check('kartoteket kender tilbudstypen', rk.type === 'pay', String(rk.type));
+    check('PAY-tilbuddet har ingen engangspris', Number(rk.engangs) === 0 && Number(rk.lic_dag) === 0,
+      `${rk.engangs} / ${rk.lic_dag}`);
+    // Kartoteket viser netto i hele kroner, som tilbuddet.
+    const nettoKr = await p.evaluate(() => payBeregn(PAY).nettoKr);
+    check('løbende/md. er netto betalingsomkostningen i hele kroner', Number(rk.mod_md) === nettoKr,
+      `${rk.mod_md} vs ${nettoKr}`);
+    await p.goto(BASE + '/');
+    await p.waitForTimeout(1200);
+    // Kartoteket er delt i udstyr og PAY; PAY-tilbuddet står i sin egen del.
+    check('kartoteket viser PAY-tilbuddet i PAY-delen', await p.$$eval('section[data-type="pay"] table.kart tbody tr', (rows, nr) => {
+      return !!rows.find((x) => x.querySelector('.nr')?.textContent === nr);
+    }, nrPay));
 
     await p.close();
   } finally {

@@ -204,6 +204,8 @@ function kravOpfyldt(){
     if(udenPris.indexOf(n)<0) udenPris.push(n);
   })));
   udenPris.forEach(n=>navne.push('Pris på brugt: '+n));
+  // Et PAY-tilbud har sine egne obligatoriske felter (js/pay.js).
+  if(FORM.type==='pay' && typeof payMarkerMangler==='function') payMarkerMangler().forEach(n=>navne.push(n));
   if(!navne.length) return true;
   if(tomme.length) tomme[0].focus();
   alert('Udfyld de obligatoriske felter, før du eksporterer:\n\n'+navne.join('\n'));

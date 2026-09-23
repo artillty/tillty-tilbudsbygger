@@ -159,7 +159,7 @@ function overviewTable(live,days,sum){
    nævnes kun, når der er én samlet licenspris — med flere muligheder har hver
    sin egen, og den står i mulighedens opsummering. */
 function prisNoter(harLic,dagspris,harEget,days){
-  let b='';
+  let b='<div class="qp-assump">'+t('Alle beløb er i danske kroner (DKK).')+'</div>';
   if(harLic){
     // Har kunden eget udstyr med, skal det siges eksplicit at det også koster
     // licens. Ellers er regnestykket i licenstabellen ikke til at følge.
@@ -390,19 +390,8 @@ function lokTitel(loc,nr){
   return '<div class="lok-titel"><span class="lo-n">'+nr+'</span>'+esc(locNavn(loc))+'</div>';
 }
 
-function update(){
-  const el=document.getElementById('preview');
-  const days=licenseDays();
-  refreshLicensePanel(collectFor(M()));
-  /* Dokumentet bygges af alle lokationer og muligheder med indhold — ikke kun
-     det man har fremme. Har ingen lokation mere end én mulighed med indhold,
-     er der intet at sammenligne, og det er et almindeligt tilbud. */
-  const lok=lokationerMedIndhold();
-  if(!lok.length){ el.innerHTML='<div class="empty">Sæt antal på et produkt for at bygge tilbuddet…</div>'; return; }
-  const sml=lok.some(x=>x.ml.length>1);
-  const multi=lok.length>1;
-  const live=lok.map(x=>({loc:x.loc, d:x.ml[0].d}));
-
+/* Parterne og hilsenen er ens for alle tilbudstyper (udstyr og PAY). */
+function parterOgHej(){
   let b='';
   /* Parterne — afsender og modtager. Uden denne blok er dokumentet ikke et tilbud. */
   // Sælgeren står under firmanavnet, ligesom kontaktpersonen hos kunden.
@@ -421,7 +410,40 @@ function update(){
 
   const kunde=v('c_contact')||v('c_company');
   b+='<div class="qp-hej">'+(kunde?t('Hej {navn},',{navn:esc(kunde)}):t('Hej,'))+'</div>';
+  return b;
+}
+function hilsen(){
+  // Kontaktoplysningerne står i sidefoden på hver side — kun underskriften
+  // hører til i selve brevteksten.
+  const seller=v('c_seller');
+  return '<div class="qp-greet">'+(seller?t('Hilsen {saelger} og tillty teamet',{saelger:esc(seller)}):t('Hilsen tillty teamet'))+'</div>';
+}
+/* Rammen om dokumentet: sidehoved, indhold og sidefod. Pagineringen (print.js)
+   læser indholdet ud af #quote-body, uanset tilbudstype. */
+function dokumentRamme(b){
+  return '<div class="quote-page" id="quote-doc" lang="'+sprog()+'">'
+    +bandHtml(true)
+    +'<div class="qp-content" id="quote-body">'+b+'</div>'
+    +footHtml('', '')
+    +'</div>';
+}
 
+function update(){
+  const el=document.getElementById('preview');
+  // Et PAY-tilbud har sit eget dokument (js/pay.js) og ingen opsætning at samle.
+  if(FORM.type==='pay'){ el.innerHTML=payTilbud(); return; }
+  const days=licenseDays();
+  refreshLicensePanel(collectFor(M()));
+  /* Dokumentet bygges af alle lokationer og muligheder med indhold — ikke kun
+     det man har fremme. Har ingen lokation mere end én mulighed med indhold,
+     er der intet at sammenligne, og det er et almindeligt tilbud. */
+  const lok=lokationerMedIndhold();
+  if(!lok.length){ el.innerHTML='<div class="empty">Sæt antal på et produkt for at bygge tilbuddet…</div>'; return; }
+  const sml=lok.some(x=>x.ml.length>1);
+  const multi=lok.length>1;
+  const live=lok.map(x=>({loc:x.loc, d:x.ml[0].d}));
+
+  let b=parterOgHej();
   const intro=v('c_intro');
   const onlyExtras = live.every(x=>!x.d.hw.length && !x.d.licenses.length && !x.d.modules.length && x.d.extras.length);
   const defaultIntro = sml && multi
@@ -438,10 +460,7 @@ function update(){
   // Beskrivelsen sættes ind efter specifikationen, lige inden hilsen — se nedenfor.
   const note=v('c_note');
 
-  // Kontaktoplysningerne står nu i sidefoden på hver side — kun underskriften
-  // hører til i selve brevteksten.
-  const seller=v('c_seller');
-  const greet='<div class="qp-greet">'+(seller?t('Hilsen {saelger} og tillty teamet',{saelger:esc(seller)}):t('Hilsen tillty teamet'))+'</div>';
+  const greet=hilsen();
 
   const harEget=lok.some(x=>x.ml.some(m=>m.d.harEget));
   const harLic=lok.some(x=>x.ml.some(m=>m.d.licDaily));
@@ -486,12 +505,7 @@ function update(){
     b+=greet;
   }
 
-  el.innerHTML=
-    '<div class="quote-page" id="quote-doc" lang="'+sprog()+'">'+
-      bandHtml(true)+
-      '<div class="qp-content" id="quote-body">'+b+'</div>'+
-      footHtml('', '')+
-    '</div>';
+  el.innerHTML=dokumentRamme(b);
 }
 
 /* ---------- sidehoved og sidefod (gentages på hver side) ---------- */

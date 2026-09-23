@@ -35,9 +35,16 @@ async function newPage(browser, form = {}) {
   // Nye tilbud starter med formvalget. Scenarierne herunder tester det
   // almindelige tilbud — én mulighed, én lokation — så vi tager standarden.
   if (await p.isVisible('#opstart')) {
-    if (form.muligheder) await p.check('#f_muligheder');
-    if (form.lokationer) await p.check('#f_lokationer');
-    await p.click('#opstart .opstart-start');
+    // Tilbudstypen vælges først som to knapper. PAY starter med det samme;
+    // udstyr folder de ekstra valg ud, som derefter bekræftes.
+    if (form.pay) {
+      await p.click('#opstart [data-type="pay"]');
+    } else {
+      await p.click('#opstart [data-type="udstyr"]');
+      if (form.muligheder) await p.check('#f_muligheder');
+      if (form.lokationer) await p.check('#f_lokationer');
+      await p.click('#opstart .opstart-start');
+    }
     await p.waitForTimeout(250);
   }
   return p;
@@ -239,6 +246,8 @@ let STANDARD_START = null;
     check('tomt indløsningsfelt giver "Aftales efter dialog"',
       await p.$eval('#quote-doc', e => /Indløsning, fysisk betaling: Aftales efter dialog\. ?Indløsning, online betaling: Aftales efter dialog\./.test(
         e.textContent.replace(/\s+/g, ' '))));
+    check('valutaen står under prisoverblikket', await p.$eval('#quote-doc', e =>
+      /Samlet prisoverblik[\s\S]*Alle beløb er i danske kroner \(DKK\)\.[\s\S]*Indløsning/.test(e.textContent)));
 
     check('QR låst når Takeaway er valgt',
       await p.isDisabled('[data-qwrap="s_qr"] button:last-child'));
@@ -465,6 +474,12 @@ let STANDARD_START = null;
     check('produktvalg ryddet', (await p.inputValue('#qty_m_sot')) === '0');
     // Nulstil sender én tilbage til formvalget, så opsætningen skal bekræftes igen.
     check('formvalget vises igen efter nulstil', await p.isVisible('#opstart'));
+    // Opstarten starter altid på typevalget; udstyr folder de ekstra valg ud.
+    check('opstarten starter på typevalget', !(await p.isVisible('#opstart_udstyr'))
+      && (await p.$$('#opstart .opstart-type.active')).length === 0);
+    await p.click('#opstart [data-type="udstyr"]'); await p.waitForTimeout(100);
+    check('udstyr folder de ekstra valg ud', await p.isVisible('#opstart_udstyr')
+      && await p.$eval('#opstart [data-type="udstyr"]', (e) => e.classList.contains('active')));
     // Knappen siger "Simpelt tilbud" uden valg og "Kom i gang", når ét er slået til.
     const knap = () => p.$eval('#opstart .opstart-start', (e) => e.textContent.trim());
     await p.uncheck('#f_lokationer'); await p.uncheck('#f_muligheder');
@@ -477,7 +492,8 @@ let STANDARD_START = null;
       (await p.$$('#loctabs .loctab:not(.loctab-add)')).length === 1);
     // Datoen er en default, ikke kundedata — den skal stå igen bagefter.
     check('dato sat til i dag',
-      (await p.inputValue('#c_date')) === new Date().toISOString().slice(0, 10));
+      (await p.inputValue('#c_date')) === (() => { const d = new Date(), to = (n) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${to(d.getMonth() + 1)}-${to(d.getDate())}`; })());
     await p.close();
   }
 
@@ -942,7 +958,7 @@ let STANDARD_START = null;
     const js = (f) => fs.readFileSync(path.resolve(__dirname, '..', 'public', 'bygger', 'js', f), 'utf8');
     // Alle faste tekster i dokumentet går gennem t('…'). Nøglerne hentes fra
     // kildekoden, så en ny tekst uden oversættelse fanges her.
-    const tKald = [...new Set(['quote.js', 'print.js', 'app.js']
+    const tKald = [...new Set(['quote.js', 'print.js', 'app.js', 'pay.js']
       .flatMap((f) => [...js(f).matchAll(/\bt\('((?:[^'\\]|\\.)*)'/g)].map((m) => m[1])))];
 
     const p = await newPage(browser, { muligheder: true, lokationer: true });
@@ -953,6 +969,7 @@ let STANDARD_START = null;
       Object.values(ACCESSORIES).forEach((x) => data.push(x.name, x.desc));
       Object.values(LICENSE_TYPES).forEach((x) => data.push(x.name));
       MODULES.forEach((x) => data.push(x.name, x.desc));
+      PAY_KORT.forEach((x) => data.push(x.name, x.desc));
       SAMMENLIGNING.forEach((k) => { data.push(k.kategori); k.raekker.forEach((r) => data.push(r.navn)); });
       return {
         mangler: [...new Set([...data, ...tKald])].filter((d) => !noegler.has(d)),
@@ -996,8 +1013,10 @@ let STANDARD_START = null;
         const txt = doc.innerText;
         // Danske tekster, der er anderledes på sproget, må ikke stå i dokumentet.
         // Korte ord ("ny", "og") springes over — de findes også inde i andre ord.
-        const rester = OVERSAETTELSER.filter((r) => r[0].length > 6 && r[0] !== TEKST[l][r[0]])
-          .map((r) => r[0].replace(/<\/?b>/g, '').split('{')[0].trim())
+        const del = (x) => x.replace(/<\/?b>/g, '').split('{')[0].trim();
+        // Kun den del før første pladsholder tjekkes; er den ens på begge sprog, er der intet at fange.
+        const rester = OVERSAETTELSER.filter((r) => r[0].length > 6 && del(r[0]) !== del(TEKST[l][r[0]]))
+          .map((r) => del(r[0]))
           .filter((d) => d.length > 6 && txt.includes(d));
         return { rester, lang: doc.lang, note: document.getElementById('c_note').value === standardNote(l) };
       }, l);
@@ -1233,6 +1252,217 @@ let STANDARD_START = null;
       (rows.find((r) => /Bemandede kassepladser/.test(r.cells[0].textContent)) || { cells: [] }).cells
         ? [...rows.find((r) => /Bemandede kassepladser/.test(r.cells[0].textContent)).cells].map((c) => c.textContent.trim()) : []);
     check('sammenligningen skelner mellem nye og brugte', celler[1] === '2 nye' && celler[2] === '2 brugte', celler.join(' | '));
+    await p.close();
+  }
+
+  /* ---------- tillty PAY ---------- */
+  // Kontroltallene er regnet i hånden ud fra regnearket "tillty - Prisudregner"
+  // (fanen PAY) med dets standardværdier: omsætning 833.333, gns. beløb 250,
+  // margin 0,60 %, fordeling 60/25/8/7, surcharge 2,5 % på firmakort og
+  // internationale kort. Ændres satserne i js/data.js, skal tallene rettes med.
+  console.log('\n# tillty PAY');
+  {
+    const p = await newPage(browser, { pay: true });
+    const dok = () => p.$eval('#quote-doc', (e) => e.innerText.replace(/\s+/g, ' '));
+    /* Rækkerne (tbody + tfoot) i den tabel, hvis navn står i første header-celle. */
+    // Kortfordeling og surcharge har begge "Korttype" som overskrift; klassen skiller dem.
+    const tabel = (navn) => p.$$eval('#quote-doc table.pv', (ts, navn) => {
+      const [overskrift, klasse] = navn.split('@');
+      const t = ts.find((x) => x.querySelector('th').textContent.trim() === overskrift && (!klasse || x.classList.contains(klasse)));
+      return t ? [...t.querySelectorAll('tbody tr, tfoot tr')]
+        .map((r) => [...r.cells].map((c) => c.textContent.replace(/\s+/g, ' ').trim())) : null;
+    }, navn);
+    const raekke = async (navn, start) => ((await tabel(navn)) || []).find((r) => r[0].startsWith(start)) || [];
+    const res = (start) => raekke('Betalingsomkostning', start);
+
+    // Byggeren: kun PAY-panelet er fremme, udstyrspanelerne og indløsningsfelterne er væk.
+    check('PAY-panelet er fremme', await p.isVisible('#panel_pay'));
+    check('udstyrspanelerne er skjult', !(await p.isVisible('#catalog')) && !(await p.isVisible('#extras'))
+      && !(await p.isVisible('#software')));
+    check('indløsningsfelterne hører til udstyrstilbuddet',
+      !(await p.isVisible('#c_indloesning')) && !(await p.isVisible('#c_indloesning_online')));
+    check('siden er mærket som PAY-tilbud', await p.evaluate(() => document.body.classList.contains('form-pay')));
+    check('afslutningen er PAY-standarden', /^Opsamling/.test((await p.textContent('#note_uddrag')).trim()));
+    check('standardteksten står som standard', await p.isVisible('#note_std'));
+
+    // Uden tal: dokumentet siger hvad der mangler, og eksporten stopper.
+    let d = await dok();
+    check('uden tal siger dokumentet hvad der mangler', /Udfyld i panelet tillty PAY/.test(d)
+      && /Månedlig kortomsætning/.test(d));
+    check('uden tal står der streger, ikke 0 kr.', (await raekke('Omsætning', 'Månedlig kortomsætning'))[1] === '–'
+      && (await res('Netto'))[1] === '–');
+    check('prisen står som overskrift', /IC\+\+ 0,60 %/.test(await p.textContent('#quote-doc .pay-pris-tal')));
+    await p.evaluate(() => { window.print = () => { window.__printKaldt = true; }; });
+    let besked = '';
+    p.removeAllListeners('dialog');
+    p.on('dialog', (dl) => { besked = dl.message(); dl.accept(); });
+    await p.click('button[onclick="exportPDF()"]'); await p.waitForTimeout(300);
+    check('eksporten stopper uden omsætning', !(await p.evaluate(() => window.__printKaldt))
+      && /Månedlig kortomsætning/.test(besked) && /Gns\. transaktionsbeløb/.test(besked), besked.replace(/\n/g, ' '));
+    check('det tomme PAY-felt markeres med rødt', await p.evaluate(() =>
+      document.getElementById('pay_omsaetning').classList.contains('mangler')));
+
+    // Regnearkets tal.
+    await p.fill('#pay_omsaetning', '833.333');
+    await p.fill('#pay_gns', '250');
+    await p.waitForTimeout(400);
+    // Surcharge er slået fra som standard: satserne er foldet væk, og tilbuddet
+    // har hverken tabel eller række om den. Netto er lig omkostningen før.
+    check('surcharge er slået fra som standard', !(await p.isChecked('#pay_surcharge_til'))
+      && !(await p.isVisible('#pay_surcharge_commercial')));
+    check('uden surcharge er tabellen ikke i tilbuddet', (await tabel('Korttype@pay-sur')) === null
+      && (await res('Surcharge, opkræves')).length === 0
+      && (await res('Netto'))[1] === '9.808,-');
+    await p.check('#pay_surcharge_til'); await p.waitForTimeout(400);
+    check('kontakten folder satserne ud med regnearkets 2,5 %', (await p.isVisible('#pay_surcharge_commercial'))
+      && (await p.inputValue('#pay_surcharge_commercial')) === '2,5' && (await p.inputValue('#pay_surcharge_noneea')) === '2,5');
+    check('markeringen forsvinder, når der skrives', !(await p.evaluate(() =>
+      document.getElementById('pay_omsaetning').classList.contains('mangler'))));
+    check('transaktioner pr. måned regnes i panelet', (await p.inputValue('#pay_tx')) === '3.333',
+      await p.inputValue('#pay_tx'));
+    check('panelets overskrift viser netto pr. måned', /IC\+\+ 0,60 %.*6\.810,-/.test(await p.textContent('#pay_sub')),
+      await p.textContent('#pay_sub'));
+    check('panelets resultat stemmer', /9\.808,-[\s\S]*2\.998,-[\s\S]*6\.810,-[\s\S]*0,82 %/.test(
+      await p.textContent('#pay_resultat')));
+
+    d = await dok();
+    check('dokumentet siger ikke længere at noget mangler', !/Udfyld i panelet/.test(d));
+    check('kundens tal står i dokumentet', (await raekke('Omsætning', 'Månedlig kortomsætning'))[1] === '833.333,-'
+      && (await raekke('Omsætning', 'Gns. transaktionsbeløb'))[1] === '250,-'
+      && (await raekke('Omsætning', 'Transaktioner pr. måned'))[1] === '3.333');
+    // Kortfordelingen har regnearkets kolonner: andel, effektiv rate, pr. transaktion, pr. md.
+    const omk = await tabel('Korttype@pay-omk');
+    const omkAf = (navn) => (omk.find((r) => r[0] === navn) || []).slice(1).join(' | ');
+    check('omkostningen pr. korttype stemmer med regnearket',
+      omkAf('EU forbruger debit') === '60 % | 0,87 % | 2,29,- | 4.574,-'
+      && omkAf('Internationale kort').startsWith('7 % | 2,65 % |')
+      && omkAf('EU forbruger credit').endsWith('| 2.114,-')
+      && omkAf('Firmakort').endsWith('| 1.540,-')
+      && omkAf('Internationale kort').endsWith('| 1.580,-'),
+      [omkAf('EU forbruger debit'), omkAf('EU forbruger credit'), omkAf('Firmakort'), omkAf('Internationale kort')].join(' / '));
+    check('summen af omkostningen stemmer', omkAf('I alt') === '100 % |  | 2,94,- | 9.808,-', omkAf('I alt'));
+    const sur = await tabel('Korttype@pay-sur');
+    const surAf = (navn) => ((sur || []).find((r) => r[0] === navn) || []).slice(1).join(' | ');
+    check('surcharge regnes pr. korttype og kan højst udligne omkostningen',
+      surAf('Firmakort') === '2,5 % | 66.667,- | 1.667,- | 1.540,-'
+      && surAf('Internationale kort').endsWith('| 1.458,-'),
+      surAf('Firmakort') + ' / ' + surAf('Internationale kort'));
+    check('samlet surcharge-effekt', ((sur || []).find((r) => /^Samlet surcharge-effekt/.test(r[0])) || []).pop() === '2.998,-');
+    check('surcharge-forbeholdet står under tabellen', /må ikke lægges på EU-forbrugerkort/.test(d));
+    check('resultatet stemmer med regnearket',
+      (await res('Omkostning før surcharge'))[1] === '9.808,-'
+      && (await res('Surcharge, opkræves'))[1] === '−2.998,-'
+      && (await res('Netto betalingsomkostning'))[1] === '6.810,-',
+      ((await tabel('Betalingsomkostning')) || []).map((r) => r.join(': ')).join(' / '));
+    check('effektiv rate og gns. pr. transaktion står som rækker', (await res('Effektiv rate'))[1] === '0,82 %'
+      && (await res('Gns. omkostning pr. transaktion'))[1] === '2,04,-');
+    const prisKort = (await p.innerText('#quote-doc .pay-pris')).replace(/\s+/g, ' ');
+    check('prisboksen har resultatets nøgletal under IC++-satsen',
+      /IC\+\+ 0,60 %.*Netto betalingsomkostning pr\. måned 6\.810,-.*Effektiv rate \(% af omsætning\) 0,82 %.*Gns\. omkostning pr\. transaktion 2,04,-/.test(prisKort)
+      && /9\.808,- før surcharge, −2\.998,- i surcharge/.test(prisKort), prisKort);
+    check('valutaen står i prisboksen', /Alle beløb er i danske kroner \(DKK\)\./.test(prisKort));
+    check('forbeholdet nævner kilden', /Worldline, Indicative Card Scheme Fee Rates, Denmark, april 2026/.test(d));
+    // Rubrikkerne over de tre dele står med versaler via CSS, og innerText følger det.
+    check('IC++ er forklaret som i regnearket', /IC\+\+ \(Interchange\+\+\) er den mest gennemsigtige/.test(d)
+      && /Kortudstedende bank/i.test(d) && /Visa og Mastercard/i.test(d) && /Worldline \(inkl\. tillty\)/i.test(d)
+      && /EU debit: 0,2 % \(loft\)/.test(d) && /Fast procent pr\. transaktion: 0,60 %/.test(d)
+      && /Summen er den samlede transaktionspris/.test(d) && /Hvorfor IC\+\+\?/.test(d) && /Kontrol/.test(d));
+    check('ingen fast fee under tilltys markup', !/Fast fee/i.test(d));
+    check('ingen lang tankestreg i PAY-tilbuddet', !d.includes('—'));
+    const bjaelker = async () => (await p.$$eval('#quote-doc .pay-blok .loc-head', (hs) =>
+      hs.map((h) => [...h.children].map((c) => c.textContent).join(' ').replace(/\s+/g, ' ').trim()))).join(' / ');
+    check('forklaringen står uden nummer, med et ikon i hvert af de tre kort',
+      (await p.$$eval('#quote-doc .pay-sek-titel', (hs) => hs.map((h) => h.textContent).join(' / '))) === 'Hvad er IC++? / Hvorfor IC++?'
+      && (await p.$$eval('#quote-doc .pay-ikon svg', (s) => s.length)) === 3);
+    check('tilbuddet er delt i nummererede bjælker',
+      (await bjaelker()) === '1 Jeres tal / 2 Kortfordeling / 3 Surcharge / 4 Jeres resultat', await bjaelker());
+
+    // Kortfordelingen skal summe til 100 %.
+    await p.fill('#pay_andel_debit', '50'); await p.waitForTimeout(400);
+    check('en fordeling under 100 % markeres', await p.evaluate(() =>
+      document.getElementById('pay_andel_sum').classList.contains('fejl')));
+    check('dokumentet regner ikke på en skæv fordeling', (await res('Netto'))[1] === '–');
+    await p.evaluate(() => { window.__printKaldt = false; });
+    await p.click('button[onclick="exportPDF()"]'); await p.waitForTimeout(300);
+    check('eksporten stopper på en skæv fordeling', !(await p.evaluate(() => window.__printKaldt))
+      && /Kortfordeling/.test(besked), besked.replace(/\n/g, ' '));
+    await p.fill('#pay_andel_debit', '60'); await p.waitForTimeout(400);
+    check('fordelingen er i orden igen', !(await p.evaluate(() =>
+      document.getElementById('pay_andel_sum').classList.contains('fejl')))
+      && (await res('Netto'))[1] === '6.810,-');
+
+    // Kontakten slås fra igen: ingen tabel, ingen række, netto = før. Satserne
+    // huskes, så den kan slås til igen uden at taste dem forfra.
+    await p.uncheck('#pay_surcharge_til'); await p.waitForTimeout(400);
+    check('slået fra er tabellen væk', (await tabel('Korttype@pay-sur')) === null && !(await p.isVisible('#pay_surcharge_commercial')));
+    check('slået fra er rækken væk og netto = før', (await res('Surcharge, opkræves')).length === 0
+      && (await res('Netto'))[1] === '9.808,-');
+    check('uden surcharge følger nummereringen med', (await bjaelker()).endsWith('2 Kortfordeling / 3 Jeres resultat'), await bjaelker());
+    await p.check('#pay_surcharge_til'); await p.waitForTimeout(400);
+    check('slået til igen er surcharge tilbage', (await res('Netto'))[1] === '6.810,-');
+    // 0 % i begge felter er også "ingen surcharge", selv om kontakten er slået til.
+    await p.fill('#pay_surcharge_commercial', '0');
+    await p.fill('#pay_surcharge_noneea', '0');
+    await p.waitForTimeout(400);
+    check('0 % giver heller ingen surcharge', (await tabel('Korttype@pay-sur')) === null
+      && (await res('Netto'))[1] === '9.808,-');
+    await p.fill('#pay_surcharge_commercial', '2,5');
+    await p.fill('#pay_surcharge_noneea', '2,5');
+    await p.waitForTimeout(400);
+    check('surcharge er tilbage', (await res('Netto'))[1] === '6.810,-');
+
+    // Marginen slår igennem i overskriften og i hver korttypes sats.
+    await p.fill('#pay_margin', '0,8'); await p.waitForTimeout(400);
+    check('marginen står i overskriften', /IC\+\+ 0,80 %/.test(await p.textContent('#quote-doc .pay-pris-tal')));
+    check('marginen slår igennem i satsen', ((await raekke('Korttype@pay-omk', 'EU forbruger debit'))[2]) === '1,07 %');
+    await p.fill('#pay_margin', '0,6'); await p.waitForTimeout(400);
+
+    // Sprog: PAY-dokumentet følger sproget som udstyrstilbuddet.
+    for (const l of ['en', 'nb', 'sv', 'de']) {
+      await p.selectOption('#c_sprog', l); await p.waitForTimeout(300);
+      const r = await p.evaluate((l) => {
+        // Små bogstaver hele vejen: flere rubrikker står med versaler via CSS.
+        const txt = document.getElementById('quote-doc').innerText.toLowerCase();
+        const del = (x) => x.replace(/<\/?b>/g, '').split('{')[0].trim();
+        // Kun den del før første pladsholder tjekkes; er den ens på begge sprog, er der intet at fange.
+        const rester = OVERSAETTELSER.filter((r) => r[0].length > 6 && del(r[0]) !== del(TEKST[l][r[0]]))
+          .map((r) => del(r[0]))
+          .filter((d) => d.length > 6 && new RegExp('(^|[^\\p{L}])' + d.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|[^\\p{L}])', 'u').test(txt));
+        return { rester, pris: txt.includes(TEKST[l]['Jeres pris'].toLowerCase()), streg: txt.includes('—'),
+          note: document.getElementById('c_note').value === standardNote(l) };
+      }, l);
+      check(`${l}: PAY-tilbuddet er oversat`, r.pris && r.rester.length === 0, r.rester.join(' | '));
+      check(`${l}: ingen lang tankestreg i PAY-tilbuddet`, !r.streg);
+      check(`${l}: PAY-afslutningen skifter sprog`, r.note);
+    }
+    await p.selectOption('#c_sprog', 'da'); await p.waitForTimeout(300);
+    check('tilbage på dansk', /Jeres pris/i.test(await dok()));
+
+    // Med alle kundefelter udfyldt går eksporten igennem, og siderne holder.
+    for (const [id, val] of [['c_company', 'Café Kort ApS'], ['c_cvr', '12345678'], ['c_contact', 'Mette'],
+      ['c_email', 'mette@kort.dk'], ['c_phone', '12345678'], ['c_addr', 'Vestergade 1'], ['c_zip', '8000'],
+      ['c_city', 'Aarhus C'], ['c_seller', 'Rask']]) await p.fill('#' + id, val);
+    await p.waitForTimeout(300);
+    await p.evaluate(() => { window.__printKaldt = false; });
+    await p.click('button[onclick="exportPDF()"]'); await p.waitForTimeout(800);
+    check('med tal og kundefelter eksporteres der', await p.evaluate(() => window.__printKaldt === true));
+    const pg = await paginate(p);
+    check('PAY-tilbuddet holder sig inden for siderne', pg.bad.length === 0 && pg.hilsenSidst, pg.bad.join(', '));
+    check('ingen eksterne requests', p.external.length === 0, p.external.join(', '));
+    check('alle lokale filer findes', p.mangler.length === 0, p.mangler.join(', '));
+
+    // "+ Nyt tilbud" går tilbage til opstarten, og udstyr kan vælges igen.
+    await p.click('button[onclick="resetAll()"]'); await p.waitForTimeout(300);
+    check('nyt tilbud viser opstarten på typevalget', await p.isVisible('#opstart')
+      && !(await p.isVisible('#opstart_udstyr')));
+    await p.click('#opstart [data-type="udstyr"]'); await p.waitForTimeout(100);
+    check('ved udstyr folder de ekstra valg sig ud', await p.isVisible('#opstart_udstyr')
+      && (await p.textContent('#opstart .opstart-start')).trim() === 'Simpelt tilbud');
+    await p.click('#opstart .opstart-start'); await p.waitForTimeout(300);
+    check('et udstyrstilbud har ikke PAY-panelet', !(await p.isVisible('#panel_pay')) && (await p.isVisible('#catalog'))
+      && !(await p.evaluate(() => document.body.classList.contains('form-pay'))));
+    check('afslutningen er udstyrsstandarden igen', /^Som vi nævnte/.test((await p.textContent('#note_uddrag')).trim()));
+    check('indløsningsfelterne er tilbage', await p.isVisible('#c_indloesning'));
     await p.close();
   }
 

@@ -157,3 +157,27 @@ CATALOG.forEach(p=>{
 ACC_IDS.forEach(aid=>{
   if(TILBEHOERFOTO[aid]) FOTO['x_'+aid] = 'produktbilleder/'+TILBEHOERFOTO[aid]+'.png';
 });
+
+/* ---------- tillty PAY: satserne bag IC++ ----------
+   Interchange og scheme fee pr. korttype samt et fast scheme-gebyr pr.
+   transaktion i EUR. Kilde: Worldline, Indicative Card Scheme Fee Rates,
+   Denmark (april 2026) — fanen "Antagelser" i tilltys prisudregner.
+   Tallene kan ikke ændres i byggeren, men kunden ser dem i tilbuddet: hele
+   pointen med IC++ er, at de tre dele står hver for sig.
+   tillty har ingen fast fee pr. transaktion og får det ikke — derfor intet felt.
+   `andel` og `surcharge` er sælgerens udgangspunkt og rettes pr. kunde.
+   `surcharge:null` betyder, at der ikke må lægges surcharge på korttypen
+   (EU-forbrugerkort). */
+const PAY_KILDE = 'Worldline, Indicative Card Scheme Fee Rates, Denmark, april 2026';
+const PAY_KURS_EUR = 7.46;
+const PAY_MARGIN = 0.006;   // tilltys margin (IC++ %), sælgerens udgangspunkt
+const PAY_KORT = [
+  {id:'debit',      name:'EU forbruger debit',  desc:'Dankort, Visa Debit og andre debetkort udstedt i EU.',
+   interchange:0.002, scheme:0.0007, fastEur:0.015, andel:0.60, surcharge:null},
+  {id:'credit',     name:'EU forbruger credit', desc:'Kreditkort fra Visa og Mastercard udstedt i EU.',
+   interchange:0.003, scheme:0.0007, fastEur:0.015, andel:0.25, surcharge:null},
+  {id:'commercial', name:'Firmakort',           desc:'Firma- og erhvervskort. Ikke omfattet af EU-loftet.',
+   interchange:0.015, scheme:0.0015, fastEur:0.02,  andel:0.08, surcharge:0.025},
+  {id:'noneea',     name:'Internationale kort', desc:'Kort udstedt uden for EEA, fx USA, UK og Asien.',
+   interchange:0.012, scheme:0.0085, fastEur:0.02,  andel:0.07, surcharge:0.025},
+];
