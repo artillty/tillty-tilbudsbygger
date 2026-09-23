@@ -147,10 +147,10 @@ async function forbiOpstart(p) {
     await aabnNyt(p);
     await p.waitForTimeout(1200);
     check('byggeren henter alle sine filer', p.mangler.length === 0, p.mangler.join(', ') || 'intet mangler');
-    check('nummerfeltet kan ikke tastes i', await p.getAttribute('#c_number', 'readonly') !== null);
+    check('tilbudsnummeret er ikke et felt i byggeren', (await p.getAttribute('#c_number', 'type')) === 'hidden');
 
     await p.fill('#c_company', 'Første Kunde ApS');
-    await p.fill('#c_seller', 'Rask');
+    await p.selectOption('#c_seller', 'Christian Dahl');
     await p.fill('#c_addr', 'Åboulevarden 69');
     await p.fill('#c_zip', '8000');
     await p.waitForTimeout(250);
@@ -184,7 +184,7 @@ async function forbiOpstart(p) {
     await aabnNyt(p);
     await p.waitForTimeout(1200);
     await p.fill('#c_company', 'Anden Kunde ApS');
-    await p.fill('#c_seller', 'Rask');
+    await p.selectOption('#c_seller', 'Christian Dahl');
     await p.click('[data-strknap="tab11"]');   // tablets deler kort; vælg størrelsen
     await p.click('[data-qwrap="m_tab11"] button:last-child');
     await p.waitForTimeout(80);
@@ -216,12 +216,23 @@ async function forbiOpstart(p) {
       && (await p.inputValue('[data-brugtpris="m_lan"]')) === '700');
     // Håndregnet: 2 SOT à 13.995 + brugt LAN-printer til 700.
     check('totalen er den samme som før', total === '28.690,-', total);
+    check('sælgeren er gendannet', (await p.inputValue('#c_seller')) === 'Christian Dahl');
+
+    // Et gammelt tilbud har en sælger, der ikke står i listen. Navnet må ikke
+    // forsvinde ved genåbning; det kommer med som valg for netop det tilbud.
+    await sql`update tilbud set data = jsonb_set(data, '{felter,c_seller}', '"Gammel Sælger"') where nr = ${nr1}`;
+    await p.goto(BASE + '/bygger/index.html?nr=' + nr1);
+    await p.waitForTimeout(1500);
+    check('et gammelt tilbud beholder sin sælger', (await p.inputValue('#c_seller')) === 'Gammel Sælger'
+      && /Gammel Sælger/.test(await p.textContent('#quote-doc .qp-parties')), await p.inputValue('#c_seller'));
 
     /* ---------- 5b: Nulstil slipper tilbuddet ---------- */
     await p.click('button[onclick="resetAll()"]');
     await p.waitForTimeout(1000);
     check('nulstil rydder nummeret', (await p.inputValue('#c_number')) === '',
       await p.inputValue('#c_number'));
+    check('nulstil fjerner den gamle sælger fra listen',
+      (await p.$$eval('#c_seller option', (os) => os.map((o) => o.value))).join('|') === '|Esben Østergaard|Aydin Bahojb-Khoshnoudi|Christian Dahl');
     // Nulstil sender tilbage til formvalget.
     await forbiOpstart(p);
     await p.fill('#c_company', 'Efter Nulstil ApS');
@@ -263,9 +274,10 @@ async function forbiOpstart(p) {
     // Alle obligatoriske felter skal udfyldes, ellers stopper eksporten.
     for (const [id, val] of [['c_company', 'Eksport Uden Gem ApS'], ['c_cvr', '12345678'],
       ['c_contact', 'Mette'], ['c_email', 'mette@eksport.dk'], ['c_phone', '12345678'],
-      ['c_addr', 'Vej 1'], ['c_zip', '8000'], ['c_city', 'Aarhus C'], ['c_seller', 'Rask']]) {
+      ['c_addr', 'Vej 1'], ['c_zip', '8000'], ['c_city', 'Aarhus C']]) {
       await p.fill('#' + id, val);
     }
+    await p.selectOption('#c_seller', 'Christian Dahl');
     await p.click('[data-qwrap="m_lan"] button:last-child');
     await p.waitForTimeout(80);
     // window.print() ville blokere i headless — vi neutraliserer den og tjekker
@@ -321,7 +333,7 @@ async function forbiOpstart(p) {
     await p.click('#opstart [data-type="pay"]');
     await p.waitForTimeout(300);
     await p.fill('#c_company', 'PAY Kunden ApS');
-    await p.fill('#c_seller', 'Rask');
+    await p.selectOption('#c_seller', 'Christian Dahl');
     await p.fill('#pay_omsaetning', '833.333');
     await p.fill('#pay_gns', '250');
     // En fordeling der ikke er standarden, så vi ved at det er de gemte tal der kommer tilbage.

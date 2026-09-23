@@ -131,7 +131,7 @@ let STANDARD_START = null;
     const p = await newPage(browser);
     await p.fill('#c_company', 'Café Mikkeller ApS');
     await p.fill('#c_contact', 'Mette Sørensen');
-    await p.fill('#c_seller', 'Rask');
+    await p.selectOption('#c_seller', 'Christian Dahl');
 
     await plus(p, 'm_sot', 2);
     await p.click('[data-match="a_sot_floor"]');          // sæt = 2
@@ -186,7 +186,7 @@ let STANDARD_START = null;
       await p.$eval('#quote-doc .qp-parties', e => /2100 København Ø/.test(e.textContent)));
     // Sælgeren står i Fra-boksen under tillty, som kontaktpersonen hos kunden.
     check('sælgeren står i Fra-boksen', await p.$eval('#quote-doc .qp-parties .qp-col:first-child',
-      e => e.innerHTML.split('<br>').slice(0, 2).join('|').endsWith('tillty|Rask')));
+      e => e.innerHTML.split('<br>').slice(0, 2).join('|').endsWith('tillty|Christian Dahl')));
     // Vej, postnr. og by på én linje, som afsenderens adresse.
     await p.fill('#c_addr', 'Vesterbrogade 1'); await p.waitForTimeout(250);
     check('adressen står på én linje', await p.$eval('#quote-doc .qp-parties .qp-col:last-child',
@@ -196,7 +196,9 @@ let STANDARD_START = null;
       e => e.innerHTML.split('<br>').includes('Vesterbrogade 1')));
     await p.fill('#c_addr', ''); await p.fill('#c_zip', '2100'); await p.waitForTimeout(250);
 
-    check('tilbudsnr. kan ikke tastes i', await p.getAttribute('#c_number', 'readonly') !== null);
+    check('tilbudsnummeret er ikke et felt i byggeren', (await p.getAttribute('#c_number', 'type')) === 'hidden');
+    check('sælger vælges blandt tilltys sælgere', (await p.$$eval('#c_seller option', (os) => os.map((o) => o.textContent).join(' | ')))
+      === 'Vælg sælger | Esben Østergaard | Aydin Bahojb-Khoshnoudi | Christian Dahl');
     // Tilbuddet gælder altid 30 dage — det er ikke et felt, man kan stille på.
     check('gyldigheden er ikke et felt', !(await p.$('#c_valid')));
     check('gælder til er 30 dage efter sendt', await p.evaluate(() => {
@@ -342,7 +344,7 @@ let STANDARD_START = null;
     const p = await newPage(browser, { lokationer: true });
     await p.fill('#c_company', 'Kaffe & Co Holding ApS');
     await p.fill('#c_contact', 'Sofie Dahl');
-    await p.fill('#c_seller', 'Rask');
+    await p.selectOption('#c_seller', 'Christian Dahl');
     await p.fill('#l_name', 'Aarhus C');
 
     await plus(p, 'm_tab11', 4);
@@ -397,7 +399,7 @@ let STANDARD_START = null;
   {
     const p = await newPage(browser);
     await p.fill('#c_company', 'Bageriet Bro ApS');
-    await p.fill('#c_seller', 'Rask');
+    await p.selectOption('#c_seller', 'Christian Dahl');
     await skrivNote(p, 'Installation og oplæring er inkluderet i prisen.');
     await p.fill('#c_indloesning', '0,45 %');
     await plus(p, 'm_sot', 1);
@@ -605,7 +607,7 @@ let STANDARD_START = null;
   {
     const p = await newPage(browser);
     await p.fill('#c_company', 'Restaurant Havnen ApS');
-    await p.fill('#c_seller', 'Rask');
+    await p.selectOption('#c_seller', 'Christian Dahl');
 
     // Genbrugsscenariet fra buddet: SOT + betalingsterminal + KDS er nyt,
     // to 11" tablets og LAN-printeren har kunden i forvejen.
@@ -716,7 +718,7 @@ let STANDARD_START = null;
     const p = await newPage(browser, { muligheder: true });
     await p.fill('#c_company', 'Restaurant Havnen ApS');
     await p.fill('#c_contact', 'Line Mikkelsen');
-    await p.fill('#c_seller', 'Rask');
+    await p.selectOption('#c_seller', 'Christian Dahl');
     const saet = (k, n) => saetAntal(p, k, n);
 
     // Buddets tre muligheder. Fælles for dem alle: SOT med gulvstander og
@@ -851,7 +853,7 @@ let STANDARD_START = null;
   {
     const p = await newPage(browser, { muligheder: true, lokationer: true });
     await p.fill('#c_company', 'Kaffe & Co ApS');
-    await p.fill('#c_seller', 'Rask');
+    await p.selectOption('#c_seller', 'Christian Dahl');
     const saet = (k, n) => saetAntal(p, k, n);
 
     // Aarhus C: Genbrug (SOT + 2 egne tablets) og Alt nyt (SOT + 2 nye 14").
@@ -991,7 +993,7 @@ let STANDARD_START = null;
     const saet = (k, n) => saetAntal(p, k, n);
     await p.fill('#c_company', 'Cafe Nord AS');
     await p.fill('#c_contact', 'Ola Nordmann');
-    await p.fill('#c_seller', 'Rask');
+    await p.selectOption('#c_seller', 'Christian Dahl');
     await saet('m_sot', 1); await saet('a_sot_floor', 1); await saet('eget_m_tab11', 2);
     await saet('m_kds185', 1); await saet('s_takeaway', 1); await saet('s_bi', 1);
     if (await p.$('.panel.fold.closed > h2')) { await p.click('.panel.fold.closed > h2'); await p.waitForTimeout(150); }
@@ -1034,7 +1036,7 @@ let STANDARD_START = null;
     check('adressen følger ikke sproget', de.includes('Åboulevarden 69, 8000 Aarhus C\n') && !/Dänemark|Denmark/.test(de));
     check('de: sidetal på tysk', (await paginate(p)).feet[0].startsWith('Seite 1 von'));
     check('de: navne sælgeren ikke har rettet, følger sproget', /Option A/.test(de) && /Standort 2/.test(de));
-    check('de: sælgerens egen tekst oversættes ikke', /Guten Tag Ola Nordmann,/.test(de) && /Rask/.test(de));
+    check('de: sælgerens egen tekst oversættes ikke', /Guten Tag Ola Nordmann,/.test(de) && /Christian Dahl/.test(de));
     check('de: filnavnet følger sproget', (await p.evaluate(() => quoteFilename())).startsWith('Angebot-'));
     await p.selectOption('#c_sprog', 'en'); await p.waitForTimeout(200);
     // Vejnavnet i afsenderadressen er undtaget — det er et navn, ikke dansk tekst.
@@ -1108,9 +1110,10 @@ let STANDARD_START = null;
       document.getElementById('c_company').classList.contains('mangler'))));
 
     for (const [id, val] of [['c_cvr', '12345678'], ['c_email', 'mette@mikkeller.dk'], ['c_phone', '12345678'],
-      ['c_addr', 'Vesterbrogade 1'], ['c_zip', '1620'], ['c_city', 'København V'], ['c_seller', 'Rask']]) {
+      ['c_addr', 'Vesterbrogade 1'], ['c_zip', '1620'], ['c_city', 'København V']]) {
       await p.fill('#' + id, val);
     }
+    await p.selectOption('#c_seller', 'Christian Dahl');
     await p.click('button[onclick="exportPDF()"]'); await p.waitForTimeout(800);
     check('med alle felter udfyldt eksporteres der', await p.evaluate(() => window.__printKaldt === true));
     await p.close();
@@ -1122,7 +1125,8 @@ let STANDARD_START = null;
     const p = await newPage(browser);
     for (const [id, val] of [['c_company', 'Café Brugt ApS'], ['c_cvr', '12345678'], ['c_contact', 'Mette'],
       ['c_email', 'mette@brugt.dk'], ['c_phone', '12345678'], ['c_addr', 'Vestergade 1'], ['c_zip', '8000'],
-      ['c_city', 'Aarhus C'], ['c_seller', 'Rask']]) await p.fill('#' + id, val);
+      ['c_city', 'Aarhus C']]) await p.fill('#' + id, val);
+    await p.selectOption('#c_seller', 'Christian Dahl');
 
     const total = async () => (await p.$$eval('#quote-doc table.loc-overview tfoot td',
       (td) => td.map((t) => t.textContent.trim())));
@@ -1441,7 +1445,8 @@ let STANDARD_START = null;
     // Med alle kundefelter udfyldt går eksporten igennem, og siderne holder.
     for (const [id, val] of [['c_company', 'Café Kort ApS'], ['c_cvr', '12345678'], ['c_contact', 'Mette'],
       ['c_email', 'mette@kort.dk'], ['c_phone', '12345678'], ['c_addr', 'Vestergade 1'], ['c_zip', '8000'],
-      ['c_city', 'Aarhus C'], ['c_seller', 'Rask']]) await p.fill('#' + id, val);
+      ['c_city', 'Aarhus C']]) await p.fill('#' + id, val);
+    await p.selectOption('#c_seller', 'Christian Dahl');
     await p.waitForTimeout(300);
     await p.evaluate(() => { window.__printKaldt = false; });
     await p.click('button[onclick="exportPDF()"]'); await p.waitForTimeout(800);

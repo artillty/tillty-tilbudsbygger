@@ -113,10 +113,17 @@
               <input id="c_city" data-krav="By" oninput="updateSoon()" aria-label="By">
             </span>
           </label>
-          <label class="ny-raekke">Tilbudsnr.<input id="c_number" placeholder="Tildeles ved gem" readonly
-                 title="Tildeles automatisk, når tilbuddet gemmes"></label>
-          <label>Dato sendt<input id="c_date" type="date" oninput="updateSoon()"></label>
-          <label class="bred"><span class="felt-navn">Sælger<span class="krav" title="Skal udfyldes">*</span></span><input id="c_seller" data-krav="Sælger" placeholder="Dit navn" oninput="updateSoon()"></label>
+          <!-- Tilbudsnummeret tildeles af serveren og rettes aldrig; det står i
+               tilbuddets sidehoved, ikke som et felt. -->
+          <input id="c_number" type="hidden">
+          <label class="ny-raekke">Dato sendt<input id="c_date" type="date" oninput="updateSoon()"></label>
+          <label><span class="felt-navn">Sælger<span class="krav" title="Skal udfyldes">*</span></span>
+            <select id="c_seller" data-krav="Sælger" onchange="update()">
+              <option value="">Vælg sælger</option>
+              <option>Esben Østergaard</option>
+              <option>Aydin Bahojb-Khoshnoudi</option>
+              <option>Christian Dahl</option>
+            </select></label>
           <!-- Online betaling har sin egen sats. Feltet til fysisk betaling
                beholder id'et c_indloesning, så gamle tilbud åbner med deres sats. -->
           <label class="kun-udstyr">Indløsning, fysisk betaling<input id="c_indloesning"

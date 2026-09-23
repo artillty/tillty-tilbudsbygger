@@ -70,6 +70,11 @@ udledes af koden — og de fejl der allerede er begået én gang.
   feltnavnet: firma, CVR, kontaktperson, e-mail, telefon, adresse, postnr., by
   og sælger. Mangler ét, stopper eksporten (`kravOpfyldt()` i `print.js`) — den
   spørger ikke. Feltet markeres med rødt, til der skrives i det.
+- **Sælger vælges i en liste** (`c_seller` er et `<select>` i `index.html`):
+  Esben Østergaard, Aydin Bahojb-Khoshnoudi og Christian Dahl. Nye sælgere
+  tilføjes som `<option>` dér. Et gammelt tilbud med en sælger uden for listen
+  beholder navnet: `hentTilbud()` lægger det ind som et midlertidigt valg
+  (`data-gammel`), og `slipTilbud()` fjerner det igen.
 - **Kontaktpersonens rolle (`c_rolle`) står aldrig i tilbuddet.** Den gemmes til
   den kommende CRM-kobling. Testen holder den ude af dokumentet.
 - Uden navn åbner brevet med "Hej," — ikke "Hej der,".
@@ -381,9 +386,11 @@ aldrig den timing — de kalder `buildPrintPages()` direkte.
 
 ## Tilbudsnumre
 
-- **Feltet er skrivebeskyttet.** Sælgeren taster aldrig et nummer selv — heller
-  ikke når byggeren åbnes som løs fil. Gør det ikke redigerbart igen; hele
-  pointen med kartoteket er, at numre er entydige.
+- **Nummeret er ikke et felt i byggeren.** `c_number` er et skjult input, som
+  gem og genåbning skriver i; nummeret står kun i tilbuddets sidehoved. Det er
+  prøvet som skrivebeskyttet felt og fjernet, fordi det ikke er noget man
+  retter i. Gør det ikke synligt eller redigerbart igen; hele pointen med
+  kartoteket er, at numre er entydige.
 - `resetAll()` kalder `slipTilbud()`, som nulstiller `aktivtNr`. Uden det ville
   næste Gem sende det gamle nummer med og **overskrive kundens forrige tilbud**.
 - Nummeret tildeles **af serveren** ved første gem — også når eksporten gemmer

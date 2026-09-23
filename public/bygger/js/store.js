@@ -77,7 +77,7 @@ async function gemTilbud(status){
   aktivtNr = d.nr;
 
   const felt = document.getElementById('c_number');
-  if(felt){ felt.value = d.nr; felt.readOnly = true; }
+  if(felt) felt.value = d.nr;
   history.replaceState(null, '', '/bygger/index.html?nr=' + d.nr);
   await gemBilleder();
   update();
@@ -90,12 +90,18 @@ async function gemTilbud(status){
    det gamle nummer med og overskrive kundens tidligere tilbud. */
 function slipTilbud(){
   aktivtNr = null;
+  gamleValg();
   const felt = document.getElementById('c_number');
   if(felt) felt.value = '';
   if(HAR_API){
     history.replaceState(null, '', '/bygger/index.html');
     saetStatus('Nyt tilbud — nummer tildeles når du gemmer');
   }
+}
+
+/* Fjerner valg, der kun blev lagt i listen for at vise et gammelt tilbud. */
+function gamleValg(){
+  document.querySelectorAll('option[data-gammel]').forEach(o=>o.remove());
 }
 
 /* ---------- hent ---------- */
@@ -105,8 +111,15 @@ async function hentTilbud(nr){
   const { tilbud } = await r.json();
   const d = tilbud.data || {};
 
+  gamleValg();
   Object.entries(d.felter || {}).forEach(([id,val])=>{
-    const e = document.getElementById(id); if(e) e.value = val;
+    const e = document.getElementById(id); if(!e) return;
+    // Et gammelt tilbud kan have en sælger, der ikke er i listen. Navnet
+    // skal ikke forsvinde, så det kommer med som valg for netop det tilbud.
+    if(e.tagName==='SELECT' && val && ![...e.options].some(o=>o.value===val)){
+      const o=new Option(val,val); o.dataset.gammel='1'; e.add(o);
+    }
+    e.value = val;
   });
   // Tilbud fra før sprogvalget har intet sprog gemt og står derfor på dansk.
   if(!SPROG[(d.felter||{}).c_sprog]) document.getElementById('c_sprog').value = 'da';
@@ -117,7 +130,7 @@ async function hentTilbud(nr){
   aktivtNr = tilbud.nr;
 
   const felt = document.getElementById('c_number');
-  if(felt){ felt.value = tilbud.nr; felt.readOnly = true; }
+  if(felt) felt.value = tilbud.nr;
   renderAll();
   saetStatus('Åbnet ' + tilbud.nr);
 }
@@ -187,10 +200,6 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     return;
   }
   document.querySelectorAll('[data-kraever-api]').forEach(e=>{ e.style.display=''; });
-  const felt = document.getElementById('c_number');
-  // Nummeret tildeles af serveren; det er hele pointen med kartoteket, at det
-  // ikke kan tastes frit.
-  if(felt) felt.readOnly = true;
 
   const nr = new URLSearchParams(location.search).get('nr');
   // Et nyt tilbud viser formvalget med det samme. Før ventede laget på
