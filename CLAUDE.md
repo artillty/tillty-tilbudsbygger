@@ -195,6 +195,12 @@ parter (Fra/Til) → Hej X → indledning → Samlet prisoverblik →
 Specifikation (indrammede blokke) → beskrivelse → hilsen
 ```
 
+- **Sidefoden** siger "ekskl. moms" · "1 års garanti på nyt hardware." på
+  hver side, også i PAY-tilbud. tillty valgte sidefoden frem for noterne under
+  prisoverblikket. Linjen skal kunne stå på én linje på alle sprog.
+- Engangsbeløbet hedder **"Hardware og tilbehør"** i tilbuddet (opsummering,
+  prisoverblik og sammenligning), ikke "Engangs". Det er kun hardware og
+  tilbehør (`oneOff` i `collectFor`). Kartoteket siger stadig "Engangs".
 - **Ingen overskrifter over de mørkeblå tabelrækker.** Tabellens navn står i
   første kolonne i selve header-rækken: `Hardware`, `Ekstra tilbehør`,
   `Licens`, `Modul`, `Samlet prisoverblik`.

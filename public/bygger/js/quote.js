@@ -97,7 +97,7 @@ function locSections(d,days){
   if(d.modules.length)  b+=tableMod(d);
   // Hver blok lukkes af sin egen opsummering — også når der kun er én.
   b+='<div class="loc-sub">';
-  if(d.oneOff)     b+=`<div><span>${t('Engangs')}</span><span>${fmt(d.oneOff)}</span></div>`;
+  if(d.oneOff)     b+=`<div><span>${t('Hardware og tilbehør')}</span><span>${fmt(d.oneOff)}</span></div>`;
   if(d.licDaily)   b+=`<div><span>${t('Licenser / dag')}</span><span>${fmt(d.licDaily)}</span></div>`;
   if(d.modMonthly) b+=`<div><span>${t('Moduler / md.')}</span><span>${fmt(d.modMonthly)}</span></div>`;
   if(d.licDaily||d.modMonthly)
@@ -138,7 +138,7 @@ function overviewTable(live,days,sum){
   const cell=n=>n?fmt(n):'–';   // nul udelades, "0,-" i hver kolonne støjer bare. Kort tankestreg: den lange er fravalgt i tilbuddet.
   const multi=live.length>1;
   let b='<table class="pv loc-overview"><thead><tr><th>'+t('Samlet prisoverblik')+'</th>'
-    +'<th class="num">'+t('Engangs')+'</th><th class="num">'+t('Licens/dag')+'</th>'
+    +'<th class="num">'+t('Hardware og tilbehør')+'</th><th class="num">'+t('Licens/dag')+'</th>'
     +'<th class="num">'+t('Moduler/md.')+'</th><th class="num">'+t('Løbende/md.')+'</th></tr></thead><tbody>';
   if(multi){
     live.forEach((x,i)=>{
@@ -338,7 +338,7 @@ function sammenligning(ml,days){
   const soft=smlSoftware(ml).map(r=>raekke(r.navn,r.celler)).join('');
   if(soft) b+=kat(t('Software og licens'))+soft;
   b+='</tbody><tfoot>'
-    +'<tr><td>'+t('Engangs')+'</td>'+ml.map(m=>'<td class="num'+anb(m)+'">'+celle(m.d.oneOff)+'</td>').join('')+'</tr>'
+    +'<tr><td>'+t('Hardware og tilbehør')+'</td>'+ml.map(m=>'<td class="num'+anb(m)+'">'+celle(m.d.oneOff)+'</td>').join('')+'</tr>'
     +'<tr><td>'+t('Løbende pr. måned')+'</td>'+ml.map(m=>'<td class="num'+anb(m)+'">'+celle(loebende(m.d,days))+'</td>').join('')+'</tr>'
     +'</tfoot></table>';
   return b;
@@ -369,7 +369,7 @@ function lokationsOverblik(lok,days){
   const tal=d=>`<td class="num">${cell(d.oneOff)}</td><td class="num">${cell(d.licDaily)}</td>`
     +`<td class="num">${cell(d.modMonthly)}</td><td class="num">${cell(loebende(d,days))}</td>`;
   let b='<table class="pv loc-overview"><thead><tr><th>'+t('Samlet prisoverblik')+'</th>'
-    +'<th class="num">'+t('Engangs')+'</th><th class="num">'+t('Licens/dag')+'</th>'
+    +'<th class="num">'+t('Hardware og tilbehør')+'</th><th class="num">'+t('Licens/dag')+'</th>'
     +'<th class="num">'+t('Moduler/md.')+'</th><th class="num">'+t('Løbende/md.')+'</th></tr></thead><tbody>';
   lok.forEach((x,i)=>{
     const navn=`<span class="lo-n">${i+1}</span>${esc(locNavn(x.loc))}`;
@@ -525,7 +525,7 @@ function footHtml(pageNo,pageCount){
   return '<div class="qp-foot">'
     +'<div class="qf-left">'
       +'<div>'+SENDER.company+' · '+SENDER.addr+' · '+t('CVR')+' '+SENDER.cvr+'</div>'
-      +'<div>'+SENDER.email+' · '+SENDER.phone+' · '+t('Alle priser er ekskl. moms medmindre andet er angivet.')+'</div>'
+      +'<div>'+SENDER.email+' · '+SENDER.phone+' · '+t('Alle priser er ekskl. moms medmindre andet er angivet.')+' · '+t('1 års garanti på nyt hardware.')+'</div>'
     +'</div>'
     +'<div class="qf-page">'+(pageNo?t('Side {n} af {total}',{n:pageNo,total:pageCount}):'')+'</div>'
     +'</div>';
