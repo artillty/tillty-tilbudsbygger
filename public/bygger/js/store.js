@@ -58,6 +58,7 @@ async function gemTilbud(status){
         // PAY-tilbuddets felter (js/pay.js). Sendes altid med, så et
         // udstyrstilbud også bærer standardværdierne — de fylder ingenting.
         pay: typeof PAY!=='undefined' ? PAY : undefined,
+        integrationer: INTEGR,
         lokationer: LOCS.map(l=>({
           id:l.id, name:l.name,
           muligheder: l.muligheder.map(o=>({
@@ -148,6 +149,9 @@ function laesOpsaetning(d){
   // PAY-felterne flettes med standardværdierne, så et tilbud gemt før et nyt
   // felt kom til stadig åbner med noget fornuftigt i det.
   if(typeof payLaes==='function') PAY = payLaes(d.pay);
+  // Kun id'er der stadig findes i kataloget. Ældre tilbud har ingen.
+  INTEGR = (Array.isArray(d.integrationer) ? d.integrationer : [])
+    .filter(id=>INTEGRATIONER.some(x=>x.id===id));
   let raa;
   if(Array.isArray(d.muligheder) && d.muligheder.length){
     const n = Math.max(1, ...d.muligheder.map(o=>(o.lokationer||[]).length));

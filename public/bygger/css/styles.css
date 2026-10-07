@@ -444,6 +444,24 @@
   .qp-intro{font-size:12.5px;line-height:1.6;margin:6px 0 12px;white-space:pre-wrap;color:#2d3750}
   /* Beskrivelse efter specifikationen — brødtekst, ikke en lille fodnote,
      for den læses som en del af tilbuddet lige inden underskriften. */
+  /* Integrationer i tilbuddet: en liste uden priser efter specifikationen. */
+  .qp-integr{margin-top:18px}
+  .qi-titel{font-family:var(--font-heading);font-weight:800;font-size:13px;color:var(--color-primary);margin-bottom:7px}
+  .qi-liste{display:flex;flex-wrap:wrap;gap:6px}
+  /* Feltet har fast størrelse, så listen fylder det samme, før logoerne er
+     hentet: pagineringen måler højden med det samme. */
+  .qi-liste span{display:flex;align-items:center;justify-content:center;width:104px;height:40px;padding:8px 12px;
+    border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:#fff}
+  .qi-liste img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+  /* Integrationer i byggeren: afkrydsning i to spalter. */
+  .int-liste{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .int-valg{display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid var(--border-subtle);
+    border-radius:var(--radius-md);background:#fff;font-family:var(--font-heading);font-weight:700;font-size:13px;
+    color:var(--color-primary);cursor:pointer}
+  .int-valg:has(input:checked){border-color:var(--color-accent);background:#eef6ff}
+  .int-valg input{width:17px;height:17px;accent-color:var(--color-accent);flex-shrink:0}
+  .int-valg{height:52px}
+  .int-valg img{max-width:120px;max-height:26px;object-fit:contain;display:block}
   .qp-note{font-size:12.5px;line-height:1.6;color:#2d3750;margin:20px 0 0;white-space:pre-wrap}
   .qp-greet{margin:22px 0 8px;font-size:12.5px;color:#2d3750}
   /* Sidefod — gentages på hver side i PDF'en */

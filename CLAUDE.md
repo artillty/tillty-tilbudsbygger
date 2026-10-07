@@ -142,6 +142,23 @@ udledes af koden — og de fejl der allerede er begået én gang.
 - Licenser afregnes **pr. dag i brug**. Det er et salgsargument og skal stå i
   dokumentet, ikke gemmes væk.
 
+## Simkort og integrationer
+
+- **Simkortet er en månedspris under den mobile terminal** (49 kr. pr. kort pr.
+  md.). Det er et modul i `MODULES` med `under:'termmobil'`: det står i
+  terminalens kort i byggeren, ikke i softwarepanelet, og i tilbuddet står det
+  i modultabellen og tæller med i Moduler/md. Det står ikke under terminalen i
+  hardwaretabellen, for den er engangspriser. Uden terminalen i muligheden
+  kommer det ikke med (`modAntal()`), men antallet bliver stående i state.
+- **Integrationer koster ikke noget og har intet antal** (`INTEGRATIONER` i
+  `js/data.js`, valgene i `INTEGR`). De hører til hele tilbuddet, ikke til en
+  mulighed eller lokation, og står med deres logo efter specifikationen, før
+  afslutningen. Navnene oversættes ikke. Logoerne ligger i
+  `public/bygger/integrationslogoer/` (fra tilltys hjemmesidemateriale); feltet om hvert logo har
+  fast størrelse, så pagineringen måler rigtigt, før billederne er hentet. Offentlig API, Fortnox og tillty
+  Booking er fravalgt af tillty, og QuickBooks og WooCommerce har tillty ikke
+  længere. Et PAY-tilbud har ingen integrationer.
+
 ## Formatering
 
 - Beløb: `fmt()` i `js/app.js`. Alle beløb ender på `,-`, også dem med ører

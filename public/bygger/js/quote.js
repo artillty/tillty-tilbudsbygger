@@ -284,7 +284,7 @@ function smlSoftware(ml){
   // Muligheden har modulet — også når det er inkluderet i et andet.
   const aktiv=(m,id)=>{
     const Q=m.o.qty||{}, p=INCLUDED_BY[id];
-    return qOf(Q,keyMod(id))>0 || (!!p && qOf(Q,keyMod(p))>0);
+    return modAntal(m.o,MODULES.find(x=>x.id===id))>0 || (!!p && qOf(Q,keyMod(p))>0);
   };
   const samme=(a,b)=>ml.every(m=>aktiv(m,a)===aktiv(m,b));
   MODULES.forEach(s=>{
@@ -296,7 +296,9 @@ function smlSoftware(ml){
     if(p && samme(p,s.id)) return;
     const navne=[t(s.name)].concat((s.includes||[]).filter(id=>samme(id,s.id))
       .map(id=>t(MODULES.find(x=>x.id===id).name)));
-    ud.push({navn:navne.join(' '+t('og')+' '), celler:paa.map(on=>on?'✓':null)});
+    // Et modul under et produkt (simkortet) har et antal, der betyder noget.
+    ud.push({navn:navne.join(' '+t('og')+' '),
+             celler:paa.map((on,i)=>on ? (s.under ? String(modAntal(ml[i].o,s)) : '✓') : null)});
   });
   Object.keys(LICENSE_TYPES).forEach(lt=>{
     const antal=ml.map(m=>m.d.licenses.filter(l=>l.type===lt).reduce((t,l)=>t+l.qty,0));
@@ -390,6 +392,17 @@ function lokTitel(loc,nr){
   return '<div class="lok-titel"><span class="lo-n">'+nr+'</span>'+esc(locNavn(loc))+'</div>';
 }
 
+/* De valgte integrationer som en liste uden priser, efter specifikationen.
+   De koster ikke noget; de står der, så det er skrevet ned, hvad kunden får
+   koblet på. Rækkefølgen er katalogets, ikke den de blev krydset af i. */
+function integrationerHtml(){
+  const valgt=INTEGRATIONER.filter(x=>INTEGR.indexOf(x.id)>=0);
+  if(!valgt.length) return '';
+  return '<div class="qp-integr"><div class="qi-titel">'+t('Integrationer')+'</div>'
+    +'<div class="qi-liste">'+valgt.map(x=>'<span><img src="integrationslogoer/'+x.logo+'" alt="'+esc(x.name)+'"></span>').join('')+'</div>'
+    +'<div class="qp-assump">'+t('Integrationerne følger med uden beregning.')+'</div></div>';
+}
+
 /* Parterne og hilsenen er ens for alle tilbudstyper (udstyr og PAY). */
 function parterOgHej(){
   let b='';
@@ -478,6 +491,7 @@ function update(){
         b+=specBlock('<span class="lh-name">'+t('Specifikation')+'</span>', x.ml[0].d, days, true);
       }
     });
+    b+=integrationerHtml();
     if(note) b+='<div class="qp-note">'+esc(note)+'</div>';
     b+=greet;
   } else if(sml){
@@ -486,6 +500,7 @@ function update(){
     b+=sammenligning(lok[0].ml,days);
     b+=prisNoter(harLic, null, harEget, days);
     lok[0].ml.forEach((m,i)=>{ b+=mulighedsSpec(m,bogstav(i),days); });
+    b+=integrationerHtml();
     if(note) b+='<div class="qp-note">'+esc(note)+'</div>';
     b+=greet;
   } else {
@@ -501,6 +516,7 @@ function update(){
     } else {
       b+=specBlock('<span class="lh-name">'+t('Specifikation')+'</span>', live[0].d, days, true);
     }
+    b+=integrationerHtml();
     if(note) b+='<div class="qp-note">'+esc(note)+'</div>';
     b+=greet;
   }

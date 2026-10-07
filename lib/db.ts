@@ -100,6 +100,8 @@ export type TilbudData = {
   form?: { type?: "udstyr" | "pay"; muligheder: boolean; lokationer: boolean };
   /** Kun brugt når `form.type` er "pay"; sendes altid med. */
   pay?: PayFelter;
+  /** Valgte integrationer (id fra INTEGRATIONER i byggerens data.js). Koster ikke noget. */
+  integrationer?: string[];
   /** Et tilbud er en liste af lokationer, der hver har sine muligheder.
    *  Tilbud fra før muligheder fandtes har opsætningen direkte på lokationen. */
   lokationer?: (Opsaetning & { id: string; name: string; muligheder?: (MulighedInfo & Opsaetning)[] })[];

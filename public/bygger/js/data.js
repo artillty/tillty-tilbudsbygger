@@ -89,10 +89,29 @@ const MODULES = [
   {id:'takeaway',name:'Takeaway',      desc:'Online takeaway-modul. Pr. forretning / md.', price:495, includes:['qr'], online:true},
   {id:'qr',      name:'QR bestilling', desc:'Bestilling via QR-koder. Inkluderet i Takeaway.', price:495, online:true},
   {id:'bi',      name:'BI',            desc:'Business Intelligence. Pr. md.', price:299},
+  /* `under` binder modulet til et produkt: det står under produktets kort i
+     byggeren i stedet for i softwarepanelet, og det kommer kun med i tilbuddet,
+     når produktet er der. Det er stadig en månedspris og regnes som et modul. */
+  {id:'sim',     name:'Simkort til mobil betalingsterminal', desc:'Mobildata til terminalen. Pr. kort / md.', price:49, under:'termmobil'},
 ];
 /* Opslag: modul-id -> id på det modul der inkluderer det (undgår dobbeltfakturering). */
 const INCLUDED_BY = {};
 MODULES.forEach(m=>(m.includes||[]).forEach(inc=>{INCLUDED_BY[inc]=m.id;}));
+
+/* Integrationer – koster ikke noget og har intet antal. Sælgeren krydser dem
+   af, kunden skal bruge, og de står med deres logo i tilbuddet. Navnene er
+   egennavne og oversættes ikke. Logoerne ligger lokalt i integrationslogoer/,
+   af samme grund som fontene: ingen eksterne requests. Offentlig API, Fortnox, tillty Booking, QuickBooks og WooCommerce er bevidst
+   udeladt: de to sidste har tillty ikke længere. */
+const INTEGRATIONER = [
+  {id:'economic',    name:'e-conomic', logo:'economic.png'},
+  {id:'lifepeaks',   name:'LifePeaks', logo:'lifepeaks.png'},
+  {id:'giftup',      name:'Gift Up', logo:'giftup.png'},
+  {id:'planday',     name:'Planday', logo:'planday.png'},
+  {id:'wolt',        name:'Wolt', logo:'wolt.png'},
+  {id:'workfeed',    name:'Workfeed', logo:'workfeed.png'},
+  {id:'myloyal',     name:'MyLoyal', logo:'myloyal.png'},
+];
 
 /* ---------- sammenligning af muligheder ----------
    Forsiden i et tilbud med flere muligheder stiller dem op side om side.

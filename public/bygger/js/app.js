@@ -42,6 +42,10 @@ let activeIdx = 0;        // aktiv lokation
 let optIdx = 0;           // aktiv mulighed inden for den aktive lokation
 let locSeq = 0;
 let optSeq = 0;
+/* Valgte integrationer (id'er fra INTEGRATIONER). De hører til hele tilbuddet,
+   ikke til en mulighed: de koster ikke noget og er ikke noget, kunden vælger
+   imellem. */
+let INTEGR = [];
 
 /* En mulighed bærer selve opsætningen: `qty` er det vi sælger, `eget` er det
    kunden allerede har. Eget udstyr koster 0, men tæller med i licenserne — det
@@ -426,11 +430,55 @@ function kortTilbehoer(p,vis){
             </div>
           </div>`;
         }).join('')}
+        ${kortTilvalg(p)}
       </div>`;
 }
 
 /* Sæt tilbehørets antal lig produktets — fx én hand strap pr. tablet. */
 function matchQty(accKey,mainKey){ setQ(accKey,q(mainKey)); syncUI(); }
+
+/* Et modul bundet til et produkt (`under` i MODULES, fx simkortet) tæller kun,
+   når produktet er i muligheden: nyt, brugt eller kundens eget. Antallet bliver
+   stående i state, som tilbehørets gør, så det er der igen, hvis produktet
+   kommer tilbage. */
+function modAntal(opsaet,m){
+  const Q=opsaet.qty||{}, n=qOf(Q,keyMod(m.id));
+  if(!n || !m.under) return n;
+  const mk=keyMain(m.under);
+  return qOf(Q,mk)+qOf(opsaet.eget||{},mk)+qOf(opsaet.brugt||{},mk) ? n : 0;
+}
+/* Månedspriser der hører til et produkt, står nederst i produktets tilbehørsliste. */
+function kortTilvalg(p){
+  return MODULES.filter(m=>m.under===p.id).map(m=>{
+    const k=keyMod(m.id);
+    return `<div class="acc-item acc-md" data-rowkey="${k}">
+            <div class="acc-info">
+              <div class="acc-badge">Pr. måned</div>
+              <div class="acc-name">${esc(m.name)}</div>
+              <div class="acc-desc">${esc(m.desc)}</div>
+            </div>
+            <div class="acc-right">
+              <div class="price" style="font-size:13px">${fmt(m.price)} / md.</div>
+              <div class="ctrl-row">${stepper(k)}</div>
+            </div>
+          </div>`;
+  }).join('');
+}
+
+/* ---------- integrationer ---------- */
+function renderIntegrationer(){
+  const wrap=document.getElementById('integrationer'); if(!wrap) return;
+  wrap.innerHTML=INTEGRATIONER.map(x=>`<label class="int-valg">
+      <input type="checkbox" data-int="${x.id}"${INTEGR.indexOf(x.id)>=0?' checked':''}
+             onchange="setIntegration('${x.id}',this.checked)">
+      <img src="integrationslogoer/${x.logo}" alt="${esc(x.name)}" title="${esc(x.name)}">
+    </label>`).join('');
+}
+function setIntegration(id,on){
+  INTEGR=INTEGR.filter(x=>x!==id);
+  if(on) INTEGR.push(id);
+  refreshPanelSubs(); update();
+}
 
 /* ---------- løst tilbehør (tilkøb til eksisterende opsætning) ---------- */
 function renderExtras(){
@@ -475,7 +523,8 @@ function renderSoftware(){
   wrap.appendChild(ds);
 
   const h=document.createElement('div'); h.className='sect-title'; h.textContent='Moduler (pr. måned)'; wrap.appendChild(h);
-  MODULES.forEach(s=>{
+  // Moduler bundet til et produkt (simkortet) står under produktet i stedet.
+  MODULES.filter(s=>!s.under).forEach(s=>{
     const k=keyMod(s.id);
     const g=document.createElement('div'); g.className='group'; g.dataset.rowkey=k; g.id='grp_'+k;
     g.innerHTML=`<div class="main">
@@ -605,7 +654,7 @@ function syncUI(){
 function renderAll(){
   aabneKort={};
   anvendForm();
-  renderCatalog(); renderExtras(); renderSoftware();
+  renderCatalog(); renderExtras(); renderSoftware(); renderIntegrationer();
   if(typeof renderPay==='function') renderPay();
   syncUI();
 }
@@ -625,12 +674,15 @@ function refreshPanelSubs(){
   const hw=CATALOG.reduce((s,p)=>s+qOf(Q,keyMain(p.id))+qOf(E,keyMain(p.id))+qOf(B,keyMain(p.id)),0);
   const accUnder=cnt('a_');
   const ex=cnt('x_');
-  const mod=MODULES.reduce((s,m)=>s+qOf(Q,keyMod(m.id)),0), ds=qOf(Q,KEY_DS);
+  const mod=MODULES.filter(m=>!m.under).reduce((s,m)=>s+qOf(Q,keyMod(m.id)),0), ds=qOf(Q,KEY_DS);
+  const tilvalg=MODULES.filter(m=>m.under).reduce((s,m)=>s+modAntal(M(),m),0);
   const set=(id,txt)=>{const e=document.getElementById(id); if(e) e.textContent=txt;};
   // Samme form i alle tre paneler: antal og hvad der er talt, adskilt af "·".
   const tal=(n,en,flere)=>n+' '+(n===1?en:flere);
   const liste=(...dele)=>dele.filter(Boolean).join(' · ')||'ingen valgt';
-  set('hw_sub', liste(hw&&tal(hw,'produkt','produkter'), accUnder&&tal(accUnder,'tilbehør','tilbehør')));
+  set('hw_sub', liste(hw&&tal(hw,'produkt','produkter'), accUnder&&tal(accUnder,'tilbehør','tilbehør'),
+                      tilvalg&&tal(tilvalg,'simkort','simkort')));
+  set('int_sub', INTEGR.length ? INTEGR.length+' valgt' : 'ingen valgt');
   set('ex_sub', liste(ex&&tal(ex,'tilbehør','tilbehør')));
   set('sw_sub', liste(mod&&tal(mod,'modul','moduler'), ds&&tal(ds,'DS-licens','DS-licenser')));
 }
@@ -750,7 +802,7 @@ function collectFor(opsaet){
   MODULES.forEach(s=>{
     const parentId=INCLUDED_BY[s.id];
     if(parentId && qOf(Q,keyMod(parentId))>0) return; // vises som gratis underlinje
-    const n=qOf(Q,keyMod(s.id)); if(!n) return;
+    const n=modAntal(opsaet,s); if(!n) return;
     const inc=(s.includes||[]).map(id=>MODULES.find(m=>m.id===id)).filter(Boolean)
               .map(m=>({name:m.name,desc:m.desc}));
     modules.push({name:s.name,desc:s.desc,qty:n,price:s.price,included:inc});

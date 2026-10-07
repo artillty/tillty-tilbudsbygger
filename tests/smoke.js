@@ -1468,6 +1468,54 @@ let STANDARD_START = null;
       && !(await p.evaluate(() => document.body.classList.contains('form-pay'))));
     check('afslutningen er udstyrsstandarden igen', /^Som vi nævnte/.test((await p.textContent('#note_uddrag')).trim()));
     check('indløsningsfelterne er tilbage', await p.isVisible('#c_indloesning'));
+
+    // ---------- simkort og integrationer ----------
+    console.log('\n# Simkort og integrationer');
+    // Simkortet er en månedspris under den mobile terminal: 2 kort à 49 = 98.
+    check('simkortet står ikke i softwarepanelet', !(await p.$('#software [data-qwrap="s_sim"]'))
+      && !!(await p.$('#acc_termmobil [data-qwrap="s_sim"]')));
+    await plus(p, 'm_termmobil', 1);
+    await plus(p, 's_sim', 2);
+    let sim = await p.evaluate(() => { const d = collectFor(M());
+      return { md: d.modMonthly, engangs: d.oneOff, dok: document.getElementById('quote-doc').innerText.replace(/\s+/g, ' ') }; });
+    check('simkort regnes pr. måned og ikke som engangs', sim.md === 98 && sim.engangs === 2495, `${sim.md} / ${sim.engangs}`);
+    check('simkortet står i tilbuddets modultabel', /Simkort til mobil betalingsterminal/.test(sim.dok));
+    // Uden terminalen kommer simkortet ikke med, men antallet er der, når den kommer tilbage.
+    await p.click('[data-qwrap="m_termmobil"] button:first-child'); await p.waitForTimeout(200);
+    check('uden terminal er simkortet ude af tilbuddet', await p.evaluate(() =>
+      LOCS.every(l => l.muligheder.every(o => collectFor(o).modMonthly === 0))));
+    await plus(p, 'm_termmobil', 1);
+    check('med terminalen igen er simkortene tilbage', await p.evaluate(() => collectFor(M()).modMonthly === 98));
+
+    // Integrationer: afkrydsning, ingen pris, katalogets rækkefølge.
+    check('kun de syv aktuelle integrationer er med', await p.evaluate(() =>
+      INTEGRATIONER.length === 7 && !INTEGRATIONER.some(x => /api|fortnox|booking|quickbooks|woo/i.test(x.name))));
+    check('uden valg står integrationer ikke i tilbuddet', !(await p.$('#quote-doc .qp-integr')));
+    const foer = await p.evaluate(() => { const d = collectFor(M()); return d.oneOff + ' ' + d.modMonthly + ' ' + d.licDaily; });
+    await p.evaluate(() => { ['wolt', 'economic'].forEach(id => {
+      const c = document.querySelector('[data-int="' + id + '"]'); c.checked = true; c.dispatchEvent(new Event('change')); }); });
+    await p.waitForTimeout(200);
+    check('valgte integrationer står i tilbuddet i katalogets rækkefølge',
+      (await p.$$eval('#quote-doc .qi-liste img', (e) => e.map((x) => x.alt).join())) === 'e-conomic,Wolt');
+    check('alle integrationer har et logo, der kan hentes', await p.evaluate(async () => {
+      const ok = await Promise.all(INTEGRATIONER.map((x) => new Promise((r) => {
+        const i = new Image(); i.onload = () => r(i.naturalWidth > 0); i.onerror = () => r(false);
+        i.src = 'integrationslogoer/' + x.logo; })));
+      return ok.every(Boolean); }));
+    check('integrationer ændrer ikke prisen', foer === await p.evaluate(() => {
+      const d = collectFor(M()); return d.oneOff + ' ' + d.modMonthly + ' ' + d.licDaily; }));
+    check('integrationerne står efter specifikationen og før hilsenen', await p.evaluate(() => {
+      const b = [...document.querySelectorAll('#quote-body > *')].map((e) => e.className);
+      const i = b.findIndex((c) => c === 'qp-integr');
+      return i > b.findIndex((c) => /loc-block/.test(c)) && i < b.findIndex((c) => c === 'qp-greet'); }));
+    check('integrationerne kommer med i PDF-siderne', await p.evaluate(() =>
+      buildPrintPages().some((pg) => pg.querySelector('.qp-integr'))));
+    await p.selectOption('#c_sprog', 'en'); await p.waitForTimeout(300);
+    check('en: overskrift og simkort er oversat', await p.$eval('#quote-doc', (e) =>
+      /Integrations/.test(e.innerText) && /SIM card for mobile payment terminal/.test(e.innerText)));
+    await p.selectOption('#c_sprog', 'da'); await p.waitForTimeout(300);
+    await p.click('button[onclick="resetAll()"]'); await p.waitForTimeout(300);
+    check('nyt tilbud rydder integrationerne', await p.evaluate(() => INTEGR.length === 0));
     await p.close();
   }
 

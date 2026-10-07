@@ -202,6 +202,10 @@ const OVERSAETTELSER = [
   ['Bestilling via QR-koder. Inkluderet i Takeaway.', 'Ordering via QR codes. Included in Takeaway.', 'Bestilling via QR-koder. Inkludert i Takeaway.', 'Beställning via QR-koder. Ingår i Takeaway.', 'Bestellung per QR-Code. In Takeaway enthalten.'],
   ['BI', 'BI', 'BI', 'BI', 'BI'],
   ['Business Intelligence. Pr. md.', 'Business Intelligence. Per month.', 'Business Intelligence. Per mnd.', 'Business Intelligence. Per mån.', 'Business Intelligence. Pro Monat.'],
+  ['Simkort til mobil betalingsterminal', 'SIM card for mobile payment terminal', 'SIM-kort til mobil betalingsterminal', 'SIM-kort till mobil betalterminal', 'SIM-Karte für mobiles Zahlungsterminal'],
+  ['Mobildata til terminalen. Pr. kort / md.', 'Mobile data for the terminal. Per card / month.', 'Mobildata til terminalen. Per kort / mnd.', 'Mobildata till terminalen. Per kort / mån.', 'Mobile Daten für das Terminal. Pro Karte / Monat.'],
+  ['Integrationer', 'Integrations', 'Integrasjoner', 'Integrationer', 'Integrationen'],
+  ['Integrationerne følger med uden beregning.', 'The integrations are included at no extra cost.', 'Integrasjonene følger med uten ekstra kostnad.', 'Integrationerna ingår utan extra kostnad.', 'Die Integrationen sind ohne Aufpreis enthalten.'],
 
   /* SAMMENLIGNING — kategorier og rækker */
   ['Kasse og bestilling', 'Checkout and ordering', 'Kasse og bestilling', 'Kassa och beställning', 'Kasse und Bestellung'],

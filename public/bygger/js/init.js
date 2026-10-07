@@ -75,6 +75,7 @@ function visNoteUddrag(){
 function nulstilOpsaetning(){
   locSeq=0; optSeq=0;
   LOCS=[newLoc()]; activeIdx=0; optIdx=0;
+  INTEGR=[];
   // Størrelsesvælgerne tilbage på første størrelse — de er UI-state og gemmes ikke.
   Object.keys(valgtStr).forEach(k=>delete valgtStr[k]);
   if(typeof payStandard==='function') PAY=payStandard();
