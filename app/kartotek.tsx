@@ -240,7 +240,7 @@ function UdstyrTabel({ rows, slet }: TabelProps) {
           <th>Kunde</th>
           <th>Sælger</th>
           <th>Status</th>
-          <th className="num">Engangs</th>
+          <th className="num">Hardware og tilbehør</th>
           <th className="num">Løbende/md.</th>
           <th>Opdateret</th>
           <th />

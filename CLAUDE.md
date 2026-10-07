@@ -225,7 +225,7 @@ Specifikation (indrammede blokke) → beskrivelse → hilsen
   prisoverblikket. Linjen skal kunne stå på én linje på alle sprog.
 - Engangsbeløbet hedder **"Hardware og tilbehør"** i tilbuddet (opsummering,
   prisoverblik og sammenligning), ikke "Engangs". Det er kun hardware og
-  tilbehør (`oneOff` i `collectFor`). Kartoteket siger stadig "Engangs".
+  tilbehør (`oneOff` i `collectFor`). Kartoteket bruger samme navn.
 - **Ingen overskrifter over de mørkeblå tabelrækker.** Tabellens navn står i
   første kolonne i selve header-rækken: `Hardware`, `Ekstra tilbehør`,
   `Licens`, `Modul`, `Samlet prisoverblik`.
@@ -332,7 +332,7 @@ flere lokationer: parter → Hej X → indledning → Samlet prisoverblik (lokat
   panelet). Satserne står klar med regnearkets 2,5 %, men regnes først med, og
   vises først i tilbuddet, når kontakten er slået til. tillty vil selv vælge
   det pr. tilbud.
-- **I kartoteket** er Engangs "—", og Løbende/md. er netto betalingsomkostningen
+- **I kartoteket** er Hardware og tilbehør "—", og Løbende/md. er netto betalingsomkostningen
   pr. måned (`samlTotaler()` lægger den i `mod_md`). Listen læser typen ud af
   `data->'form'->>'type'` og viser mærkatet "PAY".
 - **Opstarten er to trin.** Først tilbudstypen som to knapper
