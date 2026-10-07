@@ -207,6 +207,9 @@ function kravOpfyldt(){
   // Et PAY-tilbud har sine egne obligatoriske felter (js/pay.js).
   if(FORM.type==='pay' && typeof payMarkerMangler==='function') payMarkerMangler().forEach(n=>navne.push(n));
   if(!navne.length) return true;
+  // På telefonen kan tilbuddet være fremme i stedet for byggeren (js/visning.js).
+  // Felterne der mangler, står i byggeren, så den skal frem, før de markeres.
+  if(typeof visVisning==='function') visVisning('byg');
   if(tomme.length) tomme[0].focus();
   alert('Udfyld de obligatoriske felter, før du eksporterer:\n\n'+navne.join('\n'));
   return false;

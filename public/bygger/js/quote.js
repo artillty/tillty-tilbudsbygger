@@ -405,7 +405,7 @@ function parterOgHej(){
   b+='<div class="qp-parties">'
     +'<div class="qp-col"><div class="qp-lbl">'+t('Fra')+'</div>'+send.map(esc).join('<br>')+'</div>'
     +'<div class="qp-col"><div class="qp-lbl">'+t('Til')+'</div>'
-      +(cust.length?cust.map(esc).join('<br>'):'<span class="qp-missing">Udfyld kundeoplysninger i venstre panel</span>')
+      +(cust.length?cust.map(esc).join('<br>'):'<span class="qp-missing">Udfyld kundeoplysningerne under Kunde &amp; tilbud</span>')
     +'</div></div>';
 
   const kunde=v('c_contact')||v('c_company');

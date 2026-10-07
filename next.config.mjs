@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Kun til `next dev`: lader en telefon på samme wifi åbne siden via Macens
+  // IP. Uden den blokerer Next sine egne scripts, og login-knappen gør intet.
+  allowedDevOrigins: ["192.168.*.*"],
   // Byggeren linkes bevidst som /bygger/index.html og ikke som /bygger.
   // Dens stier er relative (js/app.js), og de opløses ud fra adresselinjen:
   // fra /bygger bliver de til /js/app.js og 404'er hele appen. Et redirect til

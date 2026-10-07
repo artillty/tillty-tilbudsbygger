@@ -92,7 +92,7 @@
      er feltets navn i beskeden. Den blå * står i feltnavnet. -->
 <div class="layout">
   <!-- LEFT: builder -->
-  <div>
+  <div id="side_byg">
     <div class="panel">
       <h2>Kunde &amp; tilbud</h2>
       <div class="body">
@@ -237,7 +237,7 @@
   </div>
 
   <!-- RIGHT: preview -->
-  <div>
+  <div id="side_tilbud">
     <div class="panel">
       <!-- Sproget står over det, det ændrer: kun preview og PDF skifter sprog,
            byggeren er dansk. Mulighederne bygges af js/sprog.js. -->
@@ -249,6 +249,15 @@
     </div>
   </div>
 </div>
+
+<!-- Kun på telefon og smal skærm (js/visning.js): spalterne står under
+     hinanden, og tilbuddet lå nederst under hele kataloget. Bjælken skifter
+     mellem de to i stedet for at rulle. -->
+<nav class="visning" aria-label="Visning">
+  <button type="button" data-visning="byg" class="active" onclick="visVisning('byg')">Byg</button>
+  <button type="button" data-visning="tilbud" onclick="visVisning('tilbud')">Tilbud</button>
+  <button type="button" class="visning-pdf" onclick="exportPDF()">⬇ PDF</button>
+</nav>
 
 <div id="print-root"></div>
 
@@ -262,5 +271,6 @@
 <script src="js/print.js"></script>
 <script src="js/init.js"></script>
 <script src="js/store.js"></script>
+<script src="js/visning.js"></script>
 </body>
 </html>

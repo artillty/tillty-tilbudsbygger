@@ -168,6 +168,31 @@ udledes af koden — og de fejl der allerede er begået én gang.
   knapperne brydes om. `@media print` sætter det hele tilbage til normalt flow,
   ellers klippes alt efter første side væk.
 
+## Mobil
+
+- Under 1000 px står spalterne under hinanden, og **Byg/Tilbud-bjælken** nederst
+  (`js/visning.js`, `.visning`) viser én ad gangen. Hver visning husker sin
+  rulleposition. Tilbuddet lå før nederst under hele kataloget.
+- `.layout` skal have `minmax(0,1fr)`, ikke `1fr`: ellers vokser spalten til
+  det bredeste indhold, og siden ruller sidelæns på en telefon.
+- Felter på telefon har 16 px tekst, ellers zoomer iPhone ind ved hvert tryk.
+- Mobilreglerne for tabellerne er scopet til `#preview`. Målebeholderen og
+  `.pg` ligger uden for den, så PDF'en er den samme fra telefon og computer.
+- Tabeller med fem kolonner (prisoverblik, PAY's kortfordeling og surcharge)
+  har 9.5 px tekst på telefon, og sammenligningens mulighedsnavne må brydes.
+  Ellers klippes højre kolonne af `.quote-page`. Som sikkerhedsnet ruller
+  `.qp-content` sidelæns. PAY's kort (nøgletal, de tre dele, "Hvorfor IC++?")
+  står under hinanden i preview'et, men tre i bredden i PDF'en.
+- Tjek telefonbredden ved at måle mod `#quote-body`, ikke mod vinduet:
+  klippet indhold giver ingen siderulning og ser derfor rigtigt ud i et
+  `scrollWidth`-tjek på siden.
+- A4 er smallere end 1000 px, så mobilreglerne gælder også ved print. Det, der
+  kun hører til skærmen (bjælkens bundluft), nulstilles i `@media print`.
+- Stopper eksporten på et manglende felt, skifter `kravOpfyldt()` tilbage til
+  Byg, så feltet kan ses.
+- `allowedDevOrigins` i `next.config.mjs` lader en telefon på samme wifi åbne
+  `next dev` via Macens IP. Uden den virker login-knappen ikke på telefonen.
+
 ## Størrelseskort i byggeren
 
 - **Tablets (8.7"/11"/14") og KDS (18.5"/22") står som ét kort med en

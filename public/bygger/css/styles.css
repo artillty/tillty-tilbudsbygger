@@ -541,6 +541,97 @@
   .hint{font-size:11.5px;color:var(--muted);margin:0 0 12px}
   input[type=file]{display:none}
 
+  /* ===== Mobil =====
+     Sælgeren skal kunne lave et tilbud på telefonen hos kunden. Én spalte,
+     ingen siderulning, trykflader på mindst 40 px. Felterne har 16 px tekst:
+     under det zoomer iPhone ind, hver gang man trykker i et felt. */
+  /* Byg/Tilbud-bjælken: skjult på brede skærme, vist i mobilblokken herunder. */
+  .visning{display:none;position:fixed;left:0;right:0;bottom:0;z-index:40;gap:8px;
+    padding:8px 12px calc(8px + env(safe-area-inset-bottom));background:var(--navy);
+    box-shadow:0 -4px 12px rgba(20,34,81,.18)}
+  .visning button{flex:1;height:44px;border:1px solid rgba(255,255,255,.35);border-radius:var(--radius-md);
+    background:transparent;color:#fff;font-family:var(--font-heading);font-size:15px;font-weight:700;cursor:pointer}
+  .visning button.active{background:#fff;color:var(--navy);border-color:#fff}
+  .visning .visning-pdf{flex:0 0 auto;padding:0 16px;background:var(--accent);border-color:var(--accent)}
+  @media(max-width:1000px){
+    /* 1fr alene er minmax(auto,1fr): spalten voksede til det bredeste indhold
+       (500 px) og hele siden skulle rulles sidelæns på en telefon. */
+    .layout{grid-template-columns:minmax(0,1fr)}
+
+    /* Byg/Tilbud-bjælken (js/visning.js): én spalte ad gangen i stedet for
+       at rulle forbi hele kataloget for at se tilbuddet. */
+    .visning{display:flex}
+    body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
+    body:not(.vis-tilbud) #side_tilbud,
+    body.vis-tilbud #side_byg{display:none}
+  }
+  @media(max-width:640px){
+    header{padding:12px 16px;gap:10px}
+    header .sub{display:none}
+    .brand{font-size:24px}
+    .actions{gap:8px;width:100%}
+    .actions .gem-status{flex-basis:100%;order:-1;margin:0}
+    .actions button,.actions a.btn-ghost{flex:1 1 auto;padding:10px 12px;text-align:center}
+    .layout{padding:12px;gap:12px}
+    .panel{margin-bottom:12px}
+    .panel h2{padding:12px 14px}
+    .panel .body{padding:14px}
+
+    .cust-grid{grid-template-columns:minmax(0,1fr)}
+    .cust-grid .ny-raekke{grid-column:auto}
+    .cust-grid input,.cust-grid textarea,.cust-grid select,
+    .optbar input[type=text],.optbar input:not([type]),.locbar input{font-size:16px;padding:10px 12px}
+    .locbar label,.optbar label{min-width:0;flex-basis:100%}
+
+    .opstart{align-items:flex-start;padding:16px}
+    .opstart-kort{padding:20px;margin:auto 0}
+    .opstart-typer{grid-template-columns:1fr}
+
+    /* Produktkortet: foto og navn øverst, tællerne på hele bredden under. */
+    .group>.main{flex-wrap:wrap;gap:10px}
+    .group>.main .prod-info{flex:1 1 0}
+    .prod-right{flex-basis:100%;align-items:stretch}
+    .ctrl-row{justify-content:space-between}
+    .kortchips{justify-content:flex-start}
+    .kortchip{padding:6px 12px;font-size:12px}
+    .acc-list{padding:4px 12px 10px}
+    .acc-item{flex-wrap:wrap}
+    .acc-right{flex-basis:100%;align-items:stretch}
+    .str-knap{padding:7px 13px;font-size:13px}
+    .qbtn{width:42px;height:40px;font-size:21px}
+    .qty input,.brugt-pris,.pay-felt input{height:40px;font-size:16px}
+    .qty input{width:50px}
+
+    /* Preview: tabellerne har op til fem kolonner. Tættere celler og ingen
+       fotos, så de kan være på en telefon. Kun på skærmen — .pg og målingen
+       til PDF'en rammes ikke, de har deres egne regler. */
+    #preview{overflow-x:auto}
+    #preview .qp-band{padding:14px 16px}
+    #preview .qp-content{padding:14px 12px 6px}
+    #preview .qp-parties{grid-template-columns:1fr;gap:10px}
+    #preview table.pv th,#preview table.pv td{padding:6px 4px;font-size:10.5px}
+    #preview table.pv td.num{font-size:10.5px;white-space:nowrap}
+    #preview table.pv tr.acc td:first-child{padding-left:12px}
+    /* Prisoverblikket har fem kolonner, og overskrifterne kan ikke brydes:
+       ved 10.5 px blev "Løbende/md." klippet af i højre side. Bliver tallene
+       alligevel for brede, ruller indholdet sidelæns i stedet for at klippes. */
+    #preview table.loc-overview th,#preview table.loc-overview td,
+    #preview table.loc-overview td.num,
+    #preview table.pay-omk th,#preview table.pay-omk td,#preview table.pay-omk td.num,
+    #preview table.pay-sur th,#preview table.pay-sur td,#preview table.pay-sur td.num{padding:6px 3px;font-size:9.5px}
+    #preview .loc-body{padding-left:8px;padding-right:8px}
+    /* PAY: nøgletal, de tre dele og "Hvorfor IC++?" står tre i bredden i
+       PDF'en. På en telefon blev hvert kort ét ord bredt, så de står under
+       hinanden med plusset imellem. */
+    #preview .pay-noegletal,#preview .pay-dele,#preview .pay-hvorfor{flex-direction:column}
+    #preview .pay-plus{line-height:1}
+    #preview .qp-content{overflow-x:auto}
+    /* Sammenligningen: mulighedens navn må brydes, ellers skubber det
+       tabellen ud over kanten allerede ved to muligheder. */
+    #preview .sml-navn{font-size:10.5px;white-space:normal;flex-wrap:wrap;gap:2px 0}
+    #preview .pv-img{display:none}
+  }
+
   /* ===== Print / Gem som PDF ===== */
   #print-root{display:none}
   @media print{
@@ -552,6 +643,9 @@
        ville klippe alt efter første side væk. */
     html,body{ height:auto !important; overflow:visible !important; display:block !important; }
     html,body{ background:#fff !important; }
+    /* A4 er smallere end 1000 px, så mobilreglerne gælder også på papir.
+       Luften til Byg/Tilbud-bjælken må ikke give en tom side til sidst. */
+    body{ padding-bottom:0 !important; }
     body>*:not(#print-root){ display:none !important; }
     #print-root{ display:block !important; }
     #print-root, #print-root *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
