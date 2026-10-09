@@ -108,6 +108,11 @@
      Et PAY-tilbud viser kun sit eget panel; udstyrspanelerne og
      indløsningsfelterne er mærket kun-udstyr i index.html. */
   .form-pay .kun-udstyr{display:none!important}
+  /* Byggeren i kartotekets ramme (js/guide.js): kun valget af mulighed ses. */
+  @media screen{
+    html.kun-guide, html.kun-guide body{background:transparent!important}
+    html.kun-guide body>*:not(dialog){visibility:hidden!important}
+  }
   #panel_pay[hidden]{display:none}
 
   /* ---- PAY-panelet (regnearkets gule felter) ---- */
@@ -463,6 +468,39 @@
   .int-valg{height:52px}
   .int-valg img{max-width:120px;max-height:26px;object-fit:contain;display:block}
   .qp-note{font-size:12.5px;line-height:1.6;color:#2d3750;margin:20px 0 0;white-space:pre-wrap}
+  /* Klargøringsguiden (js/guide.js). Hvert trin og hvert tjekpunkt er sit eget
+     element, så pagineringen kan skifte side imellem dem. Guiden findes kun
+     som printsider, så reglerne skal ikke scopes til #preview. */
+  .kg-titel{font-size:19px;margin:2px 0 2px}
+  .kg-kunde{font-size:12px;color:var(--text-secondary);margin-bottom:8px}
+  .kg-h{font-family:var(--font-heading);font-weight:800;font-size:14px;color:var(--color-primary);margin:20px 0 4px}
+  .kg-trin{display:flex;gap:10px;align-items:flex-start;padding:5px 0}
+  .kg-n{flex:none;width:20px;height:20px;display:flex;align-items:center;justify-content:center;
+    background:var(--color-primary);color:#fff;font-family:var(--font-heading);font-weight:800;font-size:11px}
+  .kg-t{font-family:var(--font-heading);font-weight:800;font-size:12.5px;color:var(--color-primary)}
+  .kg-d{font-size:12px;line-height:1.5;color:#2d3750}
+  .kg-tjek{display:flex;gap:9px;align-items:flex-start;padding:5px 0;border-bottom:1px solid var(--border-subtle);
+    font-size:12px;line-height:1.45;color:#2d3750}
+  .kg-boks{flex:none;width:12px;height:12px;margin-top:2px;border:1.5px solid var(--color-primary)}
+  table.pv.kg-tabel td{font-size:12px}
+  table.pv.kg-tabel td:first-child{font-family:var(--font-heading);font-weight:700;color:var(--color-primary)}
+  table.pv.kg-tabel th.num, table.pv.kg-tabel td.num{text-align:center}
+  table.pv.kg-tabel td{vertical-align:middle}
+  table.pv.kg-tabel .pv-prod{align-items:center}
+  table.pv.kg-tabel .pv-img{width:44px;height:44px}
+  table.pv.kg-tabel .kg-tom{display:block;border-color:transparent;background:none}
+  /* Valget af mulighed, før guiden laves. Byggerens side, ikke kundens. */
+  .guide-valg{border:none;border-radius:var(--radius-lg);padding:var(--space-6);width:min(420px,92vw);
+    box-shadow:var(--shadow-md);color:var(--color-primary);font-family:var(--font-body)}
+  .guide-valg::backdrop{background:rgba(20,34,81,.45)}
+  .guide-valg h3{font-family:var(--font-heading);font-size:17px;margin:0 0 var(--space-1)}
+  .guide-valg p{font-size:13px;color:var(--text-secondary);margin:0 0 var(--space-4)}
+  .guide-valg label{display:block;font-family:var(--font-heading);font-weight:700;font-size:13px;margin-bottom:var(--space-3)}
+  .guide-valg select,.guide-valg input[type=text]{display:block;width:100%;margin-top:var(--space-1);padding:9px 10px;font-size:16px;
+    border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:#fff;color:var(--color-primary)}
+  .guide-valg .gv-knapper{display:flex;justify-content:flex-end;gap:var(--space-2);margin-top:var(--space-4)}
+  .guide-valg .btn-pdf{border:none;border-radius:var(--radius-md);padding:9px 14px;font-family:var(--font-heading);
+    font-weight:700;font-size:13px;cursor:pointer}
   .qp-greet{margin:22px 0 8px;font-size:12.5px;color:#2d3750}
   /* Sidefod — gentages på hver side i PDF'en */
   .qp-foot{border-top:1px solid var(--line);margin:12px 22px 0;padding:8px 0 14px;font-size:9.5px;color:#9aa6bb;

@@ -21,22 +21,31 @@ function outerH(el){
        + parseFloat(cs.marginTop||0) + parseFloat(cs.marginBottom||0);
 }
 
-function buildPrintPages(){
-  const body=document.getElementById('quote-body');
-  if(!body) return null;
+/* Uden argument pagineres tilbuddet i preview'et. Klargøringsguiden
+   (js/guide.js) har intet preview og sender sit eget indhold, sidehoved og
+   sidefod med: buildPrintPages({html, band, foot}). */
+function buildPrintPages(valg){
+  const o=valg||{};
+  const band=o.band||bandHtml, foot=o.foot||footHtml;
+  let kilde=o.html;
+  if(kilde==null){
+    const body=document.getElementById('quote-body');
+    if(!body) return null;
+    kilde=body.innerHTML;
+  }
 
   // Skjult målebeholder i nøjagtig sidebredde.
   const host=document.createElement('div');
   host.className='pg-measure';
   host.style.width=CONTENT_W_PX+'px';
-  host.innerHTML=body.innerHTML;
+  host.innerHTML=kilde;
   document.body.appendChild(host);
 
   // Mål sidehoved/-fod ved at bygge én prøveside.
   const probe=document.createElement('div');
   probe.className='pg-measure';
   probe.style.width=(210*MM)+'px';
-  probe.innerHTML=bandHtml(true)+bandHtml(false)+footHtml(1,1);
+  probe.innerHTML=band(true)+band(false)+foot(1,1);
   document.body.appendChild(probe);
   const bandFirstH=probe.children[0].getBoundingClientRect().height;
   const bandRestH =probe.children[1].getBoundingClientRect().height;
@@ -163,6 +172,9 @@ function buildPrintPages(){
     // En lokationsoverskrift må ikke stå alene nederst på en side — der skal
     // være plads til den og en god bid af det, der følger efter.
     if(node.classList.contains('lok-titel')){ if(h+160>room()) newPage(); put(node.cloneNode(true),h); return; }
+    // En overskrift med data-hold må heller ikke stå alene: tallet er den plads
+    // i px, der mindst skal være til det, der følger efter.
+    if(node.dataset.hold){ if(h+Number(node.dataset.hold)>room()) newPage(); put(node.cloneNode(true),h); return; }
     if(node.classList.contains('loc-block')){ placeBlock(node); return; }
     if(node.tagName==='TABLE'){
       if(h<=room()) put(node.cloneNode(true),h); else placeTable(node);
@@ -178,12 +190,12 @@ function buildPrintPages(){
   return pages.map((nodes,i)=>{
     const pg=document.createElement('div');
     pg.className='pg';
-    pg.innerHTML=bandHtml(i===0);
+    pg.innerHTML=band(i===0);
     const bodyEl=document.createElement('div');
     bodyEl.className='pg-body';
     nodes.forEach(n=>bodyEl.appendChild(n));
     pg.appendChild(bodyEl);
-    pg.insertAdjacentHTML('beforeend', footHtml(i+1,total));
+    pg.insertAdjacentHTML('beforeend', foot(i+1,total));
     return pg;
   });
 }
@@ -235,15 +247,20 @@ async function exportPDF(){
     }
   }
 
+  await udskrivSider(buildPrintPages(), quoteFilename(), node.outerHTML);
+}
+
+/* Lægger de færdige sider i #print-root og åbner browserens printdialog.
+   `noedplan` er det HTML, der printes, hvis pagineringen ikke gav nogen sider. */
+async function udskrivSider(pages, filnavn, noedplan){
   const root=document.getElementById('print-root');
   root.innerHTML='';
-  const pages=buildPrintPages();
   if(pages && pages.length) pages.forEach(p=>root.appendChild(p));
-  else root.innerHTML=node.outerHTML;   // nødplan hvis pagineringen fejler
+  else root.innerHTML=noedplan;   // nødplan hvis pagineringen fejler
 
   // Browseren foreslår document.title som filnavn i "Gem som PDF".
   const prevTitle=document.title;
-  document.title=quoteFilename();
+  document.title=filnavn;
 
   let cleaned=false;
   const mq=window.matchMedia?window.matchMedia('print'):null;

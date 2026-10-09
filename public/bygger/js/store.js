@@ -212,5 +212,14 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   if(!nr){ visOpstart(); saetStatus('Nyt tilbud — nummer tildeles når du gemmer'); }
   await hentBilleder();
   if(nr){ skjulOpstart(); await hentTilbud(nr); }
+  // Kartotekets knap "Klargøringsguide" åbner tilbuddet med ?guide=1. Mærket
+  // fjernes fra adressen, så en genindlæsning ikke laver guiden igen.
+  if(nr && new URLSearchParams(location.search).get('guide')){
+    history.replaceState(null, '', '/bygger/index.html?nr=' + encodeURIComponent(nr));
+    // I kartotekets ramme skal kun dialogen og PDF'en ses, ikke byggeren.
+    if(window.parent !== window) document.documentElement.classList.add('kun-guide');
+    if(FORM.type !== 'pay') exportGuide();
+    else if(typeof guideBesked==='function') guideBesked('luk');
+  }
   else renderAll();   // så sælgerens egne billeder kommer med
 });

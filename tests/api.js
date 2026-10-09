@@ -296,6 +296,61 @@ async function forbiOpstart(p) {
     const kladde = await sql`select status from tilbud where nr = ${nr1}`;
     check('gemt-men-ikke-sendt står som kladde', kladde[0]?.status === 'kladde', kladde[0]?.status);
 
+    /* ---------- klargøringsguiden: hentes fra kartoteket, også for en kladde ---------- */
+    console.log('\n# Klargøringsguide');
+    await p.goto(BASE + '/');
+    await p.waitForTimeout(1000);
+    const medKnap = await p.$$eval('table.kart tbody tr', (r) => r
+      .filter((x) => [...x.querySelectorAll('button.rowbtn')].some((b) => /Klargøringsguide/.test(b.textContent)))
+      .map((x) => x.querySelector('td.nr').textContent));
+    check('kartoteket har guide-knap ved både sendt tilbud og kladde', medKnap.includes(nrEksport) && medKnap.includes(nr1), medKnap.join(' '));
+
+    // window.print() ville blokere i headless. Erstatningen gælder også rammen.
+    await p.addInitScript(() => {
+      window.print = () => {
+        window.__guidePrint = (window.__guidePrint || 0) + 1; window.__titel = document.title;
+        if (window.top !== window) {
+          window.top.__rammePrint = document.title; window.top.__topTitel = window.top.document.title;
+          window.top.__rammeTekst = document.getElementById('print-root').textContent;
+        }
+      };
+    });
+    const hent = async (nr) => {
+      await p.click(`table.kart tbody tr:has(td.nr:text-is("${nr}")) button.rowbtn:has-text("Klargøringsguide")`);
+      await p.waitForTimeout(3500);
+      const tekst = await p.evaluate(() => window.__rammeTekst || '');
+      await p.evaluate(() => document.getElementById('guide_ramme')?.contentWindow.dispatchEvent(new Event('afterprint')));
+      await p.waitForTimeout(300);
+      return tekst;
+    };
+    await p.reload(); await p.waitForTimeout(1000);
+    const foer = await hent(nrEksport);
+    check('knappen henter guiden uden at forlade kartoteket',
+      p.url() === BASE + '/' && (await p.evaluate(() => /^Klargøring-/.test(window.__rammePrint || ''))), p.url());
+    check('browseren foreslår guidens filnavn', await p.evaluate(() => /^Klargøring-/.test(window.__topTitel || '')));
+    check('rammen er væk igen, og titlen er sat tilbage',
+      await p.evaluate(() => !document.getElementById('guide_ramme') && !/^Klargøring-/.test(document.title)));
+
+    // Guiden følger tilbuddet: rettes og gemmes det, er guiden en anden næste gang.
+    check('før rettelsen står køkkenskærmen ikke i guiden', /LAN-printer/.test(foer) && !/Køkkenskærm/.test(foer));
+    await p.goto(`${BASE}/bygger/index.html?nr=${nrEksport}`);
+    await p.waitForTimeout(2000);
+    check('guidens knap står i byggeren', await p.isVisible('button[onclick="exportGuide()"]'));
+    await p.click('[data-qwrap="m_kds185"] button:last-child');
+    await p.waitForTimeout(100);
+    await p.click('button[onclick="gemTilbud()"]');
+    await p.waitForTimeout(1500);
+    await p.goto(BASE + '/');
+    await p.waitForTimeout(1000);
+    check('guiden fra kartoteket følger det opdaterede tilbud', /Køkkenskærm/.test(await hent(nrEksport)));
+    check('... og tilbuddet har stadig samme nummer',
+      (await p.$$eval('table.kart td.nr', (t) => t.map((x) => x.textContent))).includes(nrEksport));
+
+    // Et tryk på rækken åbner tilbuddet; knapperne i rækken gør ikke.
+    await p.click(`table.kart tbody tr:has(td.nr:text-is("${nrEksport}")) td.num >> nth=0`);
+    await p.waitForTimeout(2000);
+    check('et tryk på rækken åbner tilbuddet', p.url().endsWith('/bygger/index.html?nr=' + nrEksport), p.url());
+
     /* ---------- 8: sletning genbruger ikke nummeret ---------- */
     console.log('\n# Sletning');
     await p.goto(BASE + '/');

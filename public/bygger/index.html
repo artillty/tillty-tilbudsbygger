@@ -31,6 +31,9 @@
     <!-- Samme navn som i kartoteket: det er den samme handling. -->
     <button class="btn-ghost" onclick="resetAll()">+ Nyt tilbud</button>
     <button class="btn-ghost" onclick="gemTilbud()" data-kraever-api style="display:none">Gem</button>
+    <!-- Klargøringsguiden bygges af udstyret i tilbuddet (js/guide.js). Et
+         PAY-tilbud har intet udstyr, så knappen er mærket kun-udstyr. -->
+    <button class="btn-ghost kun-udstyr" onclick="exportGuide()">⬇ Klargøringsguide</button>
     <button class="btn-pdf" onclick="exportPDF()">⬇ Eksportér PDF</button>
   </div>
 </header>
@@ -279,6 +282,7 @@
 <script src="js/quote.js"></script>
 <script src="js/pay.js"></script>
 <script src="js/print.js"></script>
+<script src="js/guide.js"></script>
 <script src="js/init.js"></script>
 <script src="js/store.js"></script>
 <script src="js/visning.js"></script>

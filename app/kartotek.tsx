@@ -198,6 +198,17 @@ export default function Kartotek() {
   );
 }
 
+/** Et tryk hvor som helst på rækken åbner tilbuddet. Knapperne i sidste
+ *  kolonne stopper selv trykket, og markerer man tekst for at kopiere den,
+ *  sker der intet. Cmd/Ctrl-klik åbner i en ny fane. */
+function aabn(e: React.MouseEvent, nr: string) {
+  if ((e.target as HTMLElement).closest("a,button")) return;
+  if (window.getSelection()?.toString()) return;
+  const url = `/bygger/index.html?nr=${nr}`;
+  if (e.metaKey || e.ctrlKey) window.open(url, "_blank");
+  else location.href = url;
+}
+
 type TabelProps = { rows: Tilbud[]; slet: (nr: string, firma: string | null) => void };
 
 /** Kolonner fælles for begge tabeller: nummer, kunde, sælger og status. */
@@ -206,7 +217,11 @@ function KundeCeller({ t }: { t: Tilbud }) {
     <>
       <td className="nr">{t.nr}</td>
       <td>
-        <div className="firma">{t.firma || <span className="svag">uden navn</span>}</div>
+        {/* Hele rækken åbner tilbuddet (se `aabn`); linket her er vejen ind
+            med tastaturet. */}
+        <a className="firma" href={`/bygger/index.html?nr=${t.nr}`}>
+          {t.firma || <span className="svag">uden navn</span>}
+        </a>
         {t.kontakt && <div className="svag">{t.kontakt}</div>}
       </td>
       <td>{t.saelger || <span className="svag">—</span>}</td>
@@ -217,12 +232,50 @@ function KundeCeller({ t }: { t: Tilbud }) {
   );
 }
 
-function Knapper({ t, slet }: { t: Tilbud; slet: TabelProps["slet"] }) {
+/** Henter klargøringsguiden uden at forlade kartoteket. Guiden bygges af
+ *  byggeren (js/guide.js), så den køres i en usynlig ramme, som selv åbner
+ *  browserens "Gem som PDF". Rammen vises kun, hvis sælgeren skal vælge mellem
+ *  flere muligheder. Byggeren melder 'valg', 'print' og 'luk' tilbage. */
+function hentGuide(nr: string) {
+  document.getElementById("guide_ramme")?.remove();
+  const ramme = document.createElement("iframe");
+  ramme.id = "guide_ramme";
+  ramme.className = "guide-ramme";
+  ramme.title = "Klargøringsguide";
+  const titel = document.title;
+  const besked = (e: MessageEvent) => {
+    if (e.origin !== location.origin || e.source !== ramme.contentWindow || e.data?.tillty !== "guide") return;
+    if (e.data.trin === "valg") ramme.classList.add("synlig");
+    if (e.data.trin === "print") {
+      ramme.classList.remove("synlig");
+      // Browseren foreslår sidens titel som filnavn i "Gem som PDF".
+      if (typeof e.data.filnavn === "string") document.title = e.data.filnavn;
+    }
+    if (e.data.trin === "luk") {
+      window.removeEventListener("message", besked);
+      document.title = titel;
+      ramme.remove();
+    }
+  };
+  window.addEventListener("message", besked);
+  ramme.src = `/bygger/index.html?nr=${encodeURIComponent(nr)}&guide=1`;
+  document.body.appendChild(ramme);
+}
+
+/** `guide`: udstyrstilbud har en klargøringsguide (krav til kundens lokation),
+ *  også som kladde. Den bygges af det gemte tilbud, hver gang der trykkes, så
+ *  den altid følger tilbuddet. Knappen henter PDF'en uden at forlade
+ *  kartoteket (`hentGuide`). */
+function Knapper({ t, slet, guide }: { t: Tilbud; slet: TabelProps["slet"]; guide?: boolean }) {
   return (
-    <td style={{ whiteSpace: "nowrap", textAlign: "right" }}>
-      <a className="rowbtn" href={`/bygger/index.html?nr=${t.nr}`}>
-        Åbn
-      </a>{" "}
+    <td style={{ whiteSpace: "nowrap", textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
+      {guide && (
+        <>
+          <button className="rowbtn" onClick={() => hentGuide(t.nr)}>
+            ⬇ Klargøringsguide
+          </button>{" "}
+        </>
+      )}
       <button className="rowbtn fare" onClick={() => slet(t.nr, t.firma)}>
         Slet
       </button>
@@ -250,12 +303,12 @@ function UdstyrTabel({ rows, slet }: TabelProps) {
         {rows.map((t) => {
           const loebende = Number(t.lic_dag) * LICENSDAGE + Number(t.mod_md);
           return (
-            <tr key={t.nr}>
+            <tr key={t.nr} className="aaben" onClick={(e) => aabn(e, t.nr)}>
               <KundeCeller t={t} />
               <td className="num">{Number(t.engangs) ? fmt(Number(t.engangs)) : "—"}</td>
               <td className="num">{loebende ? fmt(loebende) : "—"}</td>
               <td className="svag">{dato(t.updated)}</td>
-              <Knapper t={t} slet={slet} />
+              <Knapper t={t} slet={slet} guide />
             </tr>
           );
         })}
@@ -284,7 +337,7 @@ function PayTabel({ rows, slet }: TabelProps) {
         {rows.map((t) => {
           const netto = Number(t.mod_md);
           return (
-            <tr key={t.nr}>
+            <tr key={t.nr} className="aaben" onClick={(e) => aabn(e, t.nr)}>
               <KundeCeller t={t} />
               <td className="num">{netto ? fmt(netto) : "—"}</td>
               <td className="svag">{dato(t.updated)}</td>

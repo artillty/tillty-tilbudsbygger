@@ -314,6 +314,52 @@ flere lokationer: parter → Hej X → indledning → Samlet prisoverblik (lokat
   udelades ved siden af et ord: "Ny WiFi", ikke "1 ny WiFi". Det er bevidst —
   alt andet er støj i en oversigt, kunden skal læse i ét blik.
 
+## Klargøringsguiden (`js/guide.js`)
+
+- **Guiden er sit eget dokument**, ikke en del af tilbuddet: knappen
+  "Klargøringsguide" i sidehovedet bygger en PDF af det åbne tilbud med det,
+  kunden skal have klar på lokationen før installationen. Den sendes, når
+  kunden har sagt ja. Den har intet preview og gemmer intet.
+- **Guiden følger tilbuddet** (tilltys regel, 9. okt 2026). Den kan hentes for
+  både kladder og sendte tilbud og bygges forfra, hver gang der trykkes: i
+  byggeren af det, der står på skærmen, i kartoteket af det gemte tilbud. Gem
+  derfor aldrig en færdig guide, og lav ingen kopi, der kan blive forældet.
+  Kartoteket har knappen "Klargøringsguide" ved alle udstyrstilbud. Sælgeren
+  skal blive i kartoteket, så `hentGuide()` kører byggeren i en usynlig ramme
+  med `?nr=…&guide=1`; byggeren laver PDF'en og melder `valg`, `print` og `luk`
+  tilbage (`guideBesked()`). Rammen ses kun, mens sælgeren vælger mellem flere
+  muligheder. Begge test holder øje med det.
+- **Guiden er kun en PDF.** Sælgeren sender den til kunden, og kunden sender
+  den udfyldte tjekliste tilbage. En tjekliste på nettet med link til kunden
+  blev bygget og fravalgt af tillty (9. okt 2026): for meget digitalt frem og
+  tilbage. Byg den ikke igen uden at spørge.
+- **Kun krav til det udstyr, der står i tilbuddet.** `guideUdstyr()` tæller
+  mulighedens udstyr op (nyt, brugt og kundens eget: det skal også have strøm
+  og net), og oversigten, trinene og tjeklisten bygges ud fra det. Uden
+  LAN-printer står der intet om netværkskabler, uden DS-licens intet om tv.
+  Nyt udstyr i `CATALOG` skal have sine krav skrevet ind her.
+- **Kravene er tilltys egne** (dokumentet "Krav til kundens lokation ved
+  opsætning af udstyr", 9. okt 2026): kun LAN-printeren kables, resten kører
+  wifi; tillty trækker ikke kabler og monterer intet permanent; pengeskuffen
+  får strøm fra bonprinteren (95 cm kabel); selvbetjeningsterminalen har ét
+  strømstik og giver strøm til sin betalingsterminal; skærme til menu og
+  ordrenumre køber kunden selv (Android TV). Ret dem ikke uden at spørge.
+- **Dato først, når tjeklisten er udfyldt.** Guiden slutter med "Før vi aftaler
+  en dato": tillty aftaler først opsætningen, når kunden har sendt den udfyldte
+  tjekliste; kræver en mangelfuld liste et ekstra besøg, faktureres det; og er
+  kunden i tvivl, skal de ringe frem for at gætte. Afsnittet om midlertidig
+  opsætning er taget ud af tillty (9. okt 2026).
+- **Køkkenskærmen:** med en Vesa Arm til hver skærm skal kunden sørge for en
+  hylde eller bordplade; uden arm sætter kunden selv et vægbeslag op.
+- **Én mulighed pr. lokation.** Mulighederne er alternativer, så har en
+  lokation flere med indhold, vælger sælgeren i en dialog den, kunden har
+  bestilt (`visGuideValg()`). Dialogen fjernes, før der printes.
+- **Guiden følger tilbuddets sprog** og går gennem `t()` som resten af kundens
+  side. Den bruger tilbuddets paginering med eget sidehoved og egen sidefod
+  (`buildPrintPages({html, band, foot})`): ingen priser og ingen garanti i
+  sidefoden. Overskrifter har `data-hold`, så de ikke står alene nederst på
+  en side.
+
 ## tillty PAY (egen tilbudstype)
 
 - **PAY er sin egen tilbudstype** (`FORM.type === 'pay'`, vælges ved opstart) og

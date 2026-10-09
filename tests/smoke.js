@@ -960,7 +960,7 @@ let STANDARD_START = null;
     const js = (f) => fs.readFileSync(path.resolve(__dirname, '..', 'public', 'bygger', 'js', f), 'utf8');
     // Alle faste tekster i dokumentet går gennem t('…'). Nøglerne hentes fra
     // kildekoden, så en ny tekst uden oversættelse fanges her.
-    const tKald = [...new Set(['quote.js', 'print.js', 'app.js', 'pay.js']
+    const tKald = [...new Set(['quote.js', 'print.js', 'app.js', 'pay.js', 'guide.js']
       .flatMap((f) => [...js(f).matchAll(/\bt\('((?:[^'\\]|\\.)*)'/g)].map((m) => m[1])))];
 
     const p = await newPage(browser, { muligheder: true, lokationer: true });
@@ -1517,6 +1517,108 @@ let STANDARD_START = null;
     await p.click('button[onclick="resetAll()"]'); await p.waitForTimeout(300);
     check('nyt tilbud rydder integrationerne', await p.evaluate(() => INTEGR.length === 0));
     await p.close();
+  }
+
+  /* ---------- klargøringsguiden ---------- */
+  console.log('\n# Klargøringsguiden');
+  {
+    const p = await newPage(browser, { muligheder: true });
+    const saet = (k, n) => saetAntal(p, k, n);
+    // Guiden har intet preview: siderne bygges direkte, som eksporten gør.
+    const guide = () => p.evaluate(() => {
+      const lok = lokationerMedIndhold();
+      const pages = guideSider(lok.map((x) => ({ loc: x.loc, o: x.ml[0].o })));
+      return pages.map((pg) => pg.textContent).join('\n');
+    });
+    await p.fill('#c_company', 'Café Eksempel');
+
+    // Kun trådløst udstyr: intet om kabler, pengeskuffe, køkkenskærm eller tv.
+    await saet('m_tab11', 1); await saet('m_wifi', 1);
+    let g = await guide();
+    check('guiden har sit eget sidehoved uden priser og garanti',
+      /KLARGØRING/.test(g) && !/TILBUD/.test(g) && !/moms/.test(g) && !/garanti/.test(g));
+    check('guiden nævner kunden', /Café Eksempel/.test(g));
+    check('uden LAN-printer står der intet om netværkskabel', !/[Nn]etværkskabel/.test(g) && /Alt udstyret kører trådløst/.test(g));
+    check('uden pengeskuffe, køkkenskærm og DS står kravene ikke i guiden',
+      !/95 cm/.test(g) && !/køkkenskærm/i.test(g) && !/Android TV/.test(g));
+    check('kassen og printeren står i oversigten', /Kasse \(POS-skærm eller tablet\)/.test(g) && /WiFi-printer/.test(g));
+
+    // Med LAN-printer, pengeskuffe, køkkenskærm uden arm, DS og selvbetjeningsterminal.
+    await saet('m_lan', 1); await saet('a_tab11_drawer', 1); await saet('m_kds185', 1);
+    await saet('dslic', 2); await saet('m_sot', 1); await saet('m_termstat', 1);
+    g = await guide();
+    check('LAN-printer giver trin og tjekpunkt om netværkskabel',
+      /Træk netværkskabel til hver LAN-printer/.test(g) && /Der er trukket netværkskabel/.test(g) && /Alt andet end LAN-printeren/.test(g));
+    check('pengeskuffen skal stå inden for 95 cm', /Stil pengeskuffen tæt på bonprinteren/.test(g) && /højst 95 cm/.test(g));
+    check('køkkenskærm uden arm kræver vægbeslag', /Sæt et vægbeslag op til køkkenskærmen/.test(g) && !/køkkenskærmens arm/.test(g));
+    check('DS-licens giver kravet om Android TV', /Køb og ophæng skærme/.test(g) && /Android TV/.test(g));
+    check('selvbetjeningsterminalen skal kun have ét strømstik',
+      /Selvbetjeningsterminalen skal kun have ét strømstik/.test(g) && /undtagen dem på en selvbetjeningsterminal/.test(g));
+    check('guiden siger selvbetjeningsterminal, ikke kiosk', !/kiosk/i.test(g));
+
+    // Med en arm til skærmen skal kunden kun sørge for en hylde.
+    await saet('a_kds185_vesa', 1);
+    g = await guide();
+    check('køkkenskærm med arm kræver en hylde, ikke et vægbeslag',
+      /Gør plads til køkkenskærmens arm/.test(g) && !/Sæt et vægbeslag op til køkkenskærmen/.test(g));
+
+    // Kundens eget udstyr skal også have strøm og net.
+    await saet('m_lan', 0); await saet('eget_m_lan', 1);
+    check('kundens egen LAN-printer tæller med', /Træk netværkskabel til hver LAN-printer/.test(await guide()));
+
+    // Intet må løbe ud over sidefoden, og hver side har sidetal.
+    const sider = await p.evaluate(() => {
+      const lok = lokationerMedIndhold();
+      const pages = guideSider(lok.map((x) => ({ loc: x.loc, o: x.ml[0].o })));
+      const root = document.getElementById('print-root');
+      root.innerHTML = ''; pages.forEach((x) => root.appendChild(x)); root.style.display = 'block';
+      const over = [...root.querySelectorAll('.pg')].map((pg) => {
+        const fod = pg.querySelector('.qp-foot').getBoundingClientRect().top;
+        return Math.max(...[...pg.querySelector('.pg-body').children].map((c) => c.getBoundingClientRect().bottom)) - fod;
+      });
+      const tal = [...root.querySelectorAll('.qf-page')].map((e) => e.textContent).join('|');
+      root.innerHTML = ''; root.style.display = '';
+      return { over, tal };
+    });
+    check('guidens indhold holder sig over sidefoden', sider.over.length > 0 && sider.over.every((x) => x < 0), sider.over.join());
+    check('guidens sider har sidetal', /^Side 1 af \d/.test(sider.tal), sider.tal);
+
+    // Alle fem sprog: oversat og uden lang tankestreg.
+    const ord = { da: 'Tjekliste', en: 'Checklist', nb: 'Sjekkliste', sv: 'Checklista', de: 'Checkliste' };
+    for (const l of Object.keys(ord)) {
+      await p.selectOption('#c_sprog', l); await p.waitForTimeout(150);
+      g = await guide();
+      check(l + ': guiden er oversat og uden lang tankestreg',
+        g.includes(ord[l]) && !g.includes('—') && (l === 'da' || !/Det skal I gøre/.test(g)));
+    }
+    await p.selectOption('#c_sprog', 'da'); await p.waitForTimeout(150);
+
+    // Én mulighed: guiden laves med det samme. Flere: sælgeren vælger først.
+    await p.evaluate(() => { window.print = () => { window.__printet = (window.__printet || 0) + 1; }; });
+    check('guiden kan også laves for en kladde', await p.isVisible('button[onclick="exportGuide()"]'));
+    await p.click('button[onclick="exportGuide()"]'); await p.waitForTimeout(400);
+    check('med én mulighed laves guiden uden at spørge',
+      !(await p.$('#guide_valg')) && (await p.evaluate(() => window.__printet === 1 && /^Klargøring-/.test(document.title))));
+    await p.evaluate(() => window.dispatchEvent(new Event('afterprint'))); await p.waitForTimeout(100);
+    check('guiden tildeler ikke et tilbudsnummer', (await p.inputValue('#c_number')) === '');
+    await p.evaluate(() => addOpt()); await p.waitForTimeout(150);
+    await saet('m_tab14', 1);
+    await p.click('button[onclick="exportGuide()"]'); await p.waitForTimeout(300);
+    check('med flere muligheder vælger sælgeren først',
+      (await p.$$eval('#guide_valg select option', (o) => o.length)) === 2 && (await p.evaluate(() => window.__printet === 1)));
+    await p.selectOption('#guide_valg select', '1');
+    await p.click('#guide_valg button[type="submit"]'); await p.waitForTimeout(400);
+    check('guiden bygges af den valgte mulighed', await p.evaluate(() => {
+      const tekst = document.getElementById('print-root').textContent;
+      return window.__printet === 2 && !document.getElementById('guide_valg')
+        && /Kasse \(POS-skærm eller tablet\)/.test(tekst) && !/LAN-printer/.test(tekst);
+    }));
+    await p.close();
+
+    // Et PAY-tilbud har intet udstyr og ingen guide.
+    const pay = await newPage(browser, { pay: true });
+    check('PAY-tilbud har ingen knap til klargøringsguiden', !(await pay.isVisible('button[onclick="exportGuide()"]')));
+    await pay.close();
   }
 
   await browser.close();
