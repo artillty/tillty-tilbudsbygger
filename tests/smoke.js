@@ -960,7 +960,7 @@ let STANDARD_START = null;
     const js = (f) => fs.readFileSync(path.resolve(__dirname, '..', 'public', 'bygger', 'js', f), 'utf8');
     // Alle faste tekster i dokumentet går gennem t('…'). Nøglerne hentes fra
     // kildekoden, så en ny tekst uden oversættelse fanges her.
-    const tKald = [...new Set(['quote.js', 'print.js', 'app.js', 'pay.js', 'guide.js']
+    const tKald = [...new Set(['quote.js', 'print.js', 'app.js', 'pay.js', 'guide.js', 'prisoversigt.js']
       .flatMap((f) => [...js(f).matchAll(/\bt\('((?:[^'\\]|\\.)*)'/g)].map((m) => m[1])))];
 
     const p = await newPage(browser, { muligheder: true, lokationer: true });
@@ -1618,6 +1618,77 @@ let STANDARD_START = null;
     // Et PAY-tilbud har intet udstyr og ingen guide.
     const pay = await newPage(browser, { pay: true });
     check('PAY-tilbud har ingen knap til klargøringsguiden', !(await pay.isVisible('button[onclick="exportGuide()"]')));
+    await pay.close();
+  }
+
+  /* ---------- prisoversigten ---------- */
+  console.log('\n# Prisoversigten');
+  {
+    const p = await newPage(browser, { muligheder: true, lokationer: true });
+    const saet = (k, n) => saetAntal(p, k, n);
+    const oversigt = (medLic) => p.evaluate((medLic) => prisoversigtSider(medLic).map((pg) => pg.innerHTML).join('\n'), medLic);
+    const tekst = (html) => html.replace(/<[^>]+>/g, ' ');
+    await p.fill('#c_company', 'Café Eksempel');
+    await saet('m_tab11', 2); await saet('m_wifi', 1); await saet('s_takeaway', 1);
+
+    let h = await oversigt(true);
+    check('prisoversigten har sit eget sidehoved og nævner kunden',
+      /PRISOVERSIGT/.test(h) && !/>TILBUD</.test(h) && /Café Eksempel/.test(h));
+    check('prisoversigten har ingen parter, brev, fotos eller beskrivelser',
+      !/qp-parties|qp-intro|qp-greet|qp-note|qp-integr/.test(h) && !/<img/.test(h) && !/pv-d/.test(h));
+    check('prisoversigten har priser og sidefodens forbehold', /Samlet pris/.test(tekst(h)) && /moms/.test(h) && /garanti/.test(h));
+    check('med licens står licenserne i oversigten', /Licens\/dag/.test(h) && /pr\. dag i brug/.test(h));
+
+    h = await oversigt(false);
+    const lic = await p.evaluate(() => collectFor(M()).licDaily);
+    check('uden licens er licenstabel, -kolonne og -note væk',
+      !/Licens\/dag|Licenser \/ dag|pr\. dag i brug|>Licens</.test(h), String(lic));
+    check('uden licens er løbende kun modulerne', await p.evaluate(() => {
+      const d = collectFor(M());
+      const html = prisoversigtSider(false).map((pg) => pg.innerHTML).join('');
+      return d.licDaily > 0 && html.includes(fmt(d.modMonthly)) && !html.includes(fmt(d.licDaily * licenseDays() + d.modMonthly));
+    }));
+
+    // Flere muligheder og lokationer kommer alle med.
+    await p.evaluate(() => addOpt()); await p.waitForTimeout(150);
+    await saet('m_tab14', 1);
+    h = await oversigt(false);
+    check('flere muligheder står side om side uden licensrækker',
+      /Sammenlign muligheder/.test(h) && /Mulighed A/.test(h) && /Mulighed B/.test(h) && !/Licens/.test(tekst(h)));
+    await p.evaluate(() => addLoc()); await p.waitForTimeout(150);
+    await saet('m_tab11', 1);
+    h = await oversigt(false);
+    check('flere lokationer: overblik uden licenskolonne og en blok pr. lokation',
+      /Samlet prisoverblik/.test(h) && /Lokation 2/.test(h) && /colspan="4"/.test(h) && !/Licens\/dag/.test(h));
+
+    // Knappen: dialogen spørger om licens og printer uden at stå i PDF'en.
+    check('knappen står over tilbuddet, ikke i sidehovedet',
+      !!(await p.$('#side_tilbud h2 button[onclick="exportPrisoversigt()"]')) && !(await p.$('header button[onclick="exportPrisoversigt()"]')));
+    // Kun kundens navn og e-mail kræves; CVR, adresse osv. må mangle.
+    let besked = '';
+    p.removeAllListeners('dialog');
+    p.on('dialog', (d) => { besked = d.message(); d.accept(); });
+    await p.evaluate(() => { window.print = () => { window.__printet = (window.__printet || 0) + 1; }; });
+    await p.click('button[onclick="exportPrisoversigt()"]'); await p.waitForTimeout(300);
+    check('uden e-mail stopper prisoversigten, og kun e-mailen mangler',
+      /E-mail/i.test(besked) && !/CVR|Adresse/i.test(besked) && !(await p.$('#pris_valg')), besked.replace(/\n+/g, ' | '));
+    await p.fill('#c_email', 'kunde@eksempel.dk');
+    besked = '';
+    await p.click('button[onclick="exportPrisoversigt()"]'); await p.waitForTimeout(300);
+    check('med navn og e-mail er der ingen besked om manglende felter', besked === '', besked);
+    check('med licenser spørger dialogen, om de skal med',
+      await p.isChecked('#pris_valg input[name="lic"]') && (await p.evaluate(() => !window.__printet)));
+    await p.uncheck('#pris_valg input[name="lic"]');
+    await p.click('#pris_valg button[type="submit"]'); await p.waitForTimeout(400);
+    check('prisoversigten printes uden licens og uden dialogen', await p.evaluate(() => {
+      const r = document.getElementById('print-root');
+      return window.__printet === 1 && !document.getElementById('pris_valg')
+        && /PRISOVERSIGT/.test(r.textContent) && !/Licens\/dag/.test(r.textContent) && /^Prisoversigt-/.test(document.title);
+    }));
+    await p.close();
+
+    const pay = await newPage(browser, { pay: true });
+    check('PAY-tilbud har ingen knap til prisoversigten', !(await pay.isVisible('button[onclick="exportPrisoversigt()"]')));
     await pay.close();
   }
 

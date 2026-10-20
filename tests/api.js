@@ -296,6 +296,37 @@ async function forbiOpstart(p) {
     const kladde = await sql`select status from tilbud where nr = ${nr1}`;
     check('gemt-men-ikke-sendt står som kladde', kladde[0]?.status === 'kladde', kladde[0]?.status);
 
+    /* ---------- prisoversigten gemmer, men rører ikke statussen ---------- */
+    console.log('\n# Prisoversigt');
+    // Et sendt tilbud bliver ikke en kladde af, at prisoversigten sendes bagefter.
+    // Uden licens i tilbuddet (kun en LAN-printer) laves den uden dialog.
+    await p.evaluate(() => { window.__printKaldt = false; });
+    await p.click('button[onclick="exportPrisoversigt()"]');
+    await p.waitForTimeout(2000);
+    check('prisoversigten blev printet', await p.evaluate(() => window.__printKaldt === true && /^Prisoversigt-/.test(document.title)));
+    const efterPo = await sql`select status from tilbud where nr = ${nrEksport}`;
+    check('sendt tilbud står stadig som sendt efter prisoversigt', efterPo[0]?.status === 'sendt', efterPo[0]?.status);
+    check('prisoversigten genbruger tilbuddets nummer', (await p.inputValue('#c_number')) === nrEksport);
+    await p.evaluate(() => window.dispatchEvent(new Event('afterprint')));
+
+    // Et nyt tilbud med kun navn og e-mail: prisoversigten gemmer det som kladde.
+    await aabnNyt(p);
+    await p.waitForTimeout(1200);
+    await p.fill('#c_company', 'Kun Priser ApS');
+    await p.fill('#c_email', 'priser@eksempel.dk');
+    await p.click('[data-qwrap="m_lan"] button:last-child');
+    await p.waitForTimeout(80);
+    await p.evaluate(() => { window.print = () => { window.__printKaldt = true; }; window.__printKaldt = false; });
+    await p.click('button[onclick="exportPrisoversigt()"]');
+    await p.waitForTimeout(2000);
+    const nrPo = husk(await p.inputValue('#c_number'));
+    check('prisoversigt med kun navn og e-mail tildeler et nummer', erNummer(nrPo), nrPo);
+    check('... og printes', await p.evaluate(() => window.__printKaldt === true));
+    const poStatus = await sql`select status, firma from tilbud where nr = ${nrPo}`;
+    check('... og står som kladde i kartoteket', poStatus[0]?.status === 'kladde' && poStatus[0]?.firma === 'Kun Priser ApS',
+      JSON.stringify(poStatus[0]));
+    await p.evaluate(() => window.dispatchEvent(new Event('afterprint')));
+
     /* ---------- klargøringsguiden: hentes fra kartoteket, også for en kladde ---------- */
     console.log('\n# Klargøringsguide');
     await p.goto(BASE + '/');
@@ -357,8 +388,9 @@ async function forbiOpstart(p) {
     await p.waitForTimeout(1000);
     await p.click('table.kart tbody tr:first-child button.rowbtn.fare');
     await p.waitForTimeout(1200);
+    // Fem tilbud før sletningen, medregnet kladden fra prisoversigten.
     check('tilbuddet er væk fra kartoteket',
-      (await p.$$eval('table.kart tbody tr', (r) => r.length)) === 3);
+      (await p.$$eval('table.kart tbody tr', (r) => r.length)) === 4);
 
     await aabnNyt(p);
     await p.waitForTimeout(1000);

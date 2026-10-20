@@ -95,6 +95,12 @@
     background:rgba(255,255,255,.1);color:#fff;font-family:var(--font-heading);font-size:13px;
     font-weight:700;padding:5px 8px;cursor:pointer}
   .sprogvalg:hover{background:rgba(255,255,255,.18)}
+  /* Prisoversigtens knap står i samme bjælke og ser ud som sprogvælgeren. */
+  .po-knap{margin-left:auto;border:1px solid rgba(255,255,255,.35);border-radius:var(--radius-md);
+    background:rgba(255,255,255,.1);color:#fff;font-family:var(--font-heading);font-size:13px;
+    font-weight:700;padding:5px 10px;cursor:pointer;white-space:nowrap}
+  .po-knap:hover{background:rgba(255,255,255,.18)}
+  .po-knap + .sprogvalg{margin-left:0}
   .sprogvalg option{color:var(--color-primary);background:#fff}
   .panel h2 .h2-sub{font-weight:600;font-size:12px;opacity:.75;margin-left:auto;padding-right:10px}
 

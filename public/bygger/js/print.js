@@ -203,8 +203,9 @@ function buildPrintPages(valg){
 /* ---------- obligatoriske felter ----------
    Tomme felter markeres med rødt, det første får fokus, og beskeden siger
    hvilke. Markeringen forsvinder, når der skrives i feltet (se init.js). */
-function kravOpfyldt(){
-  const felter=[...document.querySelectorAll('[data-krav]')];
+function kravOpfyldt(ids){
+  // Prisoversigten kræver færre felter end tilbuddet og sender sine egne med.
+  const felter=ids ? ids.map(id=>document.getElementById(id)) : [...document.querySelectorAll('[data-krav]')];
   const tomme=felter.filter(e=>!e.value.trim());
   felter.forEach(e=>e.classList.toggle('mangler', tomme.includes(e)));
   const navne=tomme.map(e=>e.dataset.krav);

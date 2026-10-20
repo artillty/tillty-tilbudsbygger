@@ -333,6 +333,10 @@ const OVERSAETTELSER = [
   ['Firma- og erhvervskort. Ikke omfattet af EU-loftet.', 'Business and corporate cards. Not covered by the EU cap.', 'Firma- og bedriftskort. Ikke omfattet av EU-taket.', 'Företags- och tjänstekort. Omfattas inte av EU-taket.', 'Firmen- und Geschäftskarten. Nicht von der EU-Obergrenze erfasst.'],
   ['Internationale kort', 'International cards', 'Internasjonale kort', 'Internationella kort', 'Internationale Karten'],
   ['Kort udstedt uden for EEA, fx USA, UK og Asien.', 'Cards issued outside the EEA, e.g. the US, UK and Asia.', 'Kort utstedt utenfor EØS, f.eks. USA, Storbritannia og Asia.', 'Kort utgivna utanför EES, t.ex. USA, Storbritannien och Asien.', 'Außerhalb des EWR ausgegebene Karten, z. B. USA, Großbritannien und Asien.'],
+  /* ---------- prisoversigten (js/prisoversigt.js) ---------- */
+  ['PRISOVERSIGT', 'PRICE OVERVIEW', 'PRISOVERSIKT', 'PRISÖVERSIKT', 'PREISÜBERSICHT'],
+  ['Prisoversigt', 'Price overview', 'Prisoversikt', 'Prisöversikt', 'Preisübersicht'],
+  ['Dato:', 'Date:', 'Dato:', 'Datum:', 'Datum:'],
   /* ---------- klargøringsguiden (js/guide.js) ---------- */
   ['KLARGØRING', 'SITE PREPARATION', 'KLARGJØRING', 'FÖRBEREDELSE', 'VORBEREITUNG'],
   ['Klargøring', 'Site-preparation', 'Klargjøring', 'Förberedelse', 'Vorbereitung'],

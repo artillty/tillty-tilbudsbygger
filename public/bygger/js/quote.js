@@ -134,24 +134,28 @@ const loebende=(sum,days)=>sum.licDaily*days+sum.modMonthly;
    lokationsblok i specifikationen nedenfor.
    Ved én lokation vises kun den samlede række — en linje og en identisk
    totallinje ville bare se ud som en fejl. */
-function overviewTable(live,days,sum){
+/* Prisoverblikkets header og talceller. Prisoversigten (js/prisoversigt.js)
+   kan være uden licens, og så er kolonnen væk — ikke en kolonne af streger. */
+function overblikHoved(medLic){
+  return '<table class="pv loc-overview"><thead><tr><th>'+t('Samlet prisoverblik')+'</th>'
+    +'<th class="num">'+t('Hardware og tilbehør')+'</th>'+(medLic?'<th class="num">'+t('Licens/dag')+'</th>':'')
+    +'<th class="num">'+t('Moduler/md.')+'</th><th class="num">'+t('Løbende/md.')+'</th></tr></thead>';
+}
+function overblikTal(d,days,medLic){
   const cell=n=>n?fmt(n):'–';   // nul udelades, "0,-" i hver kolonne støjer bare. Kort tankestreg: den lange er fravalgt i tilbuddet.
+  return `<td class="num">${cell(d.oneOff)}</td>`+(medLic?`<td class="num">${cell(d.licDaily)}</td>`:'')
+    +`<td class="num">${cell(d.modMonthly)}</td><td class="num">${cell(loebende(d,days))}</td>`;
+}
+function overviewTable(live,days,sum,medLic=true){
   const multi=live.length>1;
-  let b='<table class="pv loc-overview"><thead><tr><th>'+t('Samlet prisoverblik')+'</th>'
-    +'<th class="num">'+t('Hardware og tilbehør')+'</th><th class="num">'+t('Licens/dag')+'</th>'
-    +'<th class="num">'+t('Moduler/md.')+'</th><th class="num">'+t('Løbende/md.')+'</th></tr></thead><tbody>';
+  let b=overblikHoved(medLic)+'<tbody>';
   if(multi){
     live.forEach((x,i)=>{
-      const d=x.d;
-      b+=`<tr><td><span class="lo-n">${i+1}</span>${esc(locNavn(x.loc))}</td>`
-        +`<td class="num">${cell(d.oneOff)}</td><td class="num">${cell(d.licDaily)}</td>`
-        +`<td class="num">${cell(d.modMonthly)}</td><td class="num">${cell(loebende(d,days))}</td></tr>`;
+      b+=`<tr><td><span class="lo-n">${i+1}</span>${esc(locNavn(x.loc))}</td>${overblikTal(x.d,days,medLic)}</tr>`;
     });
   }
   b+='</tbody><tfoot><tr><td>'+(multi?t('I alt'):t('Samlet pris'))+'</td>'
-    +`<td class="num">${cell(sum.oneOff)}</td><td class="num">${cell(sum.licDaily)}</td>`
-    +`<td class="num">${cell(sum.modMonthly)}</td><td class="num">${cell(loebende(sum,days))}</td>`
-    +'</tr></tfoot></table>';
+    +overblikTal(sum,days,medLic)+'</tr></tfoot></table>';
   return b;
 }
 
@@ -366,17 +370,13 @@ function mulighedsSpec(m,bog,days){
    mellemrubrik og én linje pr. mulighed under den. Mulighederne er
    alternativer, så der er ingen samlet total — den afhænger af, hvad kunden
    vælger for hver lokation. */
-function lokationsOverblik(lok,days){
-  const cell=n=>n?fmt(n):'–';
-  const tal=d=>`<td class="num">${cell(d.oneOff)}</td><td class="num">${cell(d.licDaily)}</td>`
-    +`<td class="num">${cell(d.modMonthly)}</td><td class="num">${cell(loebende(d,days))}</td>`;
-  let b='<table class="pv loc-overview"><thead><tr><th>'+t('Samlet prisoverblik')+'</th>'
-    +'<th class="num">'+t('Hardware og tilbehør')+'</th><th class="num">'+t('Licens/dag')+'</th>'
-    +'<th class="num">'+t('Moduler/md.')+'</th><th class="num">'+t('Løbende/md.')+'</th></tr></thead><tbody>';
+function lokationsOverblik(lok,days,medLic=true){
+  const tal=d=>overblikTal(d,days,medLic);
+  let b=overblikHoved(medLic)+'<tbody>';
   lok.forEach((x,i)=>{
     const navn=`<span class="lo-n">${i+1}</span>${esc(locNavn(x.loc))}`;
     if(x.ml.length===1){ b+=`<tr><td>${navn}</td>${tal(x.ml[0].d)}</tr>`; return; }
-    b+=`<tr class="lo-lok"><td colspan="5">${navn}</td></tr>`;
+    b+=`<tr class="lo-lok"><td colspan="${medLic?5:4}">${navn}</td></tr>`;
     x.ml.forEach((m,j)=>{
       b+=`<tr class="lo-opt"><td><span class="lo-n bogstav">${bogstav(j)}</span>${esc(optNavn(m.o))}`
         +(m.o.anbefalet?'<span class="lo-anb">'+t('Vi anbefaler')+'</span>':'')+`</td>${tal(m.d)}</tr>`;

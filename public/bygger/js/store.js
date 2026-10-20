@@ -11,6 +11,7 @@ const HAR_API = location.protocol === 'http:' || location.protocol === 'https:';
 window.HAR_API = HAR_API;
 
 let aktivtNr = null;          // tilbuddets nummer, når det først er tildelt
+let aktivStatus = 'kladde';   // status i kartoteket; prisoversigten gemmer med den uændret
 const synkedeBilleder = {};   // varenøgle -> dataURL, som allerede ligger på serveren
 
 /* ---------- totaler til kartotekslisten ---------- */
@@ -76,6 +77,7 @@ async function gemTilbud(status){
   }
   const d = await r.json();
   aktivtNr = d.nr;
+  aktivStatus = status || 'kladde';
 
   const felt = document.getElementById('c_number');
   if(felt) felt.value = d.nr;
@@ -91,6 +93,7 @@ async function gemTilbud(status){
    det gamle nummer med og overskrive kundens tidligere tilbud. */
 function slipTilbud(){
   aktivtNr = null;
+  aktivStatus = 'kladde';
   gamleValg();
   const felt = document.getElementById('c_number');
   if(felt) felt.value = '';
@@ -129,6 +132,7 @@ async function hentTilbud(nr){
   activeIdx = 0;
   optIdx = 0;
   aktivtNr = tilbud.nr;
+  aktivStatus = tilbud.status === 'sendt' ? 'sendt' : 'kladde';
 
   const felt = document.getElementById('c_number');
   if(felt) felt.value = tilbud.nr;

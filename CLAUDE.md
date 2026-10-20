@@ -360,6 +360,25 @@ flere lokationer: parter → Hej X → indledning → Samlet prisoverblik (lokat
   sidefoden. Overskrifter har `data-hold`, så de ikke står alene nederst på
   en side.
 
+## Prisoversigten (`js/prisoversigt.js`)
+
+- **Kun priserne, til en mail for sig** (Esbens ønske, 20. okt 2026). Knappen
+  "Prisoversigt" står i tilbuddets bjælke ved sprogvælgeren (ikke i
+  sidehovedet) og bygger en PDF af det åbne tilbud: tilbuddets
+  prisoverblik eller sammenligning og blokke, men uden parter, brev,
+  integrationer, fotos og beskrivelser. Alle lokationer og muligheder med
+  indhold kommer med. Sidefoden er tilbuddets (moms og garanti).
+- **Licens slås til og fra pr. oversigt** i en dialog, når tilbuddet har
+  licenser. Fra betyder ingen licenstabel, ingen licenskolonne
+  (`overviewTable`/`lokationsOverblik` med `medLic=false`), ingen licensrækker i
+  sammenligningen og ingen licensnote, og "Løbende / md." er kun modulerne.
+- **Den gemmer tilbuddet først**, så kunden står i kartoteket som kladde, og
+  kræver kun kundens navn og e-mail (`PO_KRAV`, sendt med til
+  `kravOpfyldt(ids)`): sælgeren skal kunne sende priser, før CVR og adresse
+  er på plads. Brugt udstyr uden pris stopper den stadig. Statussen røres ikke
+  (`aktivStatus` i `store.js`): et sendt tilbud bliver ikke kladde af en
+  prisoversigt. Selve oversigten gemmes ikke; den bygges forfra ved hvert tryk.
+
 ## tillty PAY (egen tilbudstype)
 
 - **PAY er sin egen tilbudstype** (`FORM.type === 'pay'`, vælges ved opstart) og

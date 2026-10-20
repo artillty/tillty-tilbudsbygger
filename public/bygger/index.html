@@ -255,6 +255,9 @@
       <!-- Sproget står over det, det ændrer: kun preview og PDF skifter sprog,
            byggeren er dansk. Mulighederne bygges af js/sprog.js. -->
       <h2>Tilbudspreview
+        <!-- Prisoversigten er kun priserne, til en mail for sig (js/prisoversigt.js).
+             Den hører til tilbuddet, så knappen står over det. -->
+        <button type="button" class="po-knap kun-udstyr" onclick="exportPrisoversigt()">⬇ Prisoversigt</button>
         <select id="c_sprog" class="sprogvalg" onchange="skiftSprog()"
                 aria-label="Sprog i tilbuddet" title="Sprog i tilbuddet og PDF'en"></select>
       </h2>
@@ -283,6 +286,7 @@
 <script src="js/pay.js"></script>
 <script src="js/print.js"></script>
 <script src="js/guide.js"></script>
+<script src="js/prisoversigt.js"></script>
 <script src="js/init.js"></script>
 <script src="js/store.js"></script>
 <script src="js/visning.js"></script>
