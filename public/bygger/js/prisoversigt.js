@@ -2,10 +2,10 @@
    tillty Tilbudsbygger — Prisoversigten
 
    Et dokument for sig, bygget af det åbne tilbud: kun priserne, så sælgeren
-   kan sende dem i en mail for sig. Ingen parter, intet brev, ingen fotos og
-   beskrivelser. Opbygningen er tilbuddets: prisoverblik eller sammenligning
+   kan sende dem i en mail for sig. Ingen parter og intet brev. Opbygningen er tilbuddets: prisoverblik eller sammenligning
    øverst, så en blok pr. lokation eller mulighed med dens linjer og
    opsummering. Alle lokationer og muligheder med indhold kommer med.
+   Tabellerne er tilbuddets egne, med fotos og beskrivelser (tilltys ønske).
 
    Licens kan slås fra pr. oversigt. Så er licenstabellerne, licenskolonnen
    og licensrækkerne i sammenligningen væk, og "Løbende / md." er kun
@@ -26,15 +26,6 @@ const PO_KRAV = ['c_company', 'c_email'];
 /* Uden licens: samme opsætning, men licenserne regnes ikke med. */
 function poData(d,medLic){
   return medLic ? d : Object.assign({}, d, {licenses:[], licDaily:0});
-}
-
-/* Fotos og beskrivelser tages ud af tabellerne. Tilbuddets egne tabeller
-   bruges, så linjerne er de samme som i tilbuddet. */
-function poRen(html){
-  const el=document.createElement('div');
-  el.innerHTML=html;
-  el.querySelectorAll('.pv-img,.pv-d').forEach(x=>x.remove());
-  return el.innerHTML;
 }
 
 function prisoversigtHtml(medLic){
@@ -78,7 +69,7 @@ function prisoversigtHtml(medLic){
       b+=specBlock('<span class="lh-name">'+t('Specifikation')+'</span>', live[0].d, days, true);
     }
   }
-  return poRen(b);
+  return b;
 }
 
 /* ---------- sidehoved ----------
@@ -130,7 +121,7 @@ function visPrisValg(){
   const dlg=document.createElement('dialog');
   dlg.id='pris_valg'; dlg.className='guide-valg';
   dlg.innerHTML='<form method="dialog"><h3>Prisoversigt</h3>'
-    +'<p>Kun priserne, uden brev og fotos. Alle lokationer og muligheder kommer med.</p>'
+    +'<p>Priserne uden brev. Alle lokationer og muligheder kommer med.</p>'
     +'<label class="pay-toggle"><input type="checkbox" name="lic" checked><span>Licens med i oversigten</span></label>'
     +'<div class="gv-knapper"><button type="button" class="minibtn" data-luk>Annullér</button>'
     +'<button type="submit" class="btn-pdf">⬇ Lav prisoversigt</button></div></form>';

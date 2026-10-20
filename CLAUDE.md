@@ -366,7 +366,8 @@ flere lokationer: parter → Hej X → indledning → Samlet prisoverblik (lokat
   "Prisoversigt" står i tilbuddets bjælke ved sprogvælgeren (ikke i
   sidehovedet) og bygger en PDF af det åbne tilbud: tilbuddets
   prisoverblik eller sammenligning og blokke, men uden parter, brev,
-  integrationer, fotos og beskrivelser. Alle lokationer og muligheder med
+  og integrationer. Tabellerne er tilbuddets egne med fotos og beskrivelser
+  (tillty ville have begge med, 20. okt 2026). Alle lokationer og muligheder med
   indhold kommer med. Sidefoden er tilbuddets (moms og garanti).
 - **Licens slås til og fra pr. oversigt** i en dialog, når tilbuddet har
   licenser. Fra betyder ingen licenstabel, ingen licenskolonne

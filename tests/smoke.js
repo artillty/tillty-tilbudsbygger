@@ -1634,8 +1634,8 @@ let STANDARD_START = null;
     let h = await oversigt(true);
     check('prisoversigten har sit eget sidehoved og nævner kunden',
       /PRISOVERSIGT/.test(h) && !/>TILBUD</.test(h) && /Café Eksempel/.test(h));
-    check('prisoversigten har ingen parter, brev, fotos eller beskrivelser',
-      !/qp-parties|qp-intro|qp-greet|qp-note|qp-integr/.test(h) && !/<img/.test(h) && !/pv-d/.test(h));
+    check('prisoversigten har fotos og beskrivelser, men ingen parter eller brev',
+      !/qp-parties|qp-intro|qp-greet|qp-note|qp-integr/.test(h) && /<img class="pv-img"/.test(h) && /class="pv-d"/.test(h));
     check('prisoversigten har priser og sidefodens forbehold', /Samlet pris/.test(tekst(h)) && /moms/.test(h) && /garanti/.test(h));
     check('med licens står licenserne i oversigten', /Licens\/dag/.test(h) && /pr\. dag i brug/.test(h));
 
