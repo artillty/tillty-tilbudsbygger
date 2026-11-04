@@ -17,6 +17,10 @@ const CATALOG = [
    acc:['tsfixed','tsstand','desktop','multi','mount','hand','drawer']},
   {id:'tab14', name:'14" POS Tablet', desc:'Både stationær og mobil skærm til kassesystemet.', price:4495,
    acc:['tsfixed','tsstand','desktop','multi','mount','hand','drawer']},
+  /* `kunBrugt`: fås kun brugt. Kortet har ingen "Nye"-tæller, kun "Brugte"
+     (og "Kundens egne"), og `price` er den faste brugtpris, ikke en listepris. */
+  {id:'kds156', name:'15.6" KDS – Køkkenskærm', desc:'Digital skærm til ordrevisning i køkkenet.', price:2500,
+   kunBrugt:true, acc:['vesa']},
   {id:'kds185', name:'18.5" KDS – Køkkenskærm', desc:'Digital skærm til ordrevisning i køkkenet.', price:5995,
    acc:['vesa']},
   {id:'kds22', name:'22" KDS – Køkkenskærm', desc:'Digital skærm til ordrevisning i køkkenet.', price:6995,
@@ -39,7 +43,7 @@ const CATALOG = [
    Kortet tager navnet herfra og beskrivelsen fra den første størrelse. */
 const STOERRELSER = [
   {id:'tablet', navn:'POS Tablet', varianter:{tab87:'8.7"', tab11:'11"', tab14:'14"'}},
-  {id:'kds',    navn:'KDS – Køkkenskærm', varianter:{kds185:'18.5"', kds22:'22"'}},
+  {id:'kds',    navn:'KDS – Køkkenskærm', varianter:{kds156:'15.6"', kds185:'18.5"', kds22:'22"'}},
 ];
 
 const ACCESSORIES = {
@@ -81,7 +85,7 @@ const SENDER = {
 const PRODUCT_LICENSE = {
   sot:'pos', pos154:'pos', tab87:'pos', tab11:'pos', tab14:'pos',
   termmobil:'pos',
-  kds185:'kds', kds22:'kds',
+  kds156:'kds', kds185:'kds', kds22:'kds',
 };
 
 /* Moduler – vælges manuelt, faktureres pr. måned. */
@@ -132,7 +136,7 @@ const SAMMENLIGNING = [
     {navn:'Pengeskuffe',                       tilbehoer:['drawer']},
   ]},
   {kategori:'Køkken', raekker:[
-    {navn:'Køkkenskærm (KDS)',                 produkter:{kds185:'18.5"', kds22:'22"'}},
+    {navn:'Køkkenskærm (KDS)',                 produkter:{kds156:'15.6"', kds185:'18.5"', kds22:'22"'}},
     {navn:'Bonprinter',                        produkter:{lan:'LAN', wifi:'WiFi'}},
   ]},
   {kategori:'Betaling', raekker:[
@@ -148,11 +152,12 @@ const SAMMENLIGNING = [
 
    Sælgeren kan stadig uploade sit eget billede oveni; en upload vinder altid
    over det officielle foto. Flere produkter deler samme foto med vilje —
-   tabletterne ligner hinanden, og de to KDS-størrelser gør også. */
+   tabletterne ligner hinanden, og 18.5" og 22" KDS gør også. Den brugte
+   15.6" KDS har sit eget. */
 const PRODUKTFOTO = {
   sot:'sot', pos154:'pos154',
   tab87:'tablet', tab11:'tablet', tab14:'tablet',
-  kds185:'kds', kds22:'kds',
+  kds156:'kds156', kds185:'kds', kds22:'kds',
   termstat:'termstat', termmobil:'termmobil',
   lan:'printer', wifi:'wifi',
 };

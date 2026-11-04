@@ -296,6 +296,7 @@
   /* Brugt udstyr sælges, men til en pris sælgeren selv skriver. Prisfeltet
      står foran tælleren og vises først, når der er sat antal. */
   .mrk-brugt{color:var(--color-warning)}
+  .kun-brugt{font-size:10.5px;font-weight:700;font-family:var(--font-heading);color:var(--color-warning);text-align:right;margin:-2px 0 4px}
   .qty-brugt{border-style:dashed}
   .qty.qty-brugt.on{border-color:var(--color-warning);border-style:solid}
   .qty-brugt input{font-size:14px}

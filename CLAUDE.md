@@ -106,6 +106,12 @@ udledes af koden — og de fejl der allerede er begået én gang.
   og sætter antallet til 1. Med tre tællere fremme på hvert kort og tilbehør
   blev listen for lang. En tæller med antal står altid fremme; en tom, udfoldet
   tæller foldes først sammen, når kortene tegnes forfra (`aabneKort`).
+- **Nogle produkter fås kun brugt** (`kunBrugt:true` i `CATALOG`, fx 15.6" KDS,
+  4. nov 2026). Deres `price` er en fast brugtpris, ikke en listepris:
+  `brugtPrisOf()` tager den fra kataloget (`FAST_BRUGTPRIS`), og der er intet
+  prisfelt. Kortet har "Brugte" fremme i stedet for "Nye"
+  (`taellereKunBrugt()`), og tilbehørets "= N" følger de brugte. Tilbehøret
+  sælges nyt som på de andre størrelser.
 - **Uden pris stopper eksporten** (`kravOpfyldt()` læser `udenPris` fra
   `collectFor`). Tomt felt er "ikke sat"; 0 er en pris, sælgeren har valgt.
 - Brugt står **lige efter det nye** i tabellen med mærkatet "Brugt", ikke nede
@@ -212,7 +218,7 @@ udledes af koden — og de fejl der allerede er begået én gang.
 
 ## Størrelseskort i byggeren
 
-- **Tablets (8.7"/11"/14") og KDS (18.5"/22") står som ét kort med en
+- **Tablets (8.7"/11"/14") og KDS (15.6"/18.5"/22") står som ét kort med en
   størrelsesvælger** (`STOERRELSER` i `js/data.js`). Det er kun visning: hver
   størrelse er stadig sit eget produkt med egen pris, varenøgle og licens, så
   beregning, tilbud, sammenligning og gemte tilbud er uændrede. Slå dem ikke

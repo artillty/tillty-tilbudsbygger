@@ -108,7 +108,17 @@ function setBrugt(key,n){
 }
 /* Prisen på brugt udstyr. Tomt felt er "ikke sat" og stopper eksporten; 0 er
    en pris, sælgeren har valgt. */
-function brugtPrisOf(o,key){ const p=(o.brugtPris||{})[key]; return typeof p==='number' ? p : null; }
+function brugtPrisOf(o,key){
+  if(key in FAST_BRUGTPRIS) return FAST_BRUGTPRIS[key];
+  const p=(o.brugtPris||{})[key]; return typeof p==='number' ? p : null;
+}
+/* Produkter der kun fås brugt (`kunBrugt` i data.js), har en fast brugtpris
+   fra kataloget. Sælgeren skriver den ikke, og den står kun i data.js. */
+const FAST_BRUGTPRIS = {};
+CATALOG.forEach(p=>{ if(p.kunBrugt) FAST_BRUGTPRIS[keyMain(p.id)]=p.price; });
+/* Antallet, tilbehørets "= N"-knap følger: de nye, eller de brugte, hvis
+   produktet kun fås brugt. */
+function hovedAntal(mk){ return mk in FAST_BRUGTPRIS ? qBrugt(mk) : q(mk); }
 function setBrugtPris(key,val){
   const p=parseFloat(String(val).replace(',','.'));
   if(isNaN(p)||p<0) delete M().brugtPris[key]; else M().brugtPris[key]=Math.round(p*100)/100;
@@ -329,11 +339,23 @@ function kortAccHint(p){
   return p.acc.length?`<div class="acc-hint">· ${p.acc.length} tilbehør folder sig ud herunder</div>`:'';
 }
 function kortAntal(p,vis){
-  const mk=keyMain(p.id);
+  const mk=keyMain(p.id), egetTitel='Udstyr kunden allerede har. Koster 0, men tæller med i licenserne.';
   return `<div class="prod-right"${vis||''}>
           <div class="price">${fmt(p.price)}</div>
-          ${taellere(mk,'Udstyr kunden allerede har. Koster 0, men tæller med i licenserne.')}
+          ${p.kunBrugt ? '<div class="kun-brugt">Fås kun brugt</div>'+taellereKunBrugt(mk,egetTitel) : taellere(mk,egetTitel)}
         </div>`;
+}
+/* Et produkt der kun fås brugt: "Brugte" står fremme i stedet for "Nye", uden
+   prisfelt (prisen er fast), og "Kundens egne" er stadig en lille knap. */
+function taellereKunBrugt(key,egetTitel){
+  return `<div class="ctrl-row"><span class="qty-mrk mrk-brugt">Brugte</span>${stepper(key,'brugt')}</div>
+    <div class="ctrl-row row-kort" data-kortrow="eget_${key}" title="${egetTitel}">
+      <span class="qty-mrk mrk-eget">Kundens egne</span>${stepper(key,'eget')}
+    </div>
+    <div class="kortchips" data-chips="${key}">
+      <button type="button" class="kortchip" data-chip="eget_${key}" title="${egetTitel}"
+              onclick="aabnKort('${key}','eget')">+ Kundens egne</button>
+    </div>`;
 }
 
 /* ---------- størrelsesvælger ----------
@@ -435,7 +457,7 @@ function kortTilbehoer(p,vis){
 }
 
 /* Sæt tilbehørets antal lig produktets — fx én hand strap pr. tablet. */
-function matchQty(accKey,mainKey){ setQ(accKey,q(mainKey)); syncUI(); }
+function matchQty(accKey,mainKey){ setQ(accKey,hovedAntal(mainKey)); syncUI(); }
 
 /* Et modul bundet til et produkt (`under` i MODULES, fx simkortet) tæller kun,
    når produktet er i muligheden: nyt, brugt eller kundens eget. Antallet bliver
@@ -630,7 +652,7 @@ function syncUI(){
       const ak=keyAcc(p.id,aid), mk=keyMain(p.id);
       const btn=document.querySelector('[data-match="'+ak+'"]');
       if(!btn) return;
-      const mq=q(mk), aq=q(ak);
+      const mq=hovedAntal(mk), aq=q(ak);
       const show = mq>1 && aq!==mq;
       btn.style.display=show?'inline-block':'none';
       btn.textContent='= '+mq;

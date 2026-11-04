@@ -31,12 +31,12 @@ function guideUdstyr(o){
   // hvis der er en (pdfImg), kundens side kun tilltys egne fotos (FOTO).
   const foto=(...ids)=>ids.map(keyMain).find(k=>n(k))||'';
   return {
-    foto:{kasse:foto('pos154','tab87','tab11','tab14'), sot:foto('sot'), kds:foto('kds185','kds22'),
+    foto:{kasse:foto('pos154','tab87','tab11','tab14'), sot:foto('sot'), kds:foto('kds156','kds185','kds22'),
           termstat:foto('termstat'), termmobil:foto('termmobil'), lan:foto('lan'), wifi:foto('wifi'),
           skuffe:keyExtra('drawer')},
     kasse:prod('pos154','tab87','tab11','tab14'),
     sot:prod('sot'),
-    kds:prod('kds185','kds22'), kdsArm:tilb('vesa'),
+    kds:prod('kds156','kds185','kds22'), kdsArm:tilb('vesa'),
     termstat:prod('termstat'), termmobil:prod('termmobil'),
     sim:sim ? modAntal(o,sim) : 0,
     lan:prod('lan'), wifi:prod('wifi'),

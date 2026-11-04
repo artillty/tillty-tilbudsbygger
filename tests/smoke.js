@@ -915,7 +915,7 @@ let STANDARD_START = null;
     const knapper = (pid) => p.$eval(`#catalog [data-strknap="${pid}"]`, (b) =>
       [...b.closest('.group').querySelectorAll('.str-knap')].map((x) => x.textContent).join());
     check('de tre tablets står i ét kort', (await knapper('tab87')) === '8.7",11",14"');
-    check('de to KDS-skærme står i ét kort', (await knapper('kds185')) === '18.5",22"');
+    check('de tre KDS-skærme står i ét kort', (await knapper('kds185')) === '15.6",18.5",22"');
     // LAN og WiFi er to forskellige printere, ikke to størrelser.
     check('printerne har hver sit kort', !(await p.$('#catalog [data-strknap="lan"], #catalog [data-strknap="wifi"]')));
     check('ét kort pr. produkt i flere størrelser',
@@ -950,6 +950,29 @@ let STANDARD_START = null;
     check('kortet springer til første størrelse med indhold', (await aktiv()) === 'tab11');
     await p.click('#opttabs .loctab:nth-child(2)'); await p.waitForTimeout(250);
     check('... også i den anden mulighed', (await aktiv()) === 'tab87');
+    await p.close();
+  }
+
+  /* ---------- 9b: produkt der kun fås brugt (15.6" KDS) ---------- */
+  console.log('\n# Kun brugt');
+  {
+    const p = await newPage(browser, {});
+    await str(p, 'brugt_m_kds156');
+    check('ingen "Nye"-tæller på et produkt der kun fås brugt', !(await p.$('#qty_m_kds156')));
+    check('"Brugte" står fremme uden prisfelt', await p.isVisible('#qty_brugt_m_kds156')
+      && !(await p.$('[data-brugtpris="m_kds156"]')));
+    await plus(p, 'brugt_m_kds156', 2);
+    await p.waitForTimeout(150);
+    check('"= N" på tilbehøret følger de brugte', (await p.textContent('[data-match="a_kds156_vesa"]')) === '= 2');
+    await p.click('[data-match="a_kds156_vesa"]');
+    await p.waitForTimeout(300);
+    const row = await p.$$eval('#quote-doc table.loc-overview tfoot td', (td) => td.map((t) => t.textContent.trim()));
+    // Håndregnet: 2 brugte à 2.500 + 2 Vesa Arm à 995. KDS-licens 7,50 pr. dag pr. skærm.
+    check('den faste brugtpris regnes med', kr(row[1]) === 2 * 2500 + 2 * 995, row[1]);
+    check('den brugte KDS udløser licens', kr(row[2]) === 2 * 7.5, row[2]);
+    const linje = await p.$$eval('#quote-doc table.pv:not(.loc-overview) tbody tr', (rows) =>
+      rows.map((r) => r.textContent.replace(/\s+/g, ' ').trim()).find((t) => /15\.6" KDS/.test(t)) || '');
+    check('står i tilbuddet mærket "Brugt"', /Brugt/.test(linje), linje);
     await p.close();
   }
 

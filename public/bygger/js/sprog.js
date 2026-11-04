@@ -157,6 +157,7 @@ const OVERSAETTELSER = [
   ['11" POS Tablet', '11" POS Tablet', '11" POS Tablet', '11" POS Tablet', '11" POS Tablet'],
   ['14" POS Tablet', '14" POS Tablet', '14" POS Tablet', '14" POS Tablet', '14" POS Tablet'],
   ['Både stationær og mobil skærm til kassesystemet.', 'Both a stationary and a mobile display for the POS system.', 'Både stasjonær og mobil skjerm til kassesystemet.', 'Både stationär och mobil skärm till kassasystemet.', 'Stationärer und mobiler Bildschirm für das Kassensystem in einem.'],
+  ['15.6" KDS – Køkkenskærm', '15.6" KDS – Kitchen display', '15.6" KDS – Kjøkkenskjerm', '15.6" KDS – Köksskärm', '15.6" KDS – Küchenbildschirm'],
   ['18.5" KDS – Køkkenskærm', '18.5" KDS – Kitchen display', '18.5" KDS – Kjøkkenskjerm', '18.5" KDS – Köksskärm', '18.5" KDS – Küchenbildschirm'],
   ['22" KDS – Køkkenskærm', '22" KDS – Kitchen display', '22" KDS – Kjøkkenskjerm', '22" KDS – Köksskärm', '22" KDS – Küchenbildschirm'],
   ['Digital skærm til ordrevisning i køkkenet.', 'Digital display showing orders in the kitchen.', 'Digital skjerm for ordervisning på kjøkkenet.', 'Digital skärm för ordervisning i köket.', 'Digitaler Bildschirm zur Bestellanzeige in der Küche.'],
