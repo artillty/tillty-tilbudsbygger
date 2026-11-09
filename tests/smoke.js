@@ -916,10 +916,12 @@ let STANDARD_START = null;
       [...b.closest('.group').querySelectorAll('.str-knap')].map((x) => x.textContent).join());
     check('de tre tablets står i ét kort', (await knapper('tab87')) === '8.7",11",14"');
     check('de tre KDS-skærme står i ét kort', (await knapper('kds185')) === '15.6",18.5",22"');
-    // LAN og WiFi er to forskellige printere, ikke to størrelser.
-    check('printerne har hver sit kort', !(await p.$('#catalog [data-strknap="lan"], #catalog [data-strknap="wifi"]')));
-    check('ét kort pr. produkt i flere størrelser',
-      (await p.$$eval('#catalog > .group', (g) => g.filter((x) => x.querySelector('[data-strknap]')).length)) === 2);
+    // LAN og WiFi er to forskellige printere med hver sit kort. WiFi-kortet har
+    // Sunmi og den brugte Star.
+    check('LAN-printeren har sit eget kort', !(await p.$('#catalog [data-strknap="lan"]')));
+    check('WiFi-kortet har Sunmi og Star', (await knapper('wifi')) === 'Sunmi,Star');
+    check('ét kort pr. produkt i flere varianter',
+      (await p.$$eval('#catalog > .group', (g) => g.filter((x) => x.querySelector('[data-strknap]')).length)) === 3);
     check('kun én størrelse vises ad gangen', await p.$$eval('#catalog > .group', (g) => g.every((x) =>
       !x.querySelector('[data-strknap]') || [...x.querySelectorAll('.prod-right[data-variant]')].filter((e) => !e.hidden).length === 1)));
 
@@ -973,6 +975,24 @@ let STANDARD_START = null;
     const linje = await p.$$eval('#quote-doc table.pv:not(.loc-overview) tbody tr', (rows) =>
       rows.map((r) => r.textContent.replace(/\s+/g, ' ').trim()).find((t) => /15\.6" KDS/.test(t)) || '');
     check('står i tilbuddet mærket "Brugt"', /Brugt/.test(linje), linje);
+    await p.close();
+  }
+  /* Star-printeren fås kun brugt og har ingen fast pris: sælgeren skriver den. */
+  {
+    const p = await newPage(browser, {});
+    await str(p, 'brugt_m_star');
+    check('Star: ingen "Nye"-tæller', !(await p.$('#qty_m_star')));
+    await plus(p, 'brugt_m_star', 2);
+    await p.waitForTimeout(150);
+    check('Star: prisfeltet kommer frem og er markeret uden pris', await p.isVisible('[data-brugtpris="m_star"]')
+      && await p.evaluate(() => document.querySelector('[data-brugtpris="m_star"]').classList.contains('mangler')));
+    await p.fill('[data-brugtpris="m_star"]', '600');
+    await p.waitForTimeout(300);
+    const row = await p.$$eval('#quote-doc table.loc-overview tfoot td', (td) => td.map((t) => t.textContent.trim()));
+    check('Star: sælgerens pris regnes med', kr(row[1]) === 2 * 600, row[1]);
+    const linje = await p.$$eval('#quote-doc table.pv:not(.loc-overview) tbody tr', (rows) =>
+      rows.map((r) => r.textContent.replace(/\s+/g, ' ').trim()).find((t) => /Star WiFi Printer/.test(t)) || '');
+    check('Star: står i tilbuddet mærket "Brugt"', /Brugt/.test(linje), linje);
     await p.close();
   }
 

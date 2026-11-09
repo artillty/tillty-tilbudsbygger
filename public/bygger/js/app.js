@@ -112,13 +112,16 @@ function brugtPrisOf(o,key){
   if(key in FAST_BRUGTPRIS) return FAST_BRUGTPRIS[key];
   const p=(o.brugtPris||{})[key]; return typeof p==='number' ? p : null;
 }
-/* Produkter der kun fås brugt (`kunBrugt` i data.js), har en fast brugtpris
-   fra kataloget. Sælgeren skriver den ikke, og den står kun i data.js. */
-const FAST_BRUGTPRIS = {};
-CATALOG.forEach(p=>{ if(p.kunBrugt) FAST_BRUGTPRIS[keyMain(p.id)]=p.price; });
+/* Produkter der kun fås brugt (`kunBrugt` i data.js). Har de en pris i
+   kataloget, er den fast brugtpris: sælgeren skriver den ikke, og den står kun
+   i data.js. Uden pris (`price:null`) skriver sælgeren den som ved andet brugt. */
+const KUN_BRUGT = new Set(), FAST_BRUGTPRIS = {};
+CATALOG.forEach(p=>{ if(!p.kunBrugt) return;
+  KUN_BRUGT.add(keyMain(p.id));
+  if(typeof p.price==='number') FAST_BRUGTPRIS[keyMain(p.id)]=p.price; });
 /* Antallet, tilbehørets "= N"-knap følger: de nye, eller de brugte, hvis
    produktet kun fås brugt. */
-function hovedAntal(mk){ return mk in FAST_BRUGTPRIS ? qBrugt(mk) : q(mk); }
+function hovedAntal(mk){ return KUN_BRUGT.has(mk) ? qBrugt(mk) : q(mk); }
 function setBrugtPris(key,val){
   const p=parseFloat(String(val).replace(',','.'));
   if(isNaN(p)||p<0) delete M().brugtPris[key]; else M().brugtPris[key]=Math.round(p*100)/100;
@@ -341,14 +344,19 @@ function kortAccHint(p){
 function kortAntal(p,vis){
   const mk=keyMain(p.id), egetTitel='Udstyr kunden allerede har. Koster 0, men tæller med i licenserne.';
   return `<div class="prod-right"${vis||''}>
-          <div class="price">${fmt(p.price)}</div>
-          ${p.kunBrugt ? '<div class="kun-brugt">Fås kun brugt</div>'+taellereKunBrugt(mk,egetTitel) : taellere(mk,egetTitel)}
+          ${p.price===null ? '' : `<div class="price">${fmt(p.price)}</div>`}
+          ${p.kunBrugt ? '<div class="kun-brugt">Fås kun brugt</div>'+taellereKunBrugt(mk,egetTitel,p.price===null) : taellere(mk,egetTitel)}
         </div>`;
 }
-/* Et produkt der kun fås brugt: "Brugte" står fremme i stedet for "Nye", uden
-   prisfelt (prisen er fast), og "Kundens egne" er stadig en lille knap. */
-function taellereKunBrugt(key,egetTitel){
-  return `<div class="ctrl-row"><span class="qty-mrk mrk-brugt">Brugte</span>${stepper(key,'brugt')}</div>
+/* Et produkt der kun fås brugt: "Brugte" står fremme i stedet for "Nye", og
+   "Kundens egne" er stadig en lille knap. Prisfeltet står der kun, når
+   produktet ikke har en fast brugtpris (`medPris`). */
+function taellereKunBrugt(key,egetTitel,medPris){
+  const p=brugtPrisOf(M(),key);
+  const felt = medPris ? `<input type="number" min="0" step="1" class="brugt-pris" data-brugtpris="${key}" placeholder="Stk. pris"
+             value="${p===null?'':p}" oninput="setBrugtPris('${key}',this.value)" aria-label="Stykpris, brugt">` : '';
+  const raekke = medPris ? ` row-brugt" data-brugtrow="${key}" title="Brugt udstyr, vi sælger. Skriv stykprisen selv."` : '"';
+  return `<div class="ctrl-row${raekke}>${felt}<span class="qty-mrk mrk-brugt">Brugte</span>${stepper(key,'brugt')}</div>
     <div class="ctrl-row row-kort" data-kortrow="eget_${key}" title="${egetTitel}">
       <span class="qty-mrk mrk-eget">Kundens egne</span>${stepper(key,'eget')}
     </div>

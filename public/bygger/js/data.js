@@ -18,7 +18,8 @@ const CATALOG = [
   {id:'tab14', name:'14" POS Tablet', desc:'Både stationær og mobil skærm til kassesystemet.', price:4495,
    acc:['tsfixed','tsstand','desktop','multi','mount','hand','drawer']},
   /* `kunBrugt`: fås kun brugt. Kortet har ingen "Nye"-tæller, kun "Brugte"
-     (og "Kundens egne"), og `price` er den faste brugtpris, ikke en listepris. */
+     (og "Kundens egne"), og `price` er den faste brugtpris, ikke en listepris.
+     Er `price` null, har produktet ingen fast pris, og sælgeren skriver den. */
   {id:'kds156', name:'15.6" KDS – Køkkenskærm', desc:'Digital skærm til ordrevisning i køkkenet.', price:2500,
    kunBrugt:true, acc:['vesa']},
   {id:'kds185', name:'18.5" KDS – Køkkenskærm', desc:'Digital skærm til ordrevisning i køkkenet.', price:5995,
@@ -31,6 +32,11 @@ const CATALOG = [
    acc:['cradle']},
   {id:'lan', name:'LAN Printer', desc:'Bon- og kvitteringsprinter (kasse og køkken).', price:1495, acc:[]},
   {id:'wifi', name:'WiFi Printer', desc:'Bon- og kvitteringsprinter (kasse og køkken).', price:1795, acc:[]},
+  /* Star-printeren sælges ikke ny, kun brugt (eller som kundens egen). Uden
+     fast pris: `price:null`, og sælgeren skriver brugtprisen som ved andet
+     brugt udstyr. */
+  {id:'star', name:'Star WiFi Printer', desc:'Bon- og kvitteringsprinter (kasse og køkken).', price:null,
+   kunBrugt:true, acc:[]},
 ];
 
 /* Samme produkt i flere størrelser står som ét kort i byggeren med en
@@ -38,12 +44,13 @@ const CATALOG = [
    produkt ovenfor med egen pris, varenøgle og licens, så beregning, tilbud,
    sammenligning og gemte tilbud er uændrede — og en kunde kan godt få flere
    størrelser i samme tilbud. Nøglen er produkt-id, værdien teksten på knappen.
-   Kun rigtige størrelser: LAN- og WiFi-printeren er to forskellige printere og
-   har hver sit kort.
+   LAN- og WiFi-printeren er to forskellige printere og har hver sit kort.
+   WiFi-kortet har to printere (Sunmi og den brugte Star), efter tilltys ønske.
    Kortet tager navnet herfra og beskrivelsen fra den første størrelse. */
 const STOERRELSER = [
   {id:'tablet', navn:'POS Tablet', varianter:{tab87:'8.7"', tab11:'11"', tab14:'14"'}},
   {id:'kds',    navn:'KDS – Køkkenskærm', varianter:{kds156:'15.6"', kds185:'18.5"', kds22:'22"'}},
+  {id:'wifiprinter', navn:'WiFi Printer', varianter:{wifi:'Sunmi', star:'Star'}},
 ];
 
 const ACCESSORIES = {
@@ -137,7 +144,7 @@ const SAMMENLIGNING = [
   ]},
   {kategori:'Køkken', raekker:[
     {navn:'Køkkenskærm (KDS)',                 produkter:{kds156:'15.6"', kds185:'18.5"', kds22:'22"'}},
-    {navn:'Bonprinter',                        produkter:{lan:'LAN', wifi:'WiFi'}},
+    {navn:'Bonprinter',                        produkter:{lan:'LAN', wifi:'WiFi', star:'Star WiFi'}},
   ]},
   {kategori:'Betaling', raekker:[
     {navn:'Stationær betalingsterminal',       produkter:{termstat:''}},
@@ -159,7 +166,7 @@ const PRODUKTFOTO = {
   tab87:'tablet', tab11:'tablet', tab14:'tablet',
   kds156:'kds156', kds185:'kds', kds22:'kds',
   termstat:'termstat', termmobil:'termmobil',
-  lan:'printer', wifi:'wifi',
+  lan:'printer', wifi:'wifi', star:'star',
 };
 /* Alt tilbehør har nu et foto. Mangler et nyt tilbehør sit billede, viser
    byggeren en grå pladsholder, som aldrig kommer med i kundens PDF. */
