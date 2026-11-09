@@ -112,7 +112,7 @@ udledes af koden — og de fejl der allerede er begået én gang.
   prisfelt. Kortet har "Brugte" fremme i stedet for "Nye"
   (`taellereKunBrugt()`), og tilbehørets "= N" følger de brugte. Tilbehøret
   sælges nyt som på de andre størrelser. Med `price:null` er der ingen fast
-  pris, og "Brugte" har prisfeltet som andet brugt udstyr (Star WiFi-printeren,
+  pris, og "Brugte" har prisfeltet som andet brugt udstyr (Star LAN-printeren,
   9. nov 2026: sælges ikke ny, kun brugt eller som kundens egen).
 - **Uden pris stopper eksporten** (`kravOpfyldt()` læser `udenPris` fra
   `collectFor`). Tomt felt er "ikke sat"; 0 er en pris, sælgeren har valgt.
@@ -227,7 +227,7 @@ udledes af koden — og de fejl der allerede er begået én gang.
   sammen til ét produkt med en størrelse i state.
 - **LAN- og WiFi-printeren har hver sit kort.** De blev prøvet som ét kort og
   skilt ad igen — det er to forskellige printere med hver sit foto.
-  WiFi-kortet har til gengæld to printere, Sunmi og den brugte Star (tilltys
+  LAN-kortet har til gengæld to printere, Epson og den brugte Star (tilltys
   ønske, 9. nov 2026).
 - Den valgte størrelse er UI-state. Kortet bliver på den, så længe den har
   indhold, og springer ellers til første størrelse med indhold.

@@ -166,8 +166,8 @@ const OVERSAETTELSER = [
   ['Mobil Betalingsterminal', 'Mobile payment terminal', 'Mobil betalingsterminal', 'Mobil betalterminal', 'Mobiles Zahlungsterminal'],
   ['Håndholdt betalingsterminal for mobilbetaling.', 'Handheld terminal for mobile payments.', 'Håndholdt betalingsterminal for mobilbetaling.', 'Handhållen betalterminal för mobil betalning.', 'Handterminal für mobile Zahlungen.'],
   ['LAN Printer', 'LAN Printer', 'LAN-skriver', 'LAN-skrivare', 'LAN-Drucker'],
+  ['Star LAN Printer', 'Star LAN Printer', 'Star LAN-skriver', 'Star LAN-skrivare', 'Star LAN-Drucker'],
   ['WiFi Printer', 'WiFi Printer', 'WiFi-skriver', 'WiFi-skrivare', 'WLAN-Drucker'],
-  ['Star WiFi Printer', 'Star WiFi Printer', 'Star WiFi-skriver', 'Star WiFi-skrivare', 'Star WLAN-Drucker'],
   ['Bon- og kvitteringsprinter (kasse og køkken).', 'Receipt and order printer (checkout and kitchen).', 'Bong- og kvitteringsskriver (kasse og kjøkken).', 'Kvitto- och bongskrivare (kassa och kök).', 'Bon- und Belegdrucker (Kasse und Küche).'],
 
   /* Tilbehør med engelske produktnavne beholder dem, som på dansk. */

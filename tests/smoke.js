@@ -916,10 +916,10 @@ let STANDARD_START = null;
       [...b.closest('.group').querySelectorAll('.str-knap')].map((x) => x.textContent).join());
     check('de tre tablets står i ét kort', (await knapper('tab87')) === '8.7",11",14"');
     check('de tre KDS-skærme står i ét kort', (await knapper('kds185')) === '15.6",18.5",22"');
-    // LAN og WiFi er to forskellige printere med hver sit kort. WiFi-kortet har
-    // Sunmi og den brugte Star.
-    check('LAN-printeren har sit eget kort', !(await p.$('#catalog [data-strknap="lan"]')));
-    check('WiFi-kortet har Sunmi og Star', (await knapper('wifi')) === 'Sunmi,Star');
+    // LAN og WiFi er to forskellige printere med hver sit kort. LAN-kortet har
+    // Epson og den brugte Star.
+    check('WiFi-printeren har sit eget kort', !(await p.$('#catalog [data-strknap="wifi"]')));
+    check('LAN-kortet har Epson og Star', (await knapper('lan')) === 'Epson,Star');
     check('ét kort pr. produkt i flere varianter',
       (await p.$$eval('#catalog > .group', (g) => g.filter((x) => x.querySelector('[data-strknap]')).length)) === 3);
     check('kun én størrelse vises ad gangen', await p.$$eval('#catalog > .group', (g) => g.every((x) =>
@@ -991,7 +991,7 @@ let STANDARD_START = null;
     const row = await p.$$eval('#quote-doc table.loc-overview tfoot td', (td) => td.map((t) => t.textContent.trim()));
     check('Star: sælgerens pris regnes med', kr(row[1]) === 2 * 600, row[1]);
     const linje = await p.$$eval('#quote-doc table.pv:not(.loc-overview) tbody tr', (rows) =>
-      rows.map((r) => r.textContent.replace(/\s+/g, ' ').trim()).find((t) => /Star WiFi Printer/.test(t)) || '');
+      rows.map((r) => r.textContent.replace(/\s+/g, ' ').trim()).find((t) => /Star LAN Printer/.test(t)) || '');
     check('Star: står i tilbuddet mærket "Brugt"', /Brugt/.test(linje), linje);
     await p.close();
   }

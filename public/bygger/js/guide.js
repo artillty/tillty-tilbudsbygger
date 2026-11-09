@@ -32,14 +32,14 @@ function guideUdstyr(o){
   const foto=(...ids)=>ids.map(keyMain).find(k=>n(k))||'';
   return {
     foto:{kasse:foto('pos154','tab87','tab11','tab14'), sot:foto('sot'), kds:foto('kds156','kds185','kds22'),
-          termstat:foto('termstat'), termmobil:foto('termmobil'), lan:foto('lan'), wifi:foto('wifi','star'),
+          termstat:foto('termstat'), termmobil:foto('termmobil'), lan:foto('lan','star'), wifi:foto('wifi'),
           skuffe:keyExtra('drawer')},
     kasse:prod('pos154','tab87','tab11','tab14'),
     sot:prod('sot'),
     kds:prod('kds156','kds185','kds22'), kdsArm:tilb('vesa'),
     termstat:prod('termstat'), termmobil:prod('termmobil'),
     sim:sim ? modAntal(o,sim) : 0,
-    lan:prod('lan'), wifi:prod('wifi','star'),
+    lan:prod('lan','star'), wifi:prod('wifi'),
     skuffe:tilb('drawer'),
     ds:(o.qty||{})[KEY_DS]||0,
   };
