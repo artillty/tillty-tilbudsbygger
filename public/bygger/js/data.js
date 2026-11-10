@@ -46,10 +46,11 @@ const CATALOG = [
    størrelser i samme tilbud. Nøglen er produkt-id, værdien teksten på knappen.
    LAN- og WiFi-printeren er to forskellige printere og har hver sit kort.
    LAN-kortet har to printere (Epson og den brugte Star), efter tilltys ønske.
-   Kortet tager navnet herfra og beskrivelsen fra den første størrelse. */
+   Kortet tager navnet herfra og beskrivelsen fra den første størrelse.
+   `start` er den størrelse kortet åbner på (ellers den første). */
 const STOERRELSER = [
   {id:'tablet', navn:'POS Tablet', varianter:{tab87:'8.7"', tab11:'11"', tab14:'14"'}},
-  {id:'kds',    navn:'KDS – Køkkenskærm', varianter:{kds156:'15.6"', kds185:'18.5"', kds22:'22"'}},
+  {id:'kds',    navn:'KDS – Køkkenskærm', varianter:{kds156:'15.6"', kds185:'18.5"', kds22:'22"'}, start:'kds185'},
   {id:'lanprinter', navn:'LAN Printer', varianter:{lan:'Epson', star:'Star'}},
 ];
 

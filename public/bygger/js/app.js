@@ -373,11 +373,11 @@ const valgtStr = {};
 function strAntal(pid){ return qAlle(keyMain(pid)); }
 /* Kortet bliver på den valgte størrelse, så længe den har indhold. Ellers
    springer det til en størrelse der har — fx når man skifter til en mulighed
-   med 14" — og står ellers på den første. */
+   med 14" — og står ellers på startstørrelsen (KDS: 18.5"). */
 function vaelgStr(gr){
   const ids=Object.keys(gr.varianter), nu=valgtStr[gr.id];
   if(nu && strAntal(nu)) return nu;
-  return valgtStr[gr.id] = ids.find(strAntal) || nu || ids[0];
+  return valgtStr[gr.id] = ids.find(strAntal) || nu || gr.start || ids[0];
 }
 function skiftStr(grId,pid){ valgtStr[grId]=pid; visStr(STOERRELSER.find(g=>g.id===grId)); }
 function visStr(gr){
